@@ -65,7 +65,12 @@ export default function EditStaffModal({ isOpen, onClose, staff }: EditStaffModa
   }, [staff, isOpen, reset]);
 
   const onSubmit = (data: InsertStaff) => {
-    updateStaffMutation.mutate(data);
+    // Convert numeric fields to strings for backend compatibility
+    const submitData = {
+      ...data,
+      salary: data.salary ? data.salary.toString() : undefined,
+    };
+    updateStaffMutation.mutate(submitData);
   };
 
   if (!staff) return null;
