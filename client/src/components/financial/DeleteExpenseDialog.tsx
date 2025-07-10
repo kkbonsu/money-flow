@@ -14,12 +14,14 @@ export default function DeleteExpenseDialog({ isOpen, onClose, expense }: Delete
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const expenseIdToDelete = expense?.id;
+
   const deleteExpenseMutation = useMutation({
     mutationFn: () => {
-      if (!expense?.id) {
+      if (!expenseIdToDelete) {
         throw new Error('No expense record selected');
       }
-      return apiClient.delete(`/expenses/${expense.id}`);
+      return apiClient.delete(`/expenses/${expenseIdToDelete}`);
     },
     onSuccess: () => {
       toast({
@@ -39,7 +41,7 @@ export default function DeleteExpenseDialog({ isOpen, onClose, expense }: Delete
   });
 
   const handleDelete = () => {
-    if (expense && expense.id) {
+    if (expenseIdToDelete) {
       deleteExpenseMutation.mutate();
     }
   };

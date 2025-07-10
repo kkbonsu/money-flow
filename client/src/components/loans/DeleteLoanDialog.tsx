@@ -14,12 +14,14 @@ export default function DeleteLoanDialog({ isOpen, onClose, loan }: DeleteLoanDi
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const loanIdToDelete = loan?.id;
+
   const deleteLoanMutation = useMutation({
     mutationFn: () => {
-      if (!loan?.id) {
+      if (!loanIdToDelete) {
         throw new Error('No loan selected');
       }
-      return apiClient.delete(`/loans/${loan.id}`);
+      return apiClient.delete(`/loans/${loanIdToDelete}`);
     },
     onSuccess: () => {
       toast({
@@ -39,7 +41,7 @@ export default function DeleteLoanDialog({ isOpen, onClose, loan }: DeleteLoanDi
   });
 
   const handleDelete = () => {
-    if (loan && loan.id) {
+    if (loanIdToDelete) {
       deleteLoanMutation.mutate();
     }
   };

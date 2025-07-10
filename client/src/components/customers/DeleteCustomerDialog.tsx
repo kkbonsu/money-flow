@@ -14,12 +14,15 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Store customer ID locally to prevent race conditions
+  const customerIdToDelete = customer?.id;
+
   const deleteCustomerMutation = useMutation({
     mutationFn: () => {
-      if (!customer?.id) {
+      if (!customerIdToDelete) {
         throw new Error('No customer selected');
       }
-      return apiClient.delete(`/customers/${customer.id}`);
+      return apiClient.delete(`/customers/${customerIdToDelete}`);
     },
     onSuccess: () => {
       toast({
@@ -39,7 +42,7 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   });
 
   const handleDelete = () => {
-    if (customer && customer.id) {
+    if (customerIdToDelete) {
       deleteCustomerMutation.mutate();
     } else {
       toast({

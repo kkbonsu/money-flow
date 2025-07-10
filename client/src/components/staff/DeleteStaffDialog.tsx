@@ -14,15 +14,15 @@ export default function DeleteStaffDialog({ isOpen, onClose, staff }: DeleteStaf
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debug logging
-  console.log('DeleteStaffDialog rendered with staff:', staff);
+  // Store staff ID locally to prevent race conditions
+  const staffIdToDelete = staff?.id;
 
   const deleteStaffMutation = useMutation({
     mutationFn: () => {
-      if (!staff?.id) {
+      if (!staffIdToDelete) {
         throw new Error('No staff member selected');
       }
-      return apiClient.delete(`/staff/${staff.id}`);
+      return apiClient.delete(`/staff/${staffIdToDelete}`);
     },
     onSuccess: () => {
       toast({
@@ -42,12 +42,9 @@ export default function DeleteStaffDialog({ isOpen, onClose, staff }: DeleteStaf
   });
 
   const handleDelete = () => {
-    console.log('Delete button clicked, staff:', staff);
-    if (staff && staff.id) {
-      console.log('Proceeding with deletion for staff ID:', staff.id);
+    if (staffIdToDelete) {
       deleteStaffMutation.mutate();
     } else {
-      console.log('No staff selected, showing error');
       toast({
         title: "Error",
         description: "No staff member selected for deletion",
