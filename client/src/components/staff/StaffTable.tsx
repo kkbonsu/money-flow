@@ -4,13 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Eye, Edit, Search } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Eye, Edit, Trash2, Search, UserPlus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api';
 import { Staff } from '@shared/schema';
+import AddStaffModal from './AddStaffModal';
+import ViewStaffModal from './ViewStaffModal';
+import EditStaffModal from './EditStaffModal';
+import DeleteStaffDialog from './DeleteStaffDialog';
 
 export default function StaffTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ['/api/staff'],
@@ -28,12 +39,42 @@ export default function StaffTable() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-secondary/10 text-secondary';
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'inactive':
-        return 'bg-muted text-muted-foreground';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
       default:
-        return 'bg-muted text-muted-foreground';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const handleViewClick = (staff: Staff) => {
+    setSelectedStaff(staff);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditClick = (staff: Staff) => {
+    setSelectedStaff(staff);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (staff: Staff) => {
+    setSelectedStaff(staff);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const closeModals = () => {
+    setIsAddModalOpen(false);
+    setIsViewModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDeleteDialogOpen(false);
+    setSelectedStaff(null);
   };
 
   if (isLoading) {
@@ -53,7 +94,7 @@ export default function StaffTable() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Staff Members</CardTitle>
-          <Button className="btn-primary">
+          <Button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
             <UserPlus className="w-4 h-4 mr-2" />
             Add Staff
           </Button>
@@ -72,7 +113,7 @@ export default function StaffTable() {
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Status" />
+              <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
@@ -82,88 +123,93 @@ export default function StaffTable() {
           </Select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Staff Member</th>
-                <th>Position</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Salary</th>
-                <th>Hire Date</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Position</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Salary</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredStaff.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No staff members found
-                  </td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="text-muted-foreground">
+                      {searchTerm || statusFilter !== 'all' ? 'No staff found matching your criteria' : 'No staff members found'}
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredStaff.map((member: Staff) => (
-                  <tr key={member.id}>
-                    <td>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium">
-                            {member.firstName.charAt(0)}{member.lastName.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">
-                            {member.firstName} {member.lastName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            ID: {member.id}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="text-sm">{member.position}</span>
-                    </td>
-                    <td>
-                      <span className="text-sm">{member.email}</span>
-                    </td>
-                    <td>
-                      <span className="text-sm">{member.phone}</span>
-                    </td>
-                    <td>
-                      <span className="text-sm font-medium">
-                        ${member.salary ? parseFloat(member.salary).toLocaleString() : 'N/A'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-sm">
-                        {new Date(member.hireDate).toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td>
-                      <Badge className={`status-badge ${getStatusColor(member.status)}`}>
+                  <TableRow key={member.id}>
+                    <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>{member.position}</TableCell>
+                    <TableCell>{member.department}</TableCell>
+                    <TableCell>{formatCurrency(member.salary)}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(member.status)}>
                         {member.status}
                       </Badge>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewClick(member)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditClick(member)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(member)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredStaff.length} of {staff.length} staff members
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" disabled>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled>
+              Next
+            </Button>
+          </div>
         </div>
       </CardContent>
+
+      {/* Modals */}
+      <AddStaffModal isOpen={isAddModalOpen} onClose={closeModals} />
+      <ViewStaffModal isOpen={isViewModalOpen} onClose={closeModals} staff={selectedStaff} />
+      <EditStaffModal isOpen={isEditModalOpen} onClose={closeModals} staff={selectedStaff} />
+      <DeleteStaffDialog isOpen={isDeleteDialogOpen} onClose={closeModals} staff={selectedStaff} />
     </Card>
   );
 }

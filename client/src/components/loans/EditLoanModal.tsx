@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,16 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { insertLoanBookSchema, InsertLoanBook } from '@shared/schema';
+import { insertLoanBookSchema, InsertLoanBook, LoanBook } from '@shared/schema';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
-interface AddLoanModalProps {
+interface EditLoanModalProps {
   isOpen: boolean;
   onClose: () => void;
+  loan: LoanBook | null;
 }
 
-export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
+export default function EditLoanModal({ isOpen, onClose, loan }: EditLoanModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -28,43 +30,56 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
     reset,
   } = useForm<InsertLoanBook>({
     resolver: zodResolver(insertLoanBookSchema),
-    defaultValues: {
-      status: 'pending',
-      dateApplied: new Date().toISOString().split('T')[0],
-    },
   });
 
-  const createLoanMutation = useMutation({
-    mutationFn: (data: InsertLoanBook) => apiClient.post('/loans', data),
+  const updateLoanMutation = useMutation({
+    mutationFn: (data: InsertLoanBook) => apiClient.put(`/loans/${loan?.id}`, data),
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Loan application created successfully",
+        description: "Loan updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/loans'] });
-      reset();
       onClose();
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create loan application",
+        description: error.message || "Failed to update loan",
         variant: "destructive",
       });
     },
   });
 
+  useEffect(() => {
+    if (loan && isOpen) {
+      reset({
+        customerId: loan.customerId,
+        amount: loan.amount,
+        interestRate: loan.interestRate,
+        term: loan.term,
+        purpose: loan.purpose,
+        status: loan.status,
+        dateApplied: loan.dateApplied,
+        dateApproved: loan.dateApproved || undefined,
+        dateDisbursed: loan.dateDisbursed || undefined,
+      });
+    }
+  }, [loan, isOpen, reset]);
+
   const onSubmit = (data: InsertLoanBook) => {
-    createLoanMutation.mutate(data);
+    updateLoanMutation.mutate(data);
   };
+
+  if (!loan) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Loan</DialogTitle>
+          <DialogTitle>Edit Loan</DialogTitle>
           <DialogDescription>
-            Create a new loan application in the system.
+            Update loan application information and details.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -171,26 +186,12 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
             )}
           </div>
 
-          <div>
-            <Label htmlFor="dateApplied">Date Applied</Label>
-            <Input
-              id="dateApplied"
-              type="date"
-              {...register('dateApplied')}
-            />
-            {errors.dateApplied && (
-              <p className="text-sm text-destructive mt-1">
-                {errors.dateApplied.message}
-              </p>
-            )}
-          </div>
-
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createLoanMutation.isPending}>
-              {createLoanMutation.isPending ? 'Creating...' : 'Create Loan'}
+            <Button type="submit" disabled={updateLoanMutation.isPending}>
+              {updateLoanMutation.isPending ? 'Updating...' : 'Update Loan'}
             </Button>
           </div>
         </form>
