@@ -199,6 +199,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/staff/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const staffData = insertStaffSchema.parse(req.body);
+      const staff = await storage.updateStaff(id, staffData);
+      res.json(staff);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update staff" });
+    }
+  });
+
+  app.delete("/api/staff/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteStaff(id);
+      res.json({ message: "Staff deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete staff" });
+    }
+  });
+
   // Income Management routes
   app.get("/api/income", authenticateToken, async (req, res) => {
     try {

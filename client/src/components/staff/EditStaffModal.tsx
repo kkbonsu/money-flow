@@ -32,8 +32,13 @@ export default function EditStaffModal({ isOpen, onClose, staff }: EditStaffModa
   });
 
   const updateStaffMutation = useMutation({
-    mutationFn: (data: InsertStaff) => apiClient.put(`/staff/${staff?.id}`, data),
+    mutationFn: (data: InsertStaff) => {
+      console.log('Updating staff with data:', data);
+      console.log('Staff ID:', staff?.id);
+      return apiClient.put(`/staff/${staff?.id}`, data);
+    },
     onSuccess: () => {
+      console.log('Staff update successful');
       toast({
         title: "Success",
         description: "Staff member updated successfully",
@@ -42,6 +47,7 @@ export default function EditStaffModal({ isOpen, onClose, staff }: EditStaffModa
       onClose();
     },
     onError: (error: any) => {
+      console.error('Staff update error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update staff member",
@@ -67,6 +73,8 @@ export default function EditStaffModal({ isOpen, onClose, staff }: EditStaffModa
   }, [staff, isOpen, reset]);
 
   const onSubmit = (data: InsertStaff) => {
+    console.log('Edit form data being submitted:', data);
+    console.log('Edit form errors:', errors);
     updateStaffMutation.mutate(data);
   };
 
