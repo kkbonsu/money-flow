@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Eye, Edit, Trash2, Search } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 import { LoanBook } from '@shared/schema';
 import AddLoanModal from './AddLoanModal';
 import ViewLoanModal from './ViewLoanModal';
 import EditLoanModal from './EditLoanModal';
-import DeleteLoanDialog from './DeleteLoanDialog';
 
 export default function LoanTable() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,8 +20,10 @@ export default function LoanTable() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanBook | null>(null);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: loans = [], isLoading } = useQuery({
     queryKey: ['/api/loans'],
@@ -65,16 +67,34 @@ export default function LoanTable() {
     setIsEditModalOpen(true);
   };
 
+  const deleteLoanMutation = useMutation({
+    mutationFn: (loanId: number) => apiClient.delete(`/loans/${loanId}`),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Loan deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete loan",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDeleteClick = (loan: LoanBook) => {
-    setSelectedLoan(loan);
-    setIsDeleteDialogOpen(true);
+    if (window.confirm(`Are you sure you want to delete loan #${loan.id}?`)) {
+      deleteLoanMutation.mutate(loan.id);
+    }
   };
 
   const closeModals = () => {
     setIsAddModalOpen(false);
     setIsViewModalOpen(false);
     setIsEditModalOpen(false);
-    setIsDeleteDialogOpen(false);
     setSelectedLoan(null);
   };
 
@@ -212,7 +232,6 @@ export default function LoanTable() {
       <AddLoanModal isOpen={isAddModalOpen} onClose={closeModals} />
       <ViewLoanModal isOpen={isViewModalOpen} onClose={closeModals} loan={selectedLoan} />
       <EditLoanModal isOpen={isEditModalOpen} onClose={closeModals} loan={selectedLoan} />
-      <DeleteLoanDialog isOpen={isDeleteDialogOpen} onClose={closeModals} loan={selectedLoan} />
     </Card>
   );
 }
