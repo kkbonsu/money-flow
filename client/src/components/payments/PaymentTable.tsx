@@ -4,23 +4,63 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, CheckCircle, Search } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Calendar, CheckCircle, Search, Eye } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { PaymentSchedule } from '@shared/schema';
+import { PaymentSchedule, LoanBook, Customer } from '@shared/schema';
+import ViewPaymentModal from './ViewPaymentModal';
 
 export default function PaymentTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [viewPayment, setViewPayment] = useState<PaymentSchedule | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['/api/payment-schedules'],
   });
 
+  const { data: loans = [] } = useQuery({
+    queryKey: ['/api/loans'],
+  });
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ['/api/customers'],
+  });
+
+  const getCustomerName = (loanId: number) => {
+    const loan = loans.find((l: LoanBook) => l.id === loanId);
+    if (!loan) return 'N/A';
+    const customer = customers.find((c: Customer) => c.id === loan.customerId);
+    return customer ? `${customer.firstName} ${customer.lastName}` : 'N/A';
+  };
+
+  const getLoanDetails = (loanId: number) => {
+    return loans.find((l: LoanBook) => l.id === loanId);
+  };
+
   const filteredPayments = payments.filter((payment: PaymentSchedule) => {
-    const matchesSearch = payment.id.toString().includes(searchTerm);
+    const customerName = getCustomerName(payment.loanId);
+    const matchesSearch = 
+      payment.id.toString().includes(searchTerm) ||
+      payment.loanId.toString().includes(searchTerm) ||
+      customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleViewClick = (payment: PaymentSchedule) => {
+    setViewPayment(payment);
+    setIsViewModalOpen(true);
+  };
+
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(numAmount);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -82,74 +122,80 @@ export default function PaymentTable() {
           </Select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Payment ID</th>
-                <th>Loan ID</th>
-                <th>Due Date</th>
-                <th>Amount</th>
-                <th>Principal</th>
-                <th>Interest</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Payment ID</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Loan ID</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Principal</TableHead>
+                <TableHead>Interest</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredPayments.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No payment schedules found
-                  </td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8">
+                    <div className="text-muted-foreground">
+                      {searchTerm || statusFilter !== 'all' ? 'No payments found matching your criteria' : 'No payment schedules found'}
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredPayments.map((payment: PaymentSchedule) => (
-                  <tr key={payment.id}>
-                    <td>
-                      <span className="font-medium">#{payment.id}</span>
-                    </td>
-                    <td>
-                      <span className="text-sm">#{payment.loanId}</span>
-                    </td>
-                    <td>
-                      <span className="text-sm">
-                        {new Date(payment.dueDate).toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-sm font-medium">
-                        ${parseFloat(payment.amount).toLocaleString()}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-sm">
-                        ${parseFloat(payment.principalAmount).toLocaleString()}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-sm">
-                        ${parseFloat(payment.interestAmount).toLocaleString()}
-                      </span>
-                    </td>
-                    <td>
-                      <Badge className={`status-badge ${getStatusColor(payment.status)}`}>
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-medium">{payment.id}</TableCell>
+                    <TableCell>{getCustomerName(payment.loanId)}</TableCell>
+                    <TableCell>{payment.loanId}</TableCell>
+                    <TableCell>{new Date(payment.dueDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatCurrency(payment.amount)}</TableCell>
+                    <TableCell>{formatCurrency(payment.principalAmount)}</TableCell>
+                    <TableCell>{formatCurrency(payment.interestAmount)}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(payment.status)}>
                         {payment.status}
                       </Badge>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <CheckCircle className="w-4 h-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewClick(payment)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={payment.status === 'paid'}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Mark Paid
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
+
+        <ViewPaymentModal
+          isOpen={isViewModalOpen}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setViewPayment(null);
+          }}
+          payment={viewPayment}
+          loan={viewPayment ? getLoanDetails(viewPayment.loanId) : null}
+        />
       </CardContent>
     </Card>
   );

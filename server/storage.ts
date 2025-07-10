@@ -177,7 +177,49 @@ export class DatabaseStorage implements IStorage {
       .insert(loanBooks)
       .values(insertLoan)
       .returning();
+    
+    // Automatically create payment schedules for the loan
+    await this.createPaymentSchedulesForLoan(loan);
+    
     return loan;
+  }
+
+  private async createPaymentSchedulesForLoan(loan: LoanBook): Promise<void> {
+    const principal = parseFloat(loan.loanAmount);
+    const monthlyRate = parseFloat(loan.interestRate) / 100 / 12;
+    const numPayments = loan.term;
+    
+    // Calculate monthly payment using amortization formula
+    const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                          (Math.pow(1 + monthlyRate, numPayments) - 1);
+    
+    let remainingBalance = principal;
+    const currentDate = new Date();
+    
+    const schedules: InsertPaymentSchedule[] = [];
+    
+    for (let i = 1; i <= numPayments; i++) {
+      const interestPayment = remainingBalance * monthlyRate;
+      const principalPayment = monthlyPayment - interestPayment;
+      remainingBalance -= principalPayment;
+      
+      // Due date is first day of each month
+      const dueDate = new Date(currentDate);
+      dueDate.setMonth(currentDate.getMonth() + i);
+      dueDate.setDate(1);
+      
+      schedules.push({
+        loanId: loan.id,
+        dueDate,
+        amount: monthlyPayment.toFixed(2),
+        principalAmount: principalPayment.toFixed(2),
+        interestAmount: interestPayment.toFixed(2),
+        status: 'pending'
+      });
+    }
+    
+    // Insert all payment schedules
+    await db.insert(paymentSchedules).values(schedules);
   }
 
   async updateLoan(id: number, updateLoan: Partial<InsertLoanBook>): Promise<LoanBook> {
