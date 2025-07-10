@@ -28,29 +28,47 @@ export default function PaymentTable() {
     queryKey: ['/api/customers'],
   });
 
-  const getCustomerName = (loanId: number) => {
-    const loan = loans.find((l: LoanBook) => l.id === loanId);
-    if (!loan) return 'N/A';
+  // Group payments by loan and create summary rows
+  const loanSummaries = loans.map((loan: LoanBook) => {
+    const loanPayments = payments.filter((p: PaymentSchedule) => p.loanId === loan.id);
+    if (loanPayments.length === 0) return null;
+
     const customer = customers.find((c: Customer) => c.id === loan.customerId);
-    return customer ? `${customer.firstName} ${customer.lastName}` : 'N/A';
-  };
+    const customerName = customer ? `${customer.firstName} ${customer.lastName}` : 'N/A';
 
-  const getLoanDetails = (loanId: number) => {
-    return loans.find((l: LoanBook) => l.id === loanId);
-  };
+    // Find next payment due (earliest unpaid payment)
+    const nextPayment = loanPayments
+      .filter((p: PaymentSchedule) => p.status === 'pending')
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
 
-  const filteredPayments = payments.filter((payment: PaymentSchedule) => {
-    const customerName = getCustomerName(payment.loanId);
+    // Calculate totals
+    const totalPrincipal = loanPayments.reduce((sum, p) => sum + parseFloat(p.principalAmount), 0);
+    const totalInterest = loanPayments.reduce((sum, p) => sum + parseFloat(p.interestAmount), 0);
+
+    return {
+      loan,
+      customerName,
+      nextPayment,
+      totalPrincipal,
+      totalInterest,
+      loanPayments
+    };
+  }).filter(Boolean);
+
+  const filteredSummaries = loanSummaries.filter((summary: any) => {
+    if (!summary) return false;
     const matchesSearch = 
-      payment.id.toString().includes(searchTerm) ||
-      payment.loanId.toString().includes(searchTerm) ||
-      customerName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
+      summary.loan.id.toString().includes(searchTerm) ||
+      summary.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'pending' && summary.nextPayment) ||
+      (statusFilter === 'paid' && !summary.nextPayment) ||
+      (statusFilter === 'overdue' && summary.nextPayment && new Date(summary.nextPayment.dueDate) < new Date());
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewClick = (payment: PaymentSchedule) => {
-    setViewPayment(payment);
+  const handleViewClick = (summary: any) => {
+    setViewPayment(summary.nextPayment || summary.loanPayments[0]);
     setIsViewModalOpen(true);
   };
 
@@ -126,62 +144,77 @@ export default function PaymentTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Payment ID</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Loan ID</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Principal</TableHead>
-                <TableHead>Interest</TableHead>
+                <TableHead>Next Due Date</TableHead>
+                <TableHead>Loan Amount</TableHead>
+                <TableHead>Total Principal</TableHead>
+                <TableHead>Total Interest</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPayments.length === 0 ? (
+              {filteredSummaries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     <div className="text-muted-foreground">
-                      {searchTerm || statusFilter !== 'all' ? 'No payments found matching your criteria' : 'No payment schedules found'}
+                      {searchTerm || statusFilter !== 'all' ? 'No loans found matching your criteria' : 'No payment schedules found'}
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredPayments.map((payment: PaymentSchedule) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{payment.id}</TableCell>
-                    <TableCell>{getCustomerName(payment.loanId)}</TableCell>
-                    <TableCell>{payment.loanId}</TableCell>
-                    <TableCell>{new Date(payment.dueDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                    <TableCell>{formatCurrency(payment.principalAmount)}</TableCell>
-                    <TableCell>{formatCurrency(payment.interestAmount)}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(payment.status)}>
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewClick(payment)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={payment.status === 'paid'}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Mark Paid
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredSummaries.map((summary: any) => {
+                  const getOverallStatus = () => {
+                    if (!summary.nextPayment) return 'paid';
+                    if (new Date(summary.nextPayment.dueDate) < new Date()) return 'overdue';
+                    return 'pending';
+                  };
+
+                  const status = getOverallStatus();
+
+                  return (
+                    <TableRow key={summary.loan.id}>
+                      <TableCell className="font-medium">{summary.customerName}</TableCell>
+                      <TableCell>{summary.loan.id}</TableCell>
+                      <TableCell>
+                        {summary.nextPayment 
+                          ? new Date(summary.nextPayment.dueDate).toLocaleDateString()
+                          : 'All paid'
+                        }
+                      </TableCell>
+                      <TableCell className="font-medium">{formatCurrency(summary.loan.loanAmount)}</TableCell>
+                      <TableCell>{formatCurrency(summary.totalPrincipal)}</TableCell>
+                      <TableCell>{formatCurrency(summary.totalInterest)}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(status)}>
+                          {status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewClick(summary)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {summary.nextPayment && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={status === 'paid'}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Mark Paid
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -194,7 +227,7 @@ export default function PaymentTable() {
             setViewPayment(null);
           }}
           payment={viewPayment}
-          loan={viewPayment ? getLoanDetails(viewPayment.loanId) : null}
+          loan={viewPayment ? loans.find((l: LoanBook) => l.id === viewPayment.loanId) : null}
         />
       </CardContent>
     </Card>
