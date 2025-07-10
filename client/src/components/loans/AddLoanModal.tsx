@@ -150,7 +150,34 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
             )}
           </div>
 
+          <div>
+            <Label htmlFor="purpose">Purpose</Label>
+            <Textarea
+              id="purpose"
+              {...register('purpose')}
+              placeholder="Enter loan purpose"
+              rows={3}
+            />
+            {errors.purpose && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.purpose.message}
+              </p>
+            )}
+          </div>
 
+          <div>
+            <Label htmlFor="dateApplied">Date Applied</Label>
+            <Input
+              id="dateApplied"
+              type="date"
+              {...register('dateApplied')}
+            />
+            {errors.dateApplied && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.dateApplied.message}
+              </p>
+            )}
+          </div>
 
           <div>
             <Label htmlFor="status">Status</Label>

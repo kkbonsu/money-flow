@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { LoanBook } from '@shared/schema';
+import { useQuery } from '@tanstack/react-query';
+import { LoanBook, Customer } from '@shared/schema';
 
 interface ViewLoanModalProps {
   isOpen: boolean;
@@ -12,7 +13,16 @@ interface ViewLoanModalProps {
 }
 
 export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalProps) {
+  const { data: customers = [] } = useQuery({
+    queryKey: ['/api/customers'],
+  });
+
   if (!loan) return null;
+
+  const getCustomerName = (customerId: number) => {
+    const customer = customers.find((c: Customer) => c.id === customerId);
+    return customer ? `${customer.firstName} ${customer.lastName}` : `Customer #${customerId}`;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -29,11 +39,12 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(numAmount);
   };
 
   return (
@@ -58,12 +69,12 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
                   <p className="text-sm">{loan.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Customer ID</p>
-                  <p className="text-sm">{loan.customerId}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Customer</p>
+                  <p className="text-sm">{getCustomerName(loan.customerId)}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                  <p className="text-sm font-bold">{formatCurrency(loan.amount)}</p>
+                  <p className="text-sm font-bold">{formatCurrency(loan.loanAmount)}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Interest Rate</p>
@@ -120,13 +131,13 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
                   <p className="text-sm font-bold">
-                    {formatCurrency((loan.amount * (loan.interestRate / 100 / 12)) / (1 - Math.pow(1 + (loan.interestRate / 100 / 12), -loan.term)))}
+                    {formatCurrency((parseFloat(loan.loanAmount) * (parseFloat(loan.interestRate) / 100 / 12)) / (1 - Math.pow(1 + (parseFloat(loan.interestRate) / 100 / 12), -loan.term)))}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Interest</p>
                   <p className="text-sm font-bold">
-                    {formatCurrency((loan.amount * (loan.interestRate / 100 / 12)) / (1 - Math.pow(1 + (loan.interestRate / 100 / 12), -loan.term)) * loan.term - loan.amount)}
+                    {formatCurrency((parseFloat(loan.loanAmount) * (parseFloat(loan.interestRate) / 100 / 12)) / (1 - Math.pow(1 + (parseFloat(loan.interestRate) / 100 / 12), -loan.term)) * loan.term - parseFloat(loan.loanAmount))}
                   </p>
                 </div>
               </div>
