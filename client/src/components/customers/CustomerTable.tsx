@@ -9,6 +9,9 @@ import { Eye, Edit, Trash2, Plus, Download, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { Customer } from '@shared/schema';
+import ViewCustomerModal from './ViewCustomerModal';
+import EditCustomerModal from './EditCustomerModal';
+import DeleteCustomerDialog from './DeleteCustomerDialog';
 
 interface CustomerTableProps {
   onAddCustomer: () => void;
@@ -18,6 +21,10 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [pageSize, setPageSize] = useState(10);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['/api/customers'],
@@ -43,6 +50,28 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
       default:
         return 'bg-muted text-muted-foreground';
     }
+  };
+
+  const handleViewCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const closeModals = () => {
+    setSelectedCustomer(null);
+    setIsViewModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDeleteDialogOpen(false);
   };
 
   if (isLoading) {
@@ -182,13 +211,29 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
                     </td>
                     <td>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewCustomer(customer)}
+                          title="View Customer"
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditCustomer(customer)}
+                          title="Edit Customer"
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteCustomer(customer)}
+                          title="Delete Customer"
+                          className="text-destructive hover:text-destructive"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -220,6 +265,25 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
           </div>
         </div>
       </CardContent>
+
+      {/* Modals */}
+      <ViewCustomerModal
+        isOpen={isViewModalOpen}
+        onClose={closeModals}
+        customer={selectedCustomer}
+      />
+      
+      <EditCustomerModal
+        isOpen={isEditModalOpen}
+        onClose={closeModals}
+        customer={selectedCustomer}
+      />
+      
+      <DeleteCustomerDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={closeModals}
+        customer={selectedCustomer}
+      />
     </Card>
   );
 }

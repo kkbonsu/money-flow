@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,16 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { insertCustomerSchema, InsertCustomer } from '@shared/schema';
+import { insertCustomerSchema, InsertCustomer, Customer } from '@shared/schema';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
-interface AddCustomerModalProps {
+interface EditCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  customer: Customer | null;
 }
 
-export default function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
+export default function EditCustomerModal({ isOpen, onClose, customer }: EditCustomerModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -29,42 +30,55 @@ export default function AddCustomerModal({ isOpen, onClose }: AddCustomerModalPr
     reset,
   } = useForm<InsertCustomer>({
     resolver: zodResolver(insertCustomerSchema),
-    defaultValues: {
-      status: 'active',
-    },
   });
 
-  const createCustomerMutation = useMutation({
-    mutationFn: (data: InsertCustomer) => apiClient.post('/customers', data),
+  const updateCustomerMutation = useMutation({
+    mutationFn: (data: InsertCustomer) => apiClient.put(`/customers/${customer?.id}`, data),
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Customer created successfully",
+        description: "Customer updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
-      reset();
       onClose();
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create customer",
+        description: error instanceof Error ? error.message : "Failed to update customer",
         variant: "destructive",
       });
     },
   });
 
+  useEffect(() => {
+    if (customer && isOpen) {
+      reset({
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        nationalId: customer.nationalId || '',
+        creditScore: customer.creditScore || undefined,
+        address: customer.address || '',
+        status: customer.status,
+      });
+    }
+  }, [customer, isOpen, reset]);
+
   const onSubmit = (data: InsertCustomer) => {
-    createCustomerMutation.mutate(data);
+    updateCustomerMutation.mutate(data);
   };
+
+  if (!customer) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Customer</DialogTitle>
+          <DialogTitle>Edit Customer</DialogTitle>
           <DialogDescription>
-            Add a new customer to the system with their details.
+            Update customer information and details.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -201,9 +215,9 @@ export default function AddCustomerModal({ isOpen, onClose }: AddCustomerModalPr
             <Button 
               type="submit" 
               className="btn-primary"
-              disabled={createCustomerMutation.isPending}
+              disabled={updateCustomerMutation.isPending}
             >
-              {createCustomerMutation.isPending ? 'Creating...' : 'Save Customer'}
+              {updateCustomerMutation.isPending ? 'Updating...' : 'Update Customer'}
             </Button>
           </div>
         </form>
