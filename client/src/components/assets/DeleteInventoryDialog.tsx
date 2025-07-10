@@ -15,7 +15,12 @@ export default function DeleteInventoryDialog({ isOpen, onClose, item }: DeleteI
   const queryClient = useQueryClient();
 
   const deleteItemMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/inventory/${item?.id}`),
+    mutationFn: () => {
+      if (!item?.id) {
+        throw new Error('No inventory item selected');
+      }
+      return apiClient.delete(`/inventory/${item.id}`);
+    },
     onSuccess: () => {
       toast({
         title: "Success",
@@ -34,7 +39,9 @@ export default function DeleteInventoryDialog({ isOpen, onClose, item }: DeleteI
   });
 
   const handleDelete = () => {
-    deleteItemMutation.mutate();
+    if (item && item.id) {
+      deleteItemMutation.mutate();
+    }
   };
 
   return (

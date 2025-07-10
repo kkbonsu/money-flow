@@ -15,7 +15,12 @@ export default function DeleteIncomeDialog({ isOpen, onClose, income }: DeleteIn
   const queryClient = useQueryClient();
 
   const deleteIncomeMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/income/${income?.id}`),
+    mutationFn: () => {
+      if (!income?.id) {
+        throw new Error('No income record selected');
+      }
+      return apiClient.delete(`/income/${income.id}`);
+    },
     onSuccess: () => {
       toast({
         title: "Success",
@@ -34,7 +39,9 @@ export default function DeleteIncomeDialog({ isOpen, onClose, income }: DeleteIn
   });
 
   const handleDelete = () => {
-    deleteIncomeMutation.mutate();
+    if (income && income.id) {
+      deleteIncomeMutation.mutate();
+    }
   };
 
   return (

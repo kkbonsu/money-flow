@@ -15,7 +15,12 @@ export default function DeletePettyCashDialog({ isOpen, onClose, record }: Delet
   const queryClient = useQueryClient();
 
   const deleteRecordMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/petty-cash/${record?.id}`),
+    mutationFn: () => {
+      if (!record?.id) {
+        throw new Error('No petty cash record selected');
+      }
+      return apiClient.delete(`/petty-cash/${record.id}`);
+    },
     onSuccess: () => {
       toast({
         title: "Success",
@@ -34,7 +39,9 @@ export default function DeletePettyCashDialog({ isOpen, onClose, record }: Delet
   });
 
   const handleDelete = () => {
-    deleteRecordMutation.mutate();
+    if (record && record.id) {
+      deleteRecordMutation.mutate();
+    }
   };
 
   return (
