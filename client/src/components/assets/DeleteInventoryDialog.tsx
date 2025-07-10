@@ -15,7 +15,7 @@ export default function DeleteInventoryDialog({ isOpen, onClose, item }: DeleteI
   const queryClient = useQueryClient();
 
   const deleteItemMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/api/inventory/${item?.id}`),
+    mutationFn: () => apiClient.delete(`/inventory/${item?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",

@@ -15,7 +15,7 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   const queryClient = useQueryClient();
 
   const deleteCustomerMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/api/customers/${customer?.id}`),
+    mutationFn: () => apiClient.delete(`/customers/${customer?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",

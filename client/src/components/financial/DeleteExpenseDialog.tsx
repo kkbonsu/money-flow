@@ -15,7 +15,7 @@ export default function DeleteExpenseDialog({ isOpen, onClose, expense }: Delete
   const queryClient = useQueryClient();
 
   const deleteExpenseMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/api/expenses/${expense?.id}`),
+    mutationFn: () => apiClient.delete(`/expenses/${expense?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",

@@ -15,7 +15,7 @@ export default function DeletePettyCashDialog({ isOpen, onClose, record }: Delet
   const queryClient = useQueryClient();
 
   const deleteRecordMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/api/petty-cash/${record?.id}`),
+    mutationFn: () => apiClient.delete(`/petty-cash/${record?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",
