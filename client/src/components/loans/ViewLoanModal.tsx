@@ -177,48 +177,44 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
           </Card>
         </div>
 
-        <div className="space-y-4">
-          <Separator />
-          <div>
-            <h3 className="text-lg font-medium mb-3">Change Loan Status</h3>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={loan.status === 'pending' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleStatusChange('pending')}
-                disabled={loan.status === 'pending' || updateLoanStatusMutation.isPending}
-              >
-                Mark as Pending
-              </Button>
-              <Button
-                variant={loan.status === 'approved' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleStatusChange('approved')}
-                disabled={loan.status === 'approved' || updateLoanStatusMutation.isPending}
-              >
-                Mark as Approved
-              </Button>
-              <Button
-                variant={loan.status === 'rejected' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleStatusChange('rejected')}
-                disabled={loan.status === 'rejected' || updateLoanStatusMutation.isPending}
-              >
-                Mark as Rejected
-              </Button>
-              <Button
-                variant={loan.status === 'disbursed' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleStatusChange('disbursed')}
-                disabled={loan.status === 'disbursed' || updateLoanStatusMutation.isPending}
-              >
-                Mark as Disbursed
-              </Button>
-            </div>
+        <Separator />
+        
+        <div className="flex justify-between items-center">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={loan.status === 'pending' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleStatusChange('pending')}
+              disabled={loan.status === 'pending' || updateLoanStatusMutation.isPending}
+            >
+              Pending
+            </Button>
+            <Button
+              variant={loan.status === 'approved' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleStatusChange('approved')}
+              disabled={loan.status === 'approved' || updateLoanStatusMutation.isPending}
+            >
+              Approved
+            </Button>
+            <Button
+              variant={loan.status === 'rejected' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleStatusChange('rejected')}
+              disabled={loan.status === 'rejected' || updateLoanStatusMutation.isPending}
+            >
+              Rejected
+            </Button>
+            <Button
+              variant={loan.status === 'disbursed' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleStatusChange('disbursed')}
+              disabled={loan.status === 'disbursed' || updateLoanStatusMutation.isPending}
+            >
+              Disbursed
+            </Button>
           </div>
-        </div>
-
-        <div className="flex justify-end">
+          
           <Button onClick={onClose}>Close</Button>
         </div>
       </DialogContent>

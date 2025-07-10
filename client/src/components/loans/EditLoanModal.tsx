@@ -64,7 +64,7 @@ export default function EditLoanModal({ isOpen, onClose, loan }: EditLoanModalPr
         interestRate: loan.interestRate,
         term: loan.term,
         purpose: loan.purpose,
-        dateApplied: loan.dateApplied,
+        dateApplied: loan.dateApplied ? new Date(loan.dateApplied).toISOString().split('T')[0] : undefined,
         status: loan.status,
       });
     }
@@ -184,7 +184,9 @@ export default function EditLoanModal({ isOpen, onClose, loan }: EditLoanModalPr
             <Input
               id="dateApplied"
               type="date"
-              {...register('dateApplied')}
+              {...register('dateApplied', {
+                setValueAs: (value) => value ? new Date(value) : undefined
+              })}
             />
             {errors.dateApplied && (
               <p className="text-sm text-destructive mt-1">

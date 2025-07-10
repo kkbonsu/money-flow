@@ -170,7 +170,9 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
             <Input
               id="dateApplied"
               type="date"
-              {...register('dateApplied')}
+              {...register('dateApplied', {
+                setValueAs: (value) => value ? new Date(value) : undefined
+              })}
             />
             {errors.dateApplied && (
               <p className="text-sm text-destructive mt-1">
