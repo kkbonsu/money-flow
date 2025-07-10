@@ -32,12 +32,14 @@ export interface IStorage {
   getLoan(id: number): Promise<LoanBook | undefined>;
   createLoan(loan: InsertLoanBook): Promise<LoanBook>;
   updateLoan(id: number, loan: Partial<InsertLoanBook>): Promise<LoanBook>;
+  deleteLoan(id: number): Promise<void>;
 
   // Payment Schedule methods
   getPaymentSchedules(): Promise<PaymentSchedule[]>;
   getPaymentSchedule(id: number): Promise<PaymentSchedule | undefined>;
   createPaymentSchedule(schedule: InsertPaymentSchedule): Promise<PaymentSchedule>;
   updatePaymentSchedule(id: number, schedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule>;
+  deletePaymentSchedule(id: number): Promise<void>;
 
   // Staff methods
   getStaff(): Promise<Staff[]>;
@@ -187,6 +189,10 @@ export class DatabaseStorage implements IStorage {
     return loan;
   }
 
+  async deleteLoan(id: number): Promise<void> {
+    await db.delete(loanBooks).where(eq(loanBooks.id, id));
+  }
+
   // Payment Schedule methods
   async getPaymentSchedules(): Promise<PaymentSchedule[]> {
     return await db.select().from(paymentSchedules).orderBy(desc(paymentSchedules.dueDate));
@@ -212,6 +218,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(paymentSchedules.id, id))
       .returning();
     return schedule;
+  }
+
+  async deletePaymentSchedule(id: number): Promise<void> {
+    await db.delete(paymentSchedules).where(eq(paymentSchedules.id, id));
   }
 
   // Staff methods

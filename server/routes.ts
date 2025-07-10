@@ -159,6 +159,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/loans/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteLoan(id);
+      res.json({ message: "Loan deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete loan" });
+    }
+  });
+
   // Payment Schedule routes
   app.get("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
@@ -176,6 +186,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(schedule);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create payment schedule" });
+    }
+  });
+
+  app.put("/api/payment-schedules/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const scheduleData = insertPaymentScheduleSchema.parse(req.body);
+      const schedule = await storage.updatePaymentSchedule(id, scheduleData);
+      res.json(schedule);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update payment schedule" });
+    }
+  });
+
+  app.delete("/api/payment-schedules/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePaymentSchedule(id);
+      res.json({ message: "Payment schedule deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete payment schedule" });
     }
   });
 
@@ -240,6 +271,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/income/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const incomeData = insertIncomeManagementSchema.parse(req.body);
+      const income = await storage.updateIncome(id, incomeData);
+      res.json(income);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update income" });
+    }
+  });
+
+  app.delete("/api/income/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteIncome(id);
+      res.json({ message: "Income deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete income" });
+    }
+  });
+
   // Expense routes
   app.get("/api/expenses", authenticateToken, async (req, res) => {
     try {
@@ -257,6 +309,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(expense);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create expense" });
+    }
+  });
+
+  app.put("/api/expenses/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const expenseData = insertExpenseSchema.parse(req.body);
+      const expense = await storage.updateExpense(id, expenseData);
+      res.json(expense);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update expense" });
+    }
+  });
+
+  app.delete("/api/expenses/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteExpense(id);
+      res.json({ message: "Expense deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete expense" });
     }
   });
 
@@ -280,6 +353,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/bank-accounts/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const accountData = insertBankManagementSchema.parse(req.body);
+      const account = await storage.updateBankAccount(id, accountData);
+      res.json(account);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update bank account" });
+    }
+  });
+
+  app.delete("/api/bank-accounts/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteBankAccount(id);
+      res.json({ message: "Bank account deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete bank account" });
+    }
+  });
+
   // Petty Cash routes
   app.get("/api/petty-cash", authenticateToken, async (req, res) => {
     try {
@@ -297,6 +391,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(pettyCash);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create petty cash" });
+    }
+  });
+
+  app.put("/api/petty-cash/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const pettyCashData = insertPettyCashSchema.parse(req.body);
+      const pettyCash = await storage.updatePettyCash(id, pettyCashData);
+      res.json(pettyCash);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update petty cash" });
+    }
+  });
+
+  app.delete("/api/petty-cash/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePettyCash(id);
+      res.json({ message: "Petty cash deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete petty cash" });
     }
   });
 
@@ -320,6 +435,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/inventory/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const inventoryData = insertInventorySchema.parse(req.body);
+      const inventory = await storage.updateInventory(id, inventoryData);
+      res.json(inventory);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update inventory" });
+    }
+  });
+
+  app.delete("/api/inventory/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteInventory(id);
+      res.json({ message: "Inventory deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete inventory" });
+    }
+  });
+
   // Rent Management routes
   app.get("/api/rent", authenticateToken, async (req, res) => {
     try {
@@ -337,6 +473,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(rent);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create rent management" });
+    }
+  });
+
+  app.put("/api/rent/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const rentData = insertRentManagementSchema.parse(req.body);
+      const rent = await storage.updateRentManagement(id, rentData);
+      res.json(rent);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update rent management" });
+    }
+  });
+
+  app.delete("/api/rent/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteRentManagement(id);
+      res.json({ message: "Rent management deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete rent management" });
     }
   });
 
@@ -360,6 +517,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/assets/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assetData = insertAssetSchema.parse(req.body);
+      const asset = await storage.updateAsset(id, assetData);
+      res.json(asset);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update asset" });
+    }
+  });
+
+  app.delete("/api/assets/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAsset(id);
+      res.json({ message: "Asset deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete asset" });
+    }
+  });
+
   // Liabilities routes
   app.get("/api/liabilities", authenticateToken, async (req, res) => {
     try {
@@ -377,6 +555,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(liability);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create liability" });
+    }
+  });
+
+  app.put("/api/liabilities/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const liabilityData = insertLiabilitySchema.parse(req.body);
+      const liability = await storage.updateLiability(id, liabilityData);
+      res.json(liability);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update liability" });
+    }
+  });
+
+  app.delete("/api/liabilities/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteLiability(id);
+      res.json({ message: "Liability deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete liability" });
     }
   });
 
@@ -400,6 +599,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/equity/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const equityData = insertEquitySchema.parse(req.body);
+      const equity = await storage.updateEquity(id, equityData);
+      res.json(equity);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update equity" });
+    }
+  });
+
+  app.delete("/api/equity/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteEquity(id);
+      res.json({ message: "Equity deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete equity" });
+    }
+  });
+
   // Reports routes
   app.get("/api/reports", authenticateToken, async (req, res) => {
     try {
@@ -417,6 +637,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(report);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create report" });
+    }
+  });
+
+  app.put("/api/reports/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const reportData = insertReportSchema.parse(req.body);
+      const report = await storage.updateReport(id, reportData);
+      res.json(report);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update report" });
+    }
+  });
+
+  app.delete("/api/reports/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteReport(id);
+      res.json({ message: "Report deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete report" });
     }
   });
 
