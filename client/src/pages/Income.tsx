@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
-import IncomeTable from '@/components/financial/IncomeTable';
+import IncomeTable from '@/components/financial/IncomeTableNew';
 
 export default function Income() {
   const { isAuthenticated } = useAuth();

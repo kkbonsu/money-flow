@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
-import ExpenseTable from '@/components/financial/ExpenseTable';
+import ExpenseTable from '@/components/financial/ExpenseTableNew';
 
 export default function Expenses() {
   const { isAuthenticated } = useAuth();
