@@ -9,15 +9,31 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [location] = useLocation();
-  const { isAuthenticated } = useAuth();
+  const [location, setLocation] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (!isAuthenticated && location !== '/login') {
+  // Show loading state while checking authentication
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        {children}
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
+  }
+
+  // If not authenticated and not on login page, redirect to login
+  if (!isAuthenticated && location !== '/login') {
+    setLocation('/login');
+    return null;
+  }
+
+  // If authenticated and on login page, redirect to dashboard
+  if (isAuthenticated && location === '/login') {
+    setLocation('/');
+    return null;
   }
 
   if (location === '/login') {

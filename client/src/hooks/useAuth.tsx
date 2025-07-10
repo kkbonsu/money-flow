@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Success",
         description: "Logged in successfully",
       });
+      return authData;
     } catch (error) {
       toast({
         title: "Error",

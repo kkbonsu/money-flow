@@ -32,7 +32,10 @@ export default function Login() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data);
-      setLocation('/');
+      // Small delay to ensure auth state is updated
+      setTimeout(() => {
+        setLocation('/');
+      }, 100);
     } catch (error) {
       // Error is handled by useAuth hook
     }
