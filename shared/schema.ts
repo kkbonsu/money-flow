@@ -74,27 +74,27 @@ export const incomeManagement = pgTable("income_management", {
   id: serial("id").primaryKey(),
   source: text("source").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
-  description: text("description"),
-  date: timestamp("date").notNull(),
   category: text("category").notNull(),
+  date: text("date").notNull(),
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
-  category: text("category").notNull(),
+  description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
-  description: text("description"),
-  date: timestamp("date").notNull(),
-  paymentMethod: text("payment_method"),
+  category: text("category").notNull(),
+  vendor: text("vendor"),
+  date: text("date").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const bankManagement = pgTable("bank_management", {
   id: serial("id").primaryKey(),
+  accountName: text("account_name").notNull(),
   bankName: text("bank_name").notNull(),
   accountNumber: text("account_number").notNull(),
-  accountType: text("account_type").notNull(),
   balance: decimal("balance", { precision: 15, scale: 2 }).notNull(),
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -103,23 +103,23 @@ export const bankManagement = pgTable("bank_management", {
 
 export const pettyCash = pgTable("petty_cash", {
   id: serial("id").primaryKey(),
+  description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
-  purpose: text("purpose").notNull(),
-  date: timestamp("date").notNull(),
-  handledBy: integer("handled_by").references(() => staff.id),
-  status: text("status").notNull().default("pending"),
+  type: text("type").notNull(),
+  date: text("date").notNull(),
+  purpose: text("purpose"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const inventory = pgTable("inventory", {
   id: serial("id").primaryKey(),
   itemName: text("item_name").notNull(),
-  category: text("category").notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull(),
   totalValue: decimal("total_value", { precision: 15, scale: 2 }).notNull(),
-  supplier: text("supplier"),
-  lastUpdated: timestamp("last_updated").defaultNow(),
+  category: text("category"),
+  status: text("status").notNull().default("in_stock"),
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -201,14 +201,7 @@ export const paymentSchedulesRelations = relations(paymentSchedules, ({ one }) =
 }));
 
 export const staffRelations = relations(staff, ({ many }) => ({
-  pettyCashHandled: many(pettyCash),
-}));
-
-export const pettyCashRelations = relations(pettyCash, ({ one }) => ({
-  handler: one(staff, {
-    fields: [pettyCash.handledBy],
-    references: [staff.id],
-  }),
+  
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -277,7 +270,6 @@ export const insertPettyCashSchema = createInsertSchema(pettyCash).omit({
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
   createdAt: true,
-  lastUpdated: true,
 });
 
 export const insertRentManagementSchema = createInsertSchema(rentManagement).omit({

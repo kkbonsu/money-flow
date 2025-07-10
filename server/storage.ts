@@ -346,7 +346,7 @@ export class DatabaseStorage implements IStorage {
 
   // Inventory methods
   async getInventory(): Promise<Inventory[]> {
-    return await db.select().from(inventory).orderBy(desc(inventory.lastUpdated));
+    return await db.select().from(inventory).orderBy(desc(inventory.createdAt));
   }
 
   async createInventory(insertInventory: InsertInventory): Promise<Inventory> {
@@ -360,7 +360,7 @@ export class DatabaseStorage implements IStorage {
   async updateInventory(id: number, updateInventory: Partial<InsertInventory>): Promise<Inventory> {
     const [item] = await db
       .update(inventory)
-      .set({ ...updateInventory, lastUpdated: new Date() })
+      .set(updateInventory)
       .where(eq(inventory.id, id))
       .returning();
     return item;
