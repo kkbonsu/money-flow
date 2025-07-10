@@ -53,12 +53,7 @@ export default function AddStaffModal({ isOpen, onClose }: AddStaffModalProps) {
   });
 
   const onSubmit = (data: InsertStaff) => {
-    // Convert numeric fields to strings for backend compatibility
-    const submitData = {
-      ...data,
-      salary: data.salary ? data.salary.toString() : undefined,
-    };
-    createStaffMutation.mutate(submitData);
+    createStaffMutation.mutate(data);
   };
 
   return (

@@ -100,5 +100,12 @@ Preferred communication style: Simple, everyday language.
 - **Schema Push**: `npm run db:push` - pushes schema changes to database
 - **Type Safety**: Fully typed database operations with Drizzle
 - **Shared Types**: Database types generated and shared between client/server
+- **Numeric Field Handling**: Custom Zod schemas handle automatic conversion of form numbers to database-compatible strings for decimal fields
+
+### Recent Changes (January 2025)
+- Fixed critical validation issue where forms expected numbers but database required strings for decimal/monetary fields
+- Implemented Zod union types with transforms to handle both string and number inputs for all monetary fields
+- Updated all insert schemas (Staff, Income, Expense, Bank, PettyCash, Inventory, Loans) to automatically convert numeric inputs to strings
+- Ensured seamless user experience with numeric form inputs while maintaining database compatibility
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.

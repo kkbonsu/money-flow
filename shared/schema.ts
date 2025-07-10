@@ -233,6 +233,15 @@ export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  loanAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  interestRate: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  disbursedAmount: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null ? val.toString() : undefined
+  ),
+  outstandingBalance: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null ? val.toString() : undefined
+  ),
 });
 
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({
@@ -244,32 +253,47 @@ export const insertStaffSchema = createInsertSchema(staff).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  salary: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null ? val.toString() : undefined
+  ),
 });
 
 export const insertIncomeManagementSchema = createInsertSchema(incomeManagement).omit({
   id: true,
   createdAt: true,
+}).extend({
+  amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
   id: true,
   createdAt: true,
+}).extend({
+  amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
 export const insertBankManagementSchema = createInsertSchema(bankManagement).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  balance: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
 export const insertPettyCashSchema = createInsertSchema(pettyCash).omit({
   id: true,
   createdAt: true,
+}).extend({
+  amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
   createdAt: true,
+}).extend({
+  unitPrice: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  totalValue: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
 export const insertRentManagementSchema = createInsertSchema(rentManagement).omit({
