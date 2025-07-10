@@ -2,6 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Set environment variables if not already set
+process.env.NODE_ENV = process.env.NODE_ENV || "development";
+process.env.JWT_SECRET = process.env.JWT_SECRET || "financeflow-secret-key-2024";
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -66,5 +70,22 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+  });
+
+  // Handle graceful shutdown
+  process.on('SIGTERM', () => {
+    log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      log('Server closed');
+      process.exit(0);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+      log('Server closed');
+      process.exit(0);
+    });
   });
 })();

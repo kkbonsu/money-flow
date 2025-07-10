@@ -82,7 +82,7 @@ export default function Sidebar() {
           <div key={section.name} className="space-y-1">
             {section.href ? (
               <Link href={section.href}>
-                <a
+                <div
                   className={cn(
                     'sidebar-nav-item',
                     location === section.href && 'active'
@@ -90,7 +90,7 @@ export default function Sidebar() {
                 >
                   <section.icon className="w-5 h-5 mr-3" />
                   {section.name}
-                </a>
+                </div>
               </Link>
             ) : (
               <>
@@ -99,7 +99,7 @@ export default function Sidebar() {
                 </div>
                 {section.items?.map((item) => (
                   <Link key={item.name} href={item.href}>
-                    <a
+                    <div
                       className={cn(
                         'sidebar-nav-item',
                         location === item.href && 'active'
@@ -107,7 +107,7 @@ export default function Sidebar() {
                     >
                       <item.icon className="w-5 h-5 mr-3" />
                       {item.name}
-                    </a>
+                    </div>
                   </Link>
                 ))}
               </>
