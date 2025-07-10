@@ -65,6 +65,7 @@ export default function StaffTable() {
   };
 
   const handleDeleteClick = (staff: Staff) => {
+    console.log('Delete button clicked for staff:', staff);
     setSelectedStaff(staff);
     setIsDeleteDialogOpen(true);
   };

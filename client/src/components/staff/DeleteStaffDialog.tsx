@@ -14,6 +14,9 @@ export default function DeleteStaffDialog({ isOpen, onClose, staff }: DeleteStaf
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debug logging
+  console.log('DeleteStaffDialog rendered with staff:', staff);
+
   const deleteStaffMutation = useMutation({
     mutationFn: () => {
       if (!staff?.id) {
@@ -39,9 +42,12 @@ export default function DeleteStaffDialog({ isOpen, onClose, staff }: DeleteStaf
   });
 
   const handleDelete = () => {
+    console.log('Delete button clicked, staff:', staff);
     if (staff && staff.id) {
+      console.log('Proceeding with deletion for staff ID:', staff.id);
       deleteStaffMutation.mutate();
     } else {
+      console.log('No staff selected, showing error');
       toast({
         title: "Error",
         description: "No staff member selected for deletion",
