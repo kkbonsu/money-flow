@@ -190,7 +190,7 @@ export default function LoanTable() {
                         {loan.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(loan.dateApplied).toLocaleDateString()}</TableCell>
+                    <TableCell>{loan.dateApplied ? new Date(loan.dateApplied).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button

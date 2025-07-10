@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import { LoanBook, Customer } from '@shared/schema';
 
 interface ViewLoanModalProps {
@@ -13,9 +15,39 @@ interface ViewLoanModalProps {
 }
 
 export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const { data: customers = [] } = useQuery({
     queryKey: ['/api/customers'],
   });
+
+  const updateLoanStatusMutation = useMutation({
+    mutationFn: (newStatus: string) => apiClient.put(`/loans/${loan?.id}`, { 
+      ...loan, 
+      status: newStatus 
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Loan status updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update loan status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleStatusChange = (newStatus: string) => {
+    if (window.confirm(`Are you sure you want to change the loan status to "${newStatus}"?`)) {
+      updateLoanStatusMutation.mutate(newStatus);
+    }
+  };
 
   if (!loan) return null;
 
@@ -105,7 +137,7 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Date Applied</p>
-                <p className="text-sm">{new Date(loan.dateApplied).toLocaleDateString()}</p>
+                <p className="text-sm">{loan.dateApplied ? new Date(loan.dateApplied).toLocaleDateString() : 'N/A'}</p>
               </div>
               {loan.dateApproved && (
                 <div>
@@ -143,6 +175,47 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="space-y-4">
+          <Separator />
+          <div>
+            <h3 className="text-lg font-medium mb-3">Change Loan Status</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={loan.status === 'pending' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange('pending')}
+                disabled={loan.status === 'pending' || updateLoanStatusMutation.isPending}
+              >
+                Mark as Pending
+              </Button>
+              <Button
+                variant={loan.status === 'approved' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange('approved')}
+                disabled={loan.status === 'approved' || updateLoanStatusMutation.isPending}
+              >
+                Mark as Approved
+              </Button>
+              <Button
+                variant={loan.status === 'rejected' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange('rejected')}
+                disabled={loan.status === 'rejected' || updateLoanStatusMutation.isPending}
+              >
+                Mark as Rejected
+              </Button>
+              <Button
+                variant={loan.status === 'disbursed' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleStatusChange('disbursed')}
+                disabled={loan.status === 'disbursed' || updateLoanStatusMutation.isPending}
+              >
+                Mark as Disbursed
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end">

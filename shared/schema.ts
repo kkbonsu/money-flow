@@ -34,6 +34,8 @@ export const loanBooks = pgTable("loan_books", {
   interestRate: decimal("interest_rate", { precision: 5, scale: 2 }).notNull(),
   term: integer("term").notNull(), // in months
   status: text("status").notNull().default("pending"),
+  purpose: text("purpose"),
+  dateApplied: timestamp("date_applied"),
   approvedBy: integer("approved_by").references(() => users.id),
   disbursedAmount: decimal("disbursed_amount", { precision: 15, scale: 2 }),
   outstandingBalance: decimal("outstanding_balance", { precision: 15, scale: 2 }),
