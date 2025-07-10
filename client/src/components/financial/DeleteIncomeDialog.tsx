@@ -15,7 +15,7 @@ export default function DeleteIncomeDialog({ isOpen, onClose, income }: DeleteIn
   const queryClient = useQueryClient();
 
   const deleteIncomeMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/income/${income?.id}`),
+    mutationFn: () => apiClient.delete(`/api/income/${income?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",

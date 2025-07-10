@@ -15,7 +15,7 @@ export default function DeleteLoanDialog({ isOpen, onClose, loan }: DeleteLoanDi
   const queryClient = useQueryClient();
 
   const deleteLoanMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/loans/${loan?.id}`),
+    mutationFn: () => apiClient.delete(`/api/loans/${loan?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",

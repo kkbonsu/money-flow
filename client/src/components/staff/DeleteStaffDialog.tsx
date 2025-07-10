@@ -15,7 +15,7 @@ export default function DeleteStaffDialog({ isOpen, onClose, staff }: DeleteStaf
   const queryClient = useQueryClient();
 
   const deleteStaffMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/staff/${staff?.id}`),
+    mutationFn: () => apiClient.delete(`/api/staff/${staff?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",

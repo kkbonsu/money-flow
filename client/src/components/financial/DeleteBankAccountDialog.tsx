@@ -15,7 +15,7 @@ export default function DeleteBankAccountDialog({ isOpen, onClose, account }: De
   const queryClient = useQueryClient();
 
   const deleteAccountMutation = useMutation({
-    mutationFn: () => apiClient.delete(`/bank-accounts/${account?.id}`),
+    mutationFn: () => apiClient.delete(`/api/bank-accounts/${account?.id}`),
     onSuccess: () => {
       toast({
         title: "Success",
