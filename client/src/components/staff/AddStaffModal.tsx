@@ -33,8 +33,12 @@ export default function AddStaffModal({ isOpen, onClose }: AddStaffModalProps) {
   });
 
   const createStaffMutation = useMutation({
-    mutationFn: (data: InsertStaff) => apiClient.post('/staff', data),
+    mutationFn: (data: InsertStaff) => {
+      console.log('Making API call with data:', data);
+      return apiClient.post('/staff', data);
+    },
     onSuccess: () => {
+      console.log('Staff creation successful');
       toast({
         title: "Success",
         description: "Staff member added successfully",
@@ -44,6 +48,7 @@ export default function AddStaffModal({ isOpen, onClose }: AddStaffModalProps) {
       onClose();
     },
     onError: (error: any) => {
+      console.error('Staff creation error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add staff member",
@@ -53,6 +58,8 @@ export default function AddStaffModal({ isOpen, onClose }: AddStaffModalProps) {
   });
 
   const onSubmit = (data: InsertStaff) => {
+    console.log('Form data being submitted:', data);
+    console.log('Form errors:', errors);
     createStaffMutation.mutate(data);
   };
 
@@ -111,6 +118,20 @@ export default function AddStaffModal({ isOpen, onClose }: AddStaffModalProps) {
           </div>
 
           <div>
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              {...register('phone')}
+              placeholder="Enter phone number"
+            />
+            {errors.phone && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.phone.message}
+              </p>
+            )}
+          </div>
+
+          <div>
             <Label htmlFor="position">Position</Label>
             <Input
               id="position"
@@ -134,6 +155,20 @@ export default function AddStaffModal({ isOpen, onClose }: AddStaffModalProps) {
             {errors.department && (
               <p className="text-sm text-destructive mt-1">
                 {errors.department.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="hireDate">Hire Date</Label>
+            <Input
+              id="hireDate"
+              type="date"
+              {...register('hireDate')}
+            />
+            {errors.hireDate && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.hireDate.message}
               </p>
             )}
           </div>

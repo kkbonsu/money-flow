@@ -257,6 +257,9 @@ export const insertStaffSchema = createInsertSchema(staff).omit({
   salary: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined && val !== null ? val.toString() : undefined
   ),
+  hireDate: z.union([z.string(), z.date()]).transform((val) => 
+    val instanceof Date ? val : new Date(val)
+  ),
 });
 
 export const insertIncomeManagementSchema = createInsertSchema(incomeManagement).omit({

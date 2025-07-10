@@ -56,8 +56,10 @@ export default function EditStaffModal({ isOpen, onClose, staff }: EditStaffModa
         firstName: staff.firstName,
         lastName: staff.lastName,
         email: staff.email,
+        phone: staff.phone,
         position: staff.position,
         department: staff.department,
+        hireDate: staff.hireDate ? new Date(staff.hireDate).toISOString().split('T')[0] : '',
         salary: staff.salary,
         status: staff.status,
       });
@@ -125,6 +127,20 @@ export default function EditStaffModal({ isOpen, onClose, staff }: EditStaffModa
           </div>
 
           <div>
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              {...register('phone')}
+              placeholder="Enter phone number"
+            />
+            {errors.phone && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.phone.message}
+              </p>
+            )}
+          </div>
+
+          <div>
             <Label htmlFor="position">Position</Label>
             <Input
               id="position"
@@ -148,6 +164,20 @@ export default function EditStaffModal({ isOpen, onClose, staff }: EditStaffModa
             {errors.department && (
               <p className="text-sm text-destructive mt-1">
                 {errors.department.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="hireDate">Hire Date</Label>
+            <Input
+              id="hireDate"
+              type="date"
+              {...register('hireDate')}
+            />
+            {errors.hireDate && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.hireDate.message}
               </p>
             )}
           </div>
