@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Eye, Edit, Trash2, Search, UserPlus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 import { Staff } from '@shared/schema';
 import AddStaffModal from './AddStaffModal';
 import ViewStaffModal from './ViewStaffModal';
 import EditStaffModal from './EditStaffModal';
-import DeleteStaffDialog from './DeleteStaffDialog';
 
 export default function StaffTable() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,8 +20,10 @@ export default function StaffTable() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ['/api/staff'],
@@ -64,17 +66,34 @@ export default function StaffTable() {
     setIsEditModalOpen(true);
   };
 
+  const deleteStaffMutation = useMutation({
+    mutationFn: (staffId: number) => apiClient.delete(`/staff/${staffId}`),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Staff member deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/staff'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete staff member",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDeleteClick = (staff: Staff) => {
-    console.log('Delete button clicked for staff:', staff);
-    setSelectedStaff(staff);
-    setIsDeleteDialogOpen(true);
+    if (window.confirm(`Are you sure you want to delete ${staff.firstName} ${staff.lastName}?`)) {
+      deleteStaffMutation.mutate(staff.id);
+    }
   };
 
   const closeModals = () => {
     setIsAddModalOpen(false);
     setIsViewModalOpen(false);
     setIsEditModalOpen(false);
-    setIsDeleteDialogOpen(false);
     setSelectedStaff(null);
   };
 
@@ -210,7 +229,6 @@ export default function StaffTable() {
       <AddStaffModal isOpen={isAddModalOpen} onClose={closeModals} />
       <ViewStaffModal isOpen={isViewModalOpen} onClose={closeModals} staff={selectedStaff} />
       <EditStaffModal isOpen={isEditModalOpen} onClose={closeModals} staff={selectedStaff} />
-      <DeleteStaffDialog isOpen={isDeleteDialogOpen} onClose={closeModals} staff={selectedStaff} />
     </Card>
   );
 }
