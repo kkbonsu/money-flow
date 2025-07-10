@@ -80,7 +80,7 @@
   }
 
   .sidebar-nav-item.active {
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary text-primary-foreground;
   }
 
   .sidebar-nav-item:hover {
@@ -104,19 +104,19 @@
   }
 
   .data-table tbody tr:hover {
-    @apply bg-muted/50;
+    @apply bg-muted;
   }
 
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors duration-200;
+    @apply bg-primary text-primary-foreground hover:opacity-90 px-4 py-2 rounded-md font-medium transition-colors duration-200;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 px-4 py-2 rounded-md font-medium transition-colors duration-200;
+    @apply bg-secondary text-secondary-foreground hover:opacity-90 px-4 py-2 rounded-md font-medium transition-colors duration-200;
   }
 
   .btn-accent {
-    @apply bg-accent text-accent-foreground hover:bg-accent/90 px-4 py-2 rounded-md font-medium transition-colors duration-200;
+    @apply bg-accent text-accent-foreground hover:opacity-90 px-4 py-2 rounded-md font-medium transition-colors duration-200;
   }
 
   .status-badge {
@@ -124,11 +124,11 @@
   }
 
   .status-badge.active {
-    @apply bg-secondary/10 text-secondary;
+    @apply bg-secondary text-secondary-foreground;
   }
 
   .status-badge.pending {
-    @apply bg-accent/10 text-accent;
+    @apply bg-accent text-accent-foreground;
   }
 
   .status-badge.inactive {
@@ -136,11 +136,11 @@
   }
 
   .status-badge.overdue {
-    @apply bg-destructive/10 text-destructive;
+    @apply bg-destructive text-destructive-foreground;
   }
 
   .chart-container {
-    @apply h-64 bg-muted/30 rounded-lg flex items-center justify-center;
+    @apply h-64 bg-muted rounded-lg flex items-center justify-center;
   }
 
   .quick-action-btn {
