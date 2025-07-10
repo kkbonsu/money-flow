@@ -1,0 +1,137 @@
+import { Link, useLocation } from 'wouter';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  Home, 
+  Users, 
+  BookOpen, 
+  Calendar, 
+  UserCheck, 
+  DollarSign, 
+  Receipt, 
+  Building, 
+  Coins, 
+  Package, 
+  HomeIcon, 
+  BarChart, 
+  CreditCard, 
+  FileText, 
+  Scale 
+} from 'lucide-react';
+
+const navigationItems = [
+  { name: 'Dashboard', href: '/', icon: Home },
+  { 
+    name: 'Management', 
+    items: [
+      { name: 'Customers', href: '/customers', icon: Users },
+      { name: 'Loan Book', href: '/loan-book', icon: BookOpen },
+      { name: 'Payment Schedule', href: '/payment-schedule', icon: Calendar },
+      { name: 'Staff', href: '/staff', icon: UserCheck },
+    ]
+  },
+  { 
+    name: 'Financial', 
+    items: [
+      { name: 'Income Management', href: '/income', icon: DollarSign },
+      { name: 'Expenses', href: '/expenses', icon: Receipt },
+      { name: 'Bank Management', href: '/bank-management', icon: Building },
+      { name: 'Petty Cash', href: '/petty-cash', icon: Coins },
+    ]
+  },
+  { 
+    name: 'Assets & Operations', 
+    items: [
+      { name: 'Inventory', href: '/inventory', icon: Package },
+      { name: 'Rent Management', href: '/rent-management', icon: HomeIcon },
+      { name: 'Assets', href: '/assets', icon: BarChart },
+      { name: 'Liabilities', href: '/liabilities', icon: CreditCard },
+    ]
+  },
+  { 
+    name: 'Reports', 
+    items: [
+      { name: 'Financial Reports', href: '/reports', icon: FileText },
+      { name: 'Equity', href: '/equity', icon: Scale },
+    ]
+  },
+];
+
+export default function Sidebar() {
+  const [location] = useLocation();
+  const { user } = useAuth();
+
+  return (
+    <div className="hidden md:flex md:w-80 bg-sidebar-background shadow-lg border-r border-sidebar-border flex-col">
+      {/* Logo Section */}
+      <div className="p-6 border-b border-sidebar-border">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
+            <BarChart className="w-6 h-6 text-sidebar-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-sidebar-foreground">FinanceFlow</h1>
+            <p className="text-sm text-sidebar-foreground/70">Loan Management</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Menu */}
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        {navigationItems.map((section) => (
+          <div key={section.name} className="space-y-1">
+            {section.href ? (
+              <Link href={section.href}>
+                <a
+                  className={cn(
+                    'sidebar-nav-item',
+                    location === section.href && 'active'
+                  )}
+                >
+                  <section.icon className="w-5 h-5 mr-3" />
+                  {section.name}
+                </a>
+              </Link>
+            ) : (
+              <>
+                <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mt-6 mb-3">
+                  {section.name}
+                </div>
+                {section.items?.map((item) => (
+                  <Link key={item.name} href={item.href}>
+                    <a
+                      className={cn(
+                        'sidebar-nav-item',
+                        location === item.href && 'active'
+                      )}
+                    >
+                      <item.icon className="w-5 h-5 mr-3" />
+                      {item.name}
+                    </a>
+                  </Link>
+                ))}
+              </>
+            )}
+          </div>
+        ))}
+      </nav>
+
+      {/* User Profile Section */}
+      <div className="p-4 border-t border-sidebar-border">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
+            <Users className="w-4 h-4 text-sidebar-accent-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
+              {user?.username || 'User'}
+            </p>
+            <p className="text-xs text-sidebar-foreground/70 truncate">
+              {user?.role || 'User'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,68 @@
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/hooks/useTheme";
+import { AuthProvider } from "@/hooks/useAuth";
+import AppLayout from "@/components/layout/AppLayout";
+import Dashboard from "@/pages/Dashboard";
+import Customers from "@/pages/Customers";
+import LoanBook from "@/pages/LoanBook";
+import PaymentSchedule from "@/pages/PaymentSchedule";
+import Staff from "@/pages/Staff";
+import Income from "@/pages/Income";
+import Expenses from "@/pages/Expenses";
+import BankManagement from "@/pages/BankManagement";
+import PettyCash from "@/pages/PettyCash";
+import Inventory from "@/pages/Inventory";
+import RentManagement from "@/pages/RentManagement";
+import Assets from "@/pages/Assets";
+import Liabilities from "@/pages/Liabilities";
+import Reports from "@/pages/Reports";
+import Equity from "@/pages/Equity";
+import Login from "@/pages/Login";
+import NotFound from "@/pages/not-found";
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/login" component={Login} />
+      <Route path="/" component={Dashboard} />
+      <Route path="/customers" component={Customers} />
+      <Route path="/loan-book" component={LoanBook} />
+      <Route path="/payment-schedule" component={PaymentSchedule} />
+      <Route path="/staff" component={Staff} />
+      <Route path="/income" component={Income} />
+      <Route path="/expenses" component={Expenses} />
+      <Route path="/bank-management" component={BankManagement} />
+      <Route path="/petty-cash" component={PettyCash} />
+      <Route path="/inventory" component={Inventory} />
+      <Route path="/rent-management" component={RentManagement} />
+      <Route path="/assets" component={Assets} />
+      <Route path="/liabilities" component={Liabilities} />
+      <Route path="/reports" component={Reports} />
+      <Route path="/equity" component={Equity} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppLayout>
+              <Router />
+            </AppLayout>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
