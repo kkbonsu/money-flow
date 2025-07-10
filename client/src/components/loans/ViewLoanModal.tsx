@@ -24,7 +24,12 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
 
   const updateLoanStatusMutation = useMutation({
     mutationFn: (newStatus: string) => apiClient.put(`/loans/${loan?.id}`, { 
-      ...loan, 
+      customerId: loan?.customerId,
+      loanAmount: loan?.loanAmount,
+      interestRate: loan?.interestRate,
+      term: loan?.term,
+      purpose: loan?.purpose,
+      dateApplied: loan?.dateApplied,
       status: newStatus 
     }),
     onSuccess: () => {

@@ -244,6 +244,9 @@ export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
   outstandingBalance: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined && val !== null ? val.toString() : undefined
   ),
+  dateApplied: z.union([z.string(), z.date()]).optional().transform((val) => 
+    val instanceof Date ? val : val ? new Date(val) : undefined
+  ),
 });
 
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({
