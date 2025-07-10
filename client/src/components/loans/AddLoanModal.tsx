@@ -6,8 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { insertLoanBookSchema, InsertLoanBook } from '@shared/schema';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { insertLoanBookSchema, InsertLoanBook, Customer } from '@shared/schema';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,6 +20,11 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Fetch customers for dropdown
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ['/api/customers'],
+  });
+  
   const {
     register,
     handleSubmit,
@@ -30,7 +35,6 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
     resolver: zodResolver(insertLoanBookSchema),
     defaultValues: {
       status: 'pending',
-      dateApplied: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -69,12 +73,28 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label htmlFor="customerId">Customer ID</Label>
-            <Input
-              id="customerId"
-              type="number"
-              {...register('customerId', { valueAsNumber: true })}
-              placeholder="Enter customer ID"
+            <Label htmlFor="customerId">Select Customer</Label>
+            <Controller
+              name="customerId"
+              control={control}
+              render={({ field }) => (
+                <Select 
+                  value={field.value?.toString()} 
+                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  disabled={customersLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={customersLoading ? "Loading customers..." : "Select a customer"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer: Customer) => (
+                      <SelectItem key={customer.id} value={customer.id.toString()}>
+                        {customer.firstName} {customer.lastName} - {customer.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             />
             {errors.customerId && (
               <p className="text-sm text-destructive mt-1">
@@ -84,17 +104,17 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
           </div>
 
           <div>
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="loanAmount">Loan Amount</Label>
             <Input
-              id="amount"
+              id="loanAmount"
               type="number"
               step="0.01"
-              {...register('amount', { valueAsNumber: true })}
+              {...register('loanAmount')}
               placeholder="Enter loan amount"
             />
-            {errors.amount && (
+            {errors.loanAmount && (
               <p className="text-sm text-destructive mt-1">
-                {errors.amount.message}
+                {errors.loanAmount.message}
               </p>
             )}
           </div>
@@ -130,20 +150,7 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
             )}
           </div>
 
-          <div>
-            <Label htmlFor="purpose">Purpose</Label>
-            <Textarea
-              id="purpose"
-              {...register('purpose')}
-              placeholder="Enter loan purpose"
-              rows={3}
-            />
-            {errors.purpose && (
-              <p className="text-sm text-destructive mt-1">
-                {errors.purpose.message}
-              </p>
-            )}
-          </div>
+
 
           <div>
             <Label htmlFor="status">Status</Label>
@@ -171,19 +178,7 @@ export default function AddLoanModal({ isOpen, onClose }: AddLoanModalProps) {
             )}
           </div>
 
-          <div>
-            <Label htmlFor="dateApplied">Date Applied</Label>
-            <Input
-              id="dateApplied"
-              type="date"
-              {...register('dateApplied')}
-            />
-            {errors.dateApplied && (
-              <p className="text-sm text-destructive mt-1">
-                {errors.dateApplied.message}
-              </p>
-            )}
-          </div>
+
 
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={onClose}>

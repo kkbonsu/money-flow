@@ -29,6 +29,10 @@ export default function LoanTable() {
     queryKey: ['/api/loans'],
   });
 
+  const { data: customers = [] } = useQuery({
+    queryKey: ['/api/customers'],
+  });
+
   const filteredLoans = loans.filter((loan: LoanBook) => {
     const matchesSearch = loan.id.toString().includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
@@ -50,11 +54,17 @@ export default function LoanTable() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(numAmount);
+  };
+
+  const getCustomerName = (customerId: number) => {
+    const customer = customers.find((c: any) => c.id === customerId);
+    return customer ? `${customer.firstName} ${customer.lastName}` : `Customer #${customerId}`;
   };
 
   const handleViewClick = (loan: LoanBook) => {
@@ -151,7 +161,7 @@ export default function LoanTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
-                <TableHead>Customer ID</TableHead>
+                <TableHead>Customer</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Interest Rate</TableHead>
                 <TableHead>Status</TableHead>
@@ -172,8 +182,8 @@ export default function LoanTable() {
                 filteredLoans.map((loan: LoanBook) => (
                   <TableRow key={loan.id}>
                     <TableCell className="font-medium">{loan.id}</TableCell>
-                    <TableCell>{loan.customerId}</TableCell>
-                    <TableCell>{formatCurrency(loan.amount)}</TableCell>
+                    <TableCell>{getCustomerName(loan.customerId)}</TableCell>
+                    <TableCell>{formatCurrency(loan.loanAmount)}</TableCell>
                     <TableCell>{loan.interestRate}%</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(loan.status)}>
