@@ -330,6 +330,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/users/:id/role", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      // Check if user is admin
+      const currentUser = await storage.getUser(req.user.id);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Prevent admin from changing their own role
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot change your own role" });
+      }
+
+      // Validate role
+      if (!['user', 'manager', 'admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be 'user', 'manager', or 'admin'" });
+      }
+
+      await storage.updateUser(userId, { role });
+      
+      // Log user role change
+      await storage.createUserAuditLog({
+        userId: req.user.id,
+        action: 'user_role_change',
+        description: `Admin changed user role to '${role}' for user with ID: ${userId}`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      res.json({ message: "User role updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update user role" });
+    }
+  });
+
   // Customer routes
   app.get("/api/customers", authenticateToken, async (req, res) => {
     try {

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload, Users, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -270,6 +271,30 @@ export default function UserProfile() {
 
   const handleToggleUserStatus = (userId: number, currentStatus: boolean) => {
     updateUserStatusMutation.mutate({ userId, isActive: !currentStatus });
+  };
+
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number, role: string }) => {
+      await apiRequest('PUT', `/api/users/${userId}/role`, { role });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User role updated",
+        description: "User role has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRoleChange = (userId: number, newRole: string) => {
+    updateUserRoleMutation.mutate({ userId, role: newRole });
   };
 
   const getActionIcon = (action: string) => {
@@ -737,9 +762,23 @@ export default function UserProfile() {
                               </h4>
                               <p className="text-sm text-muted-foreground">{userItem.email}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="secondary" className="text-xs capitalize">
-                                  {userItem.role}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Role:</span>
+                                  <Select
+                                    value={userItem.role}
+                                    onValueChange={(newRole) => handleRoleChange(userItem.id, newRole)}
+                                    disabled={userItem.id === user?.id || updateUserRoleMutation.isPending}
+                                  >
+                                    <SelectTrigger className="w-24 h-6 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="user">User</SelectItem>
+                                      <SelectItem value="manager">Manager</SelectItem>
+                                      <SelectItem value="admin">Admin</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                                 <Badge 
                                   variant={userItem.isActive ? "default" : "secondary"} 
                                   className={`text-xs ${userItem.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
