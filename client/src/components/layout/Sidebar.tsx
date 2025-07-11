@@ -28,7 +28,7 @@ const navigationItems = [
       { name: 'Loan Book', href: '/loan-book', icon: BookOpen },
       { name: 'Payment Schedule', href: '/payment-schedule', icon: Calendar },
       { name: 'Income Management', href: '/income', icon: DollarSign },
-      { name: 'Expenses', href: '/expenses', icon: Receipt },
+      { name: 'Expense Management', href: '/expenses', icon: Receipt },
       { name: 'Banking (coming soon)', href: '/bank-management', icon: Building },
     ]
   },
@@ -37,7 +37,6 @@ const navigationItems = [
     items: [
       { name: 'Staff', href: '/staff', icon: UserCheck },
       { name: 'Inventory', href: '/inventory', icon: Package },
-      { name: 'Rent Management', href: '/rent-management', icon: HomeIcon },
       { name: 'Assets', href: '/assets', icon: BarChart },
       { name: 'Liabilities', href: '/liabilities', icon: CreditCard },
     ]

@@ -111,6 +111,7 @@ export default function AddExpenseModal({ isOpen, onClose }: AddExpenseModalProp
                     <SelectItem value="operations">Operations</SelectItem>
                     <SelectItem value="marketing">Marketing</SelectItem>
                     <SelectItem value="utilities">Utilities</SelectItem>
+                    <SelectItem value="rent">Rent</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>

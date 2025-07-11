@@ -16,7 +16,6 @@ import Expenses from "@/pages/Expenses";
 import BankManagement from "@/pages/BankManagement";
 
 import Inventory from "@/pages/Inventory";
-import RentManagement from "@/pages/RentManagement";
 import Assets from "@/pages/Assets";
 import Liabilities from "@/pages/Liabilities";
 import Reports from "@/pages/Reports";
@@ -39,7 +38,6 @@ function Router() {
       <Route path="/bank-management" component={BankManagement} />
 
       <Route path="/inventory" component={Inventory} />
-      <Route path="/rent-management" component={RentManagement} />
       <Route path="/assets" component={Assets} />
       <Route path="/liabilities" component={Liabilities} />
       <Route path="/reports" component={Reports} />
