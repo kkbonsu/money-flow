@@ -3,8 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PaymentSchedule, LoanBook, Customer } from '@shared/schema';
+import { apiClient } from '@/lib/api';
+import { CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ViewPaymentModalProps {
   isOpen: boolean;
@@ -14,12 +17,38 @@ interface ViewPaymentModalProps {
 }
 
 export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: ViewPaymentModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const { data: customers = [] } = useQuery({
     queryKey: ['/api/customers'],
   });
 
   const { data: allPayments = [] } = useQuery({
     queryKey: ['/api/payment-schedules'],
+  });
+
+  const markAsPaidMutation = useMutation({
+    mutationFn: (paymentId: number) => 
+      apiClient.put(`/payment-schedules/${paymentId}`, {
+        status: 'paid',
+        paidDate: new Date().toISOString(),
+        paidAmount: allPayments.find((p: PaymentSchedule) => p.id === paymentId)?.amount || '0'
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/payment-schedules'] });
+      toast({
+        title: "Payment Updated",
+        description: "Payment has been marked as paid successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update payment status.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (!payment || !loan) return null;
@@ -198,6 +227,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                       <th className="text-left p-2">Principal</th>
                       <th className="text-left p-2">Interest</th>
                       <th className="text-left p-2">Status</th>
+                      <th className="text-left p-2">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -219,6 +249,20 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                             <Badge className={getStatusColor(p.status)} size="sm">
                               {p.status}
                             </Badge>
+                          </td>
+                          <td className="p-2">
+                            {p.status === 'pending' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => markAsPaidMutation.mutate(p.id)}
+                                disabled={markAsPaidMutation.isPending}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Mark Paid
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
