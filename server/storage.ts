@@ -560,7 +560,7 @@ export class DatabaseStorage implements IStorage {
         count: sql<number>`COUNT(*)` 
       })
       .from(loanBooks)
-      .where(eq(loanBooks.status, 'approved'));
+      .where(sql`${loanBooks.status} IN ('approved', 'disbursed')`);
 
     const [activeCustomersResult] = await db
       .select({ count: sql<number>`COUNT(*)` })

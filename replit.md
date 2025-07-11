@@ -135,5 +135,9 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Mark as Unpaid functionality implemented to reverse paid status back to pending
     - ✅ **COMPLETED**: Replaced disabled "Paid" buttons with active "Mark as Unpaid" buttons in payment modal
     - ✅ **COMPLETED**: Dashboard Quick Actions card removed as requested
+    - ✅ **COMPLETED**: Recent Loan Applications updated to show latest 7 loans with customer names
+    - ✅ **COMPLETED**: Action buttons removed from Recent Loan Applications table
+    - ✅ **COMPLETED**: View All button now redirects to loan book page
+    - ✅ **COMPLETED**: Dashboard metrics fixed to include disbursed loans in total loan calculation
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
