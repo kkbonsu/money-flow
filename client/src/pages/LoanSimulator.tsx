@@ -52,62 +52,68 @@ export default function LoanSimulator() {
   const calculateLoan = async () => {
     setIsCalculating(true);
     
-    // Add a small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const principal = parseFloat(formData.loanAmount);
-    const annualRate = parseFloat(formData.interestRate) / 100;
-    const termInMonths = formData.loanTermType === 'years' 
-      ? parseInt(formData.loanTerm) * 12 
-      : parseInt(formData.loanTerm);
+    try {
+      // Add a small delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const principal = parseFloat(formData.loanAmount);
+      const annualRate = parseFloat(formData.interestRate) / 100;
+      const termInMonths = formData.loanTermType === 'years' 
+        ? parseInt(formData.loanTerm) * 12 
+        : parseInt(formData.loanTerm);
 
-    if (!principal || !annualRate || !termInMonths) {
-      setIsCalculating(false);
-      return;
-    }
+      if (!principal || !annualRate || !termInMonths || !formData.startDate) {
+        setIsCalculating(false);
+        return;
+      }
 
-    const monthlyRate = annualRate / 12;
-    const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, termInMonths)) / 
-                          (Math.pow(1 + monthlyRate, termInMonths) - 1);
-    
-    const totalPayments = monthlyPayment * termInMonths;
-    const totalInterest = totalPayments - principal;
+      const monthlyRate = annualRate / 12;
+      const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, termInMonths)) / 
+                            (Math.pow(1 + monthlyRate, termInMonths) - 1);
+      
+      const totalPayments = monthlyPayment * termInMonths;
+      const totalInterest = totalPayments - principal;
 
-    // Generate payment schedule
-    const schedule: PaymentScheduleItem[] = [];
-    let remainingBalance = principal;
-    const startDate = new Date(formData.startDate);
+      // Generate payment schedule
+      const schedule: PaymentScheduleItem[] = [];
+      let remainingBalance = principal;
+      const startDate = new Date(formData.startDate);
 
-    for (let i = 1; i <= termInMonths; i++) {
-      const interestAmount = remainingBalance * monthlyRate;
-      const principalAmount = monthlyPayment - interestAmount;
-      remainingBalance -= principalAmount;
+      for (let i = 1; i <= termInMonths; i++) {
+        const interestAmount = remainingBalance * monthlyRate;
+        const principalAmount = monthlyPayment - interestAmount;
+        remainingBalance -= principalAmount;
 
-      const paymentDate = new Date(startDate);
-      paymentDate.setMonth(startDate.getMonth() + i);
+        // Calculate payment date by adding months to start date
+        const paymentDate = new Date(startDate);
+        paymentDate.setMonth(paymentDate.getMonth() + i);
 
-      schedule.push({
-        paymentNumber: i,
-        paymentDate: paymentDate.toISOString().split('T')[0],
-        paymentAmount: monthlyPayment,
-        principalAmount: principalAmount,
-        interestAmount: interestAmount,
-        remainingBalance: Math.max(0, remainingBalance)
+        schedule.push({
+          paymentNumber: i,
+          paymentDate: paymentDate.toISOString().split('T')[0],
+          paymentAmount: monthlyPayment,
+          principalAmount: principalAmount,
+          interestAmount: interestAmount,
+          remainingBalance: Math.max(0, remainingBalance)
+        });
+      }
+
+      setSimulation({
+        loanAmount: principal,
+        interestRate: annualRate * 100,
+        loanTerm: termInMonths,
+        startDate: new Date(formData.startDate),
+        monthlyPayment,
+        totalPayments,
+        totalInterest,
+        schedule
       });
+      
+    } catch (error) {
+      console.error('Error calculating loan:', error);
+    } finally {
+      setIsCalculating(false);
     }
-
-    setSimulation({
-      loanAmount: principal,
-      interestRate: annualRate * 100,
-      loanTerm: termInMonths,
-      startDate: new Date(formData.startDate),
-      monthlyPayment,
-      totalPayments,
-      totalInterest,
-      schedule
-    });
-    
-    setIsCalculating(false);
   };
 
   const handleInputChange = (field: string, value: string) => {
