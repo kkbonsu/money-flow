@@ -49,54 +49,54 @@ export default function PaymentStatusCard() {
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Payment Status</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="pb-4">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-muted-foreground">On-Time/Pending</span>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-3 h-3 text-green-600" />
+              <span className="text-xs text-muted-foreground">On-Time/Pending</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{paymentData?.onTime || 0}</span>
-              <span className="text-sm text-green-600">{onTimePercentage}%</span>
+              <span className="text-xs font-medium">{paymentData?.onTime || 0}</span>
+              <span className="text-xs text-green-600">{onTimePercentage}%</span>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Clock className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm text-muted-foreground">Overdue (7 days)</span>
+            <div className="flex items-center space-x-2">
+              <Clock className="w-3 h-3 text-yellow-600" />
+              <span className="text-xs text-muted-foreground">Overdue (7 days)</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{paymentData?.overdue7Days || 0}</span>
-              <span className="text-sm text-yellow-600">{overdue7Percentage}%</span>
+              <span className="text-xs font-medium">{paymentData?.overdue7Days || 0}</span>
+              <span className="text-xs text-yellow-600">{overdue7Percentage}%</span>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <AlertTriangle className="w-4 h-4 text-orange-600" />
-              <span className="text-sm text-muted-foreground">Overdue (30 days)</span>
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-3 h-3 text-orange-600" />
+              <span className="text-xs text-muted-foreground">Overdue (30 days)</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{paymentData?.overdue30Days || 0}</span>
-              <span className="text-sm text-orange-600">{overdue30Percentage}%</span>
+              <span className="text-xs font-medium">{paymentData?.overdue30Days || 0}</span>
+              <span className="text-xs text-orange-600">{overdue30Percentage}%</span>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <AlertTriangle className="w-4 h-4 text-red-600" />
-              <span className="text-sm text-muted-foreground">Overdue (90 days)</span>
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-3 h-3 text-red-600" />
+              <span className="text-xs text-muted-foreground">Overdue (90 days)</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{paymentData?.overdue90Days || 0}</span>
-              <span className="text-sm text-red-600">{overdue90Percentage}%</span>
+              <span className="text-xs font-medium">{paymentData?.overdue90Days || 0}</span>
+              <span className="text-xs text-red-600">{overdue90Percentage}%</span>
             </div>
           </div>
           
-          <div className="pt-2 border-t">
-            <div className="flex items-center justify-between text-sm font-medium">
+          <div className="pt-1 border-t">
+            <div className="flex items-center justify-between text-xs font-medium">
               <span>Total Pending</span>
               <span>{paymentData?.totalPending || 0}</span>
             </div>
