@@ -154,5 +154,6 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Created PaymentStatusCard component with proper icons and percentage calculations
     - ✅ **COMPLETED**: Application name changed from "FinanceFlow" to "Money Flow" in sidebar and login page
     - ✅ **COMPLETED**: Removed notification icon from top-right header
+    - ✅ **COMPLETED**: Updated dashboard metric cards to show actual percentage increases/decreases based on month-over-month comparison
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.

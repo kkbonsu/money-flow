@@ -692,6 +692,12 @@ export class DatabaseStorage implements IStorage {
 
   // Dashboard metrics
   async getDashboardMetrics(): Promise<any> {
+    const currentDate = new Date();
+    const lastMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+    const thisMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+    // Current month data
     const [totalLoansResult] = await db
       .select({ 
         total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
@@ -715,15 +721,73 @@ export class DatabaseStorage implements IStorage {
       .from(incomeManagement)
       .where(sql`DATE_TRUNC('month', ${incomeManagement.date}) = DATE_TRUNC('month', CURRENT_DATE)`);
 
+    // Previous month data for comparison
+    const [lastMonthLoansResult] = await db
+      .select({ 
+        total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
+        count: sql<number>`COUNT(*)` 
+      })
+      .from(loanBooks)
+      .where(sql`
+        ${loanBooks.status} IN ('approved', 'disbursed') 
+        AND ${loanBooks.createdAt} < ${thisMonthStart}
+      `);
+
+    const [lastMonthCustomersResult] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(customers)
+      .where(sql`
+        ${customers.status} = 'active' 
+        AND ${customers.createdAt} < ${thisMonthStart}
+      `);
+
+    const [lastMonthPaymentsResult] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${paymentSchedules.amount}), 0)` })
+      .from(paymentSchedules)
+      .where(sql`
+        ${paymentSchedules.status} = 'pending' 
+        AND ${paymentSchedules.createdAt} < ${thisMonthStart}
+      `);
+
+    const [lastMonthIncomeResult] = await db
+      .select({ total: sql<number>`COALESCE(SUM(${incomeManagement.amount}), 0)` })
+      .from(incomeManagement)
+      .where(sql`
+        ${incomeManagement.date} >= ${lastMonthStart} 
+        AND ${incomeManagement.date} <= ${lastMonthEnd}
+      `);
+
+    // Calculate percentage changes
+    const calculateGrowth = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100 * 100) / 100;
+    };
+
+    const currentTotalLoans = totalLoansResult?.total || 0;
+    const previousTotalLoans = lastMonthLoansResult?.total || 0;
+    const loanGrowth = calculateGrowth(currentTotalLoans, previousTotalLoans);
+
+    const currentCustomers = activeCustomersResult?.count || 0;
+    const previousCustomers = lastMonthCustomersResult?.count || 0;
+    const customerGrowth = calculateGrowth(currentCustomers, previousCustomers);
+
+    const currentPayments = pendingPaymentsResult?.total || 0;
+    const previousPayments = lastMonthPaymentsResult?.total || 0;
+    const paymentGrowth = calculateGrowth(currentPayments, previousPayments);
+
+    const currentIncome = monthlyIncomeResult?.total || 0;
+    const previousIncome = lastMonthIncomeResult?.total || 0;
+    const incomeGrowth = calculateGrowth(currentIncome, previousIncome);
+
     return {
-      totalLoans: `$${totalLoansResult?.total?.toLocaleString() || '0'}`,
-      activeCustomers: activeCustomersResult?.count || 0,
-      pendingPayments: `$${pendingPaymentsResult?.total?.toLocaleString() || '0'}`,
-      monthlyIncome: `$${monthlyIncomeResult?.total?.toLocaleString() || '0'}`,
-      loanGrowth: 12.5,
-      customerGrowth: 8.2,
-      paymentGrowth: -3.1,
-      revenueGrowth: 15.8,
+      totalLoans: `$${currentTotalLoans.toLocaleString()}`,
+      activeCustomers: currentCustomers,
+      pendingPayments: `$${currentPayments.toLocaleString()}`,
+      monthlyIncome: `$${currentIncome.toLocaleString()}`,
+      loanGrowth,
+      customerGrowth,
+      paymentGrowth,
+      revenueGrowth: incomeGrowth,
     };
   }
 }
