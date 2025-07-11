@@ -271,6 +271,12 @@ export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
   dateApplied: z.union([z.string(), z.date()]).optional().transform((val) => 
     val instanceof Date ? val : val ? new Date(val) : undefined
   ),
+  startDate: z.union([z.string(), z.date()]).optional().transform((val) => 
+    val instanceof Date ? val : val ? new Date(val) : undefined
+  ),
+  endDate: z.union([z.string(), z.date()]).optional().transform((val) => 
+    val instanceof Date ? val : val ? new Date(val) : undefined
+  ),
 });
 
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({
