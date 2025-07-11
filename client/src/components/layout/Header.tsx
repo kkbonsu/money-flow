@@ -47,7 +47,7 @@ export default function Header() {
               <Button variant="ghost" className="flex items-center gap-2 p-2 h-auto">
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
-                    src={user?.profilePicture ? `/uploads/${user.profilePicture}` : undefined} 
+                    src={user?.profilePicture || undefined} 
                     alt={user?.username || authUser?.username || 'User'} 
                   />
                   <AvatarFallback className="bg-primary text-primary-foreground">
