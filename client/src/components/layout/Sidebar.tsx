@@ -44,10 +44,10 @@ const navigationItems = [
     ]
   },
   { 
-    name: 'Reports', 
+    name: 'Executive Functions and Reports', 
     items: [
       { name: 'Financial Reports', href: '/reports', icon: FileText },
-      { name: 'Equity Reports', href: '/equity', icon: Scale },
+      { name: 'Equity Management', href: '/equity', icon: Scale },
     ]
   },
 ];
