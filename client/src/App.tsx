@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
 import AppLayout from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
+import LoanSimulator from "@/pages/LoanSimulator";
 import Customers from "@/pages/Customers";
 import LoanBook from "@/pages/LoanBook";
 import PaymentSchedule from "@/pages/PaymentSchedule";
@@ -29,6 +30,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/" component={Dashboard} />
+      <Route path="/loan-simulator" component={LoanSimulator} />
       <Route path="/customers" component={Customers} />
       <Route path="/loan-book" component={LoanBook} />
       <Route path="/payment-schedule" component={PaymentSchedule} />
