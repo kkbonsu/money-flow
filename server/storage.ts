@@ -573,9 +573,9 @@ export class DatabaseStorage implements IStorage {
       .where(eq(paymentSchedules.status, 'pending'));
 
     const [monthlyRevenueResult] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${incomeManagement.amount}), 0)` })
-      .from(incomeManagement)
-      .where(sql`DATE_TRUNC('month', ${incomeManagement.date}) = DATE_TRUNC('month', CURRENT_DATE)`);
+      .select({ total: sql<number>`COALESCE(SUM(${paymentSchedules.interestAmount}), 0)` })
+      .from(paymentSchedules)
+      .where(sql`${paymentSchedules.status} = 'paid' AND DATE_TRUNC('month', ${paymentSchedules.paidDate}) = DATE_TRUNC('month', CURRENT_DATE)`);
 
     return {
       totalLoans: `$${totalLoansResult?.total?.toLocaleString() || '0'}`,
