@@ -46,7 +46,7 @@ const navigationItems = [
     name: 'Reports', 
     items: [
       { name: 'Financial Reports', href: '/reports', icon: FileText },
-      { name: 'Equity', href: '/equity', icon: Scale },
+      { name: 'Equity Reports', href: '/equity', icon: Scale },
     ]
   },
 ];
