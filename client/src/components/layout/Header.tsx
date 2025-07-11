@@ -1,15 +1,22 @@
-import { Sun, Moon, Menu, User, Settings, LogOut } from 'lucide-react';
+import { Sun, Moon, Menu, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const [, setLocation] = useLocation();
+  
+  // Get fresh user data including profile picture
+  const { data: user } = useQuery({
+    queryKey: ['/api/users/profile'],
+    enabled: !!authUser, // Only run if user is authenticated
+  });
 
   return (
     <header className="bg-background shadow-sm border-b border-border">
@@ -37,16 +44,17 @@ export default function Header() {
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
+              <Button variant="ghost" className="flex items-center gap-2 p-2 h-auto">
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
                     src={user?.profilePicture ? `/uploads/${user.profilePicture}` : undefined} 
-                    alt={user?.username || 'User'} 
+                    alt={user?.username || authUser?.username || 'User'} 
                   />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user?.firstName?.[0] || user?.username?.charAt(0).toUpperCase() || 'U'}
+                    {user?.firstName?.[0] || user?.username?.charAt(0).toUpperCase() || authUser?.username?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
+                <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -55,10 +63,10 @@ export default function Header() {
                   <p className="text-sm font-medium leading-none">
                     {user?.firstName && user?.lastName 
                       ? `${user.firstName} ${user.lastName}` 
-                      : user?.username}
+                      : user?.username || authUser?.username}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {user?.email}
+                    {user?.email || authUser?.email}
                   </p>
                 </div>
               </DropdownMenuLabel>
