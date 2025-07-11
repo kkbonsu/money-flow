@@ -87,6 +87,15 @@ export default function InventoryTable() {
 
   return (
     <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Inventory Items</CardTitle>
+          <Button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
+            <Package className="w-4 h-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
+      </CardHeader>
       <CardContent>
         <div className="flex items-center space-x-4 mb-6">
           <div className="relative">
