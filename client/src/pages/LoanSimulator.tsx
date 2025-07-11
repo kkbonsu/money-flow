@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
 interface LoanSimulation {
@@ -49,24 +49,14 @@ export default function LoanSimulator() {
   const [simulation, setSimulation] = useState<LoanSimulation | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [showCreateLoanModal, setShowCreateLoanModal] = useState(false);
-  const [customerData, setCustomerData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    nationalId: '',
-    creditScore: '',
-    purpose: ''
-  });
-
-  const [loanData, setLoanData] = useState({
-    status: 'pending',
-    collateral: '',
-    notes: '',
-    employerName: '',
-    monthlyIncome: '',
-    existingDebt: ''
+  const [loanFormData, setLoanFormData] = useState({
+    customerId: '',
+    loanAmount: '',
+    interestRate: '',
+    term: '',
+    purpose: '',
+    dateApplied: '',
+    status: 'pending'
   });
 
   // Redirect to login if not authenticated
@@ -75,46 +65,33 @@ export default function LoanSimulator() {
     return null;
   }
 
-  // Mutation for creating customer and loan
+  // Fetch customers for dropdown
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ['/api/customers'],
+  });
+
+  // Mutation for creating loan
   const createLoanMutation = useMutation({
-    mutationFn: async (data: { customer: any; loan: any }) => {
-      console.log('Creating customer with data:', data.customer);
-      
-      // First create the customer
-      const customerResponse = await apiRequest('POST', '/api/customers', data.customer);
-      const customerJson = await customerResponse.json();
-      
-      console.log('Customer created successfully:', customerJson);
-      
-      // Then create the loan with the customer ID
-      const loanData = {
-        ...data.loan,
-        customerId: customerJson.id
-      };
-      
-      console.log('Creating loan with data:', loanData);
-      
-      const loanResponse = await apiRequest('POST', '/api/loans', loanData);
-      const loanJson = await loanResponse.json();
-      
-      console.log('Loan created successfully:', loanJson);
-      
-      return { customer: customerJson, loan: loanJson };
+    mutationFn: async (data: any) => {
+      console.log('Creating loan with data:', data);
+      const response = await apiRequest('POST', '/api/loans', data);
+      const responseJson = await response.json();
+      console.log('Loan created successfully:', responseJson);
+      return responseJson;
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Customer and loan created successfully!",
+        description: "Loan created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/loans'] });
       setShowCreateLoanModal(false);
-      resetCustomerData();
+      resetLoanFormData();
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create customer and loan. Please try again.",
+        description: "Failed to create loan. Please try again.",
         variant: "destructive",
       });
       console.error('Error creating loan:', error);
@@ -206,36 +183,20 @@ export default function LoanSimulator() {
     setSimulation(null);
   };
 
-  const resetCustomerData = () => {
-    setCustomerData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      address: '',
-      nationalId: '',
-      creditScore: '',
-      purpose: ''
-    });
-    setLoanData({
-      status: 'pending',
-      collateral: '',
-      notes: '',
-      employerName: '',
-      monthlyIncome: '',
-      existingDebt: ''
+  const resetLoanFormData = () => {
+    setLoanFormData({
+      customerId: '',
+      loanAmount: '',
+      interestRate: '',
+      term: '',
+      purpose: '',
+      dateApplied: '',
+      status: 'pending'
     });
   };
 
-  const handleCustomerInputChange = (field: string, value: string) => {
-    setCustomerData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleLoanInputChange = (field: string, value: string) => {
-    setLoanData(prev => ({
+  const handleLoanFormChange = (field: string, value: string) => {
+    setLoanFormData(prev => ({
       ...prev,
       [field]: value
     }));
@@ -244,48 +205,20 @@ export default function LoanSimulator() {
   const handleCreateLoan = () => {
     if (!simulation) return;
 
-    const customerPayload = {
-      firstName: customerData.firstName,
-      lastName: customerData.lastName,
-      email: customerData.email,
-      phone: customerData.phone,
-      address: customerData.address,
-      nationalId: customerData.nationalId || null,
-      creditScore: customerData.creditScore ? parseInt(customerData.creditScore) : null,
-      status: 'active'
-    };
-
-    // Create a detailed purpose description including additional information
-    let purposeDescription = customerData.purpose || 'Personal loan';
-    
-    // Add additional information to the purpose field
-    const additionalInfo = [];
-    if (loanData.employerName) additionalInfo.push(`Employer: ${loanData.employerName}`);
-    if (loanData.monthlyIncome) additionalInfo.push(`Monthly Income: $${loanData.monthlyIncome}`);
-    if (loanData.existingDebt) additionalInfo.push(`Existing Debt: $${loanData.existingDebt}`);
-    if (loanData.collateral) additionalInfo.push(`Collateral: ${loanData.collateral}`);
-    if (loanData.notes) additionalInfo.push(`Notes: ${loanData.notes}`);
-    
-    if (additionalInfo.length > 0) {
-      purposeDescription += ` | ${additionalInfo.join(' | ')}`;
-    }
-
     const loanPayload = {
-      loanAmount: simulation.loanAmount,
-      interestRate: simulation.interestRate,
-      term: simulation.loanTerm,
-      status: loanData.status || 'pending',
-      purpose: purposeDescription,
-      dateApplied: new Date(),
+      customerId: parseInt(loanFormData.customerId),
+      loanAmount: loanFormData.loanAmount || simulation.loanAmount.toString(),
+      interestRate: loanFormData.interestRate || simulation.interestRate.toString(),
+      term: parseInt(loanFormData.term) || simulation.loanTerm,
+      purpose: loanFormData.purpose,
+      dateApplied: loanFormData.dateApplied ? new Date(loanFormData.dateApplied) : new Date(),
+      status: loanFormData.status,
       startDate: simulation.startDate,
-      disbursedAmount: simulation.loanAmount,
-      outstandingBalance: simulation.loanAmount,
+      disbursedAmount: loanFormData.loanAmount || simulation.loanAmount.toString(),
+      outstandingBalance: loanFormData.loanAmount || simulation.loanAmount.toString(),
     };
 
-    createLoanMutation.mutate({
-      customer: customerPayload,
-      loan: loanPayload
-    });
+    createLoanMutation.mutate(loanPayload);
   };
 
   return (
@@ -565,14 +498,14 @@ export default function LoanSimulator() {
                             Create New Loan
                           </DialogTitle>
                           <DialogDescription>
-                            Create a new loan in the loan book using the calculated loan details and customer information.
+                            Create a new loan in the loan book using the calculated loan details.
                           </DialogDescription>
                         </DialogHeader>
                         
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                           {/* Loan Summary */}
                           <div className="bg-muted/20 p-4 rounded-lg">
-                            <h3 className="font-semibold mb-3">Loan Details</h3>
+                            <h3 className="font-semibold mb-3">Calculated Loan Details</h3>
                             <div className="grid grid-cols-2 gap-3 text-sm">
                               <div className="flex justify-between">
                                 <span>Loan Amount:</span>
@@ -593,189 +526,100 @@ export default function LoanSimulator() {
                             </div>
                           </div>
 
-                          {/* Customer Details Form */}
-                          <div className="space-y-4">
-                            <h3 className="font-semibold">Customer Information</h3>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="firstName">First Name *</Label>
-                                <Input
-                                  id="firstName"
-                                  value={customerData.firstName}
-                                  onChange={(e) => handleCustomerInputChange('firstName', e.target.value)}
-                                  placeholder="Enter first name"
-                                  required
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="lastName">Last Name *</Label>
-                                <Input
-                                  id="lastName"
-                                  value={customerData.lastName}
-                                  onChange={(e) => handleCustomerInputChange('lastName', e.target.value)}
-                                  placeholder="Enter last name"
-                                  required
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="email">Email *</Label>
-                                <Input
-                                  id="email"
-                                  type="email"
-                                  value={customerData.email}
-                                  onChange={(e) => handleCustomerInputChange('email', e.target.value)}
-                                  placeholder="Enter email address"
-                                  required
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="phone">Phone *</Label>
-                                <Input
-                                  id="phone"
-                                  value={customerData.phone}
-                                  onChange={(e) => handleCustomerInputChange('phone', e.target.value)}
-                                  placeholder="Enter phone number"
-                                  required
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="address">Address *</Label>
-                              <Input
-                                id="address"
-                                value={customerData.address}
-                                onChange={(e) => handleCustomerInputChange('address', e.target.value)}
-                                placeholder="Enter full address"
-                                required
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="nationalId">National ID</Label>
-                                <Input
-                                  id="nationalId"
-                                  value={customerData.nationalId}
-                                  onChange={(e) => handleCustomerInputChange('nationalId', e.target.value)}
-                                  placeholder="Enter national ID"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="creditScore">Credit Score</Label>
-                                <Input
-                                  id="creditScore"
-                                  type="number"
-                                  value={customerData.creditScore}
-                                  onChange={(e) => handleCustomerInputChange('creditScore', e.target.value)}
-                                  placeholder="Enter credit score"
-                                  min="300"
-                                  max="850"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="purpose">Loan Purpose</Label>
-                              <Select value={customerData.purpose} onValueChange={(value) => handleCustomerInputChange('purpose', value)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select loan purpose" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Personal loan">Personal loan</SelectItem>
-                                  <SelectItem value="Business loan">Business loan</SelectItem>
-                                  <SelectItem value="Home improvement">Home improvement</SelectItem>
-                                  <SelectItem value="Education">Education</SelectItem>
-                                  <SelectItem value="Medical expenses">Medical expenses</SelectItem>
-                                  <SelectItem value="Vehicle purchase">Vehicle purchase</SelectItem>
-                                  <SelectItem value="Other">Other</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                          {/* Customer Selection */}
+                          <div>
+                            <Label htmlFor="customerId">Select Customer</Label>
+                            <Select 
+                              value={loanFormData.customerId} 
+                              onValueChange={(value) => handleLoanFormChange('customerId', value)}
+                              disabled={customersLoading}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={customersLoading ? "Loading customers..." : "Select a customer"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {customers.map((customer: any) => (
+                                  <SelectItem key={customer.id} value={customer.id.toString()}>
+                                    {customer.firstName} {customer.lastName} - {customer.email}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
-                          {/* Additional Loan Information */}
-                          <div className="space-y-4">
-                            <h3 className="font-semibold">Additional Loan Information</h3>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="status">Loan Status</Label>
-                                <Select value={loanData.status} onValueChange={(value) => handleLoanInputChange('status', value)}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select loan status" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="approved">Approved</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                    <SelectItem value="disbursed">Disbursed</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label htmlFor="monthlyIncome">Monthly Income</Label>
-                                <Input
-                                  id="monthlyIncome"
-                                  type="number"
-                                  value={loanData.monthlyIncome}
-                                  onChange={(e) => handleLoanInputChange('monthlyIncome', e.target.value)}
-                                  placeholder="Enter monthly income"
-                                  min="0"
-                                  step="0.01"
-                                />
-                              </div>
-                            </div>
+                          <div>
+                            <Label htmlFor="loanAmount">Loan Amount</Label>
+                            <Input
+                              id="loanAmount"
+                              type="number"
+                              step="0.01"
+                              value={loanFormData.loanAmount || simulation.loanAmount}
+                              onChange={(e) => handleLoanFormChange('loanAmount', e.target.value)}
+                              placeholder="Enter loan amount"
+                            />
+                          </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="employerName">Employer Name</Label>
-                                <Input
-                                  id="employerName"
-                                  value={loanData.employerName}
-                                  onChange={(e) => handleLoanInputChange('employerName', e.target.value)}
-                                  placeholder="Enter employer name"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="existingDebt">Existing Debt</Label>
-                                <Input
-                                  id="existingDebt"
-                                  type="number"
-                                  value={loanData.existingDebt}
-                                  onChange={(e) => handleLoanInputChange('existingDebt', e.target.value)}
-                                  placeholder="Enter existing debt amount"
-                                  min="0"
-                                  step="0.01"
-                                />
-                              </div>
-                            </div>
+                          <div>
+                            <Label htmlFor="interestRate">Interest Rate (%)</Label>
+                            <Input
+                              id="interestRate"
+                              type="number"
+                              step="0.01"
+                              value={loanFormData.interestRate || simulation.interestRate}
+                              onChange={(e) => handleLoanFormChange('interestRate', e.target.value)}
+                              placeholder="Enter interest rate"
+                            />
+                          </div>
 
-                            <div>
-                              <Label htmlFor="collateral">Collateral/Security</Label>
-                              <Input
-                                id="collateral"
-                                value={loanData.collateral}
-                                onChange={(e) => handleLoanInputChange('collateral', e.target.value)}
-                                placeholder="Enter collateral details (if any)"
-                              />
-                            </div>
+                          <div>
+                            <Label htmlFor="term">Term (months)</Label>
+                            <Input
+                              id="term"
+                              type="number"
+                              value={loanFormData.term || simulation.loanTerm}
+                              onChange={(e) => handleLoanFormChange('term', e.target.value)}
+                              placeholder="Enter loan term in months"
+                            />
+                          </div>
 
-                            <div>
-                              <Label htmlFor="notes">Additional Notes</Label>
-                              <textarea
-                                id="notes"
-                                value={loanData.notes}
-                                onChange={(e) => handleLoanInputChange('notes', e.target.value)}
-                                placeholder="Enter any additional notes or comments"
-                                className="w-full p-2 border border-input rounded-md resize-none"
-                                rows={3}
-                              />
-                            </div>
+                          <div>
+                            <Label htmlFor="purpose">Purpose</Label>
+                            <textarea
+                              id="purpose"
+                              value={loanFormData.purpose}
+                              onChange={(e) => handleLoanFormChange('purpose', e.target.value)}
+                              placeholder="Enter loan purpose"
+                              rows={3}
+                              className="w-full p-2 border border-input rounded-md resize-none"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="dateApplied">Date Applied</Label>
+                            <Input
+                              id="dateApplied"
+                              type="date"
+                              value={loanFormData.dateApplied}
+                              onChange={(e) => handleLoanFormChange('dateApplied', e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="status">Status</Label>
+                            <Select 
+                              value={loanFormData.status} 
+                              onValueChange={(value) => handleLoanFormChange('status', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="disbursed">Disbursed</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           {/* Action Buttons */}
@@ -785,7 +629,7 @@ export default function LoanSimulator() {
                               variant="outline" 
                               onClick={() => {
                                 setShowCreateLoanModal(false);
-                                resetCustomerData();
+                                resetLoanFormData();
                               }}
                             >
                               Cancel
@@ -793,8 +637,7 @@ export default function LoanSimulator() {
                             <Button 
                               type="button" 
                               onClick={handleCreateLoan}
-                              disabled={createLoanMutation.isPending || !customerData.firstName || !customerData.lastName || !customerData.email || !customerData.phone || !customerData.address}
-                              className="bg-primary hover:bg-primary/90"
+                              disabled={createLoanMutation.isPending || !loanFormData.customerId}
                             >
                               {createLoanMutation.isPending ? 'Creating...' : 'Create Loan'}
                             </Button>
