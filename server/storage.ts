@@ -622,23 +622,16 @@ export class DatabaseStorage implements IStorage {
       .from(paymentSchedules)
       .where(eq(paymentSchedules.status, 'pending'));
 
-    const [monthlyInterestResult] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${paymentSchedules.interestAmount}), 0)` })
-      .from(paymentSchedules)
-      .where(sql`${paymentSchedules.status} = 'paid' AND DATE_TRUNC('month', ${paymentSchedules.paidDate}) = DATE_TRUNC('month', CURRENT_DATE)`);
-
-    const [monthlyIncomeResult] = await db
+    const [monthlyRevenueResult] = await db
       .select({ total: sql<number>`COALESCE(SUM(${incomeManagement.amount}), 0)` })
       .from(incomeManagement)
       .where(sql`DATE_TRUNC('month', ${incomeManagement.date}) = DATE_TRUNC('month', CURRENT_DATE)`);
-
-    const totalMonthlyRevenue = (monthlyInterestResult?.total || 0) + (monthlyIncomeResult?.total || 0);
 
     return {
       totalLoans: `$${totalLoansResult?.total?.toLocaleString() || '0'}`,
       activeCustomers: activeCustomersResult?.count || 0,
       pendingPayments: `$${pendingPaymentsResult?.total?.toLocaleString() || '0'}`,
-      monthlyRevenue: `$${totalMonthlyRevenue.toLocaleString()}`,
+      monthlyRevenue: `$${monthlyRevenueResult?.total?.toLocaleString() || '0'}`,
       loanGrowth: 12.5,
       customerGrowth: 8.2,
       paymentGrowth: -3.1,
