@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings } from 'lucide-react';
+import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,6 +33,8 @@ const passwordSchema = z.object({
 });
 
 export default function UserProfile() {
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -135,6 +137,86 @@ export default function UserProfile() {
     });
   };
 
+  const updateProfilePictureMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+      
+      const response = await fetch('/api/users/profile-picture', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload profile picture');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile picture updated",
+        description: "Your profile picture has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/profile'] });
+      setPreviewImage(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File too large",
+          description: "Please choose a file smaller than 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please choose an image file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleSaveProfilePicture = () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (file) {
+      updateProfilePictureMutation.mutate(file);
+    }
+  };
+
+  const handleCancelProfilePicture = () => {
+    setPreviewImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'login':
@@ -205,10 +287,40 @@ export default function UserProfile() {
             <CardContent>
               <div className="mb-6 p-4 border rounded-lg bg-muted/50">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold">
-                    {user?.firstName?.[0] || user?.username?.[0]?.toUpperCase() || 'U'}
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold">
+                      {previewImage ? (
+                        <img 
+                          src={previewImage} 
+                          alt="Profile preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : user?.profilePicture ? (
+                        <img 
+                          src={user.profilePicture} 
+                          alt="Profile picture" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        user?.firstName?.[0] || user?.username?.[0]?.toUpperCase() || 'U'
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleUploadClick}
+                      className="absolute -bottom-1 -right-1 p-1 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors"
+                    >
+                      <Camera className="h-3 w-3" />
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold">
                       {user?.firstName && user?.lastName 
                         ? `${user.firstName} ${user.lastName}` 
@@ -226,6 +338,26 @@ export default function UserProfile() {
                       )}
                     </div>
                   </div>
+                  {previewImage && (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSaveProfilePicture}
+                        disabled={updateProfilePictureMutation.isPending}
+                      >
+                        {updateProfilePictureMutation.isPending ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelProfilePicture}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
