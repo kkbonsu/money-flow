@@ -5,7 +5,6 @@ import { BookOpen, Users, Clock, DollarSign } from 'lucide-react';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ChartCard from '@/components/dashboard/ChartCard';
 import RecentLoansTable from '@/components/dashboard/RecentLoansTable';
-import QuickActions from '@/components/dashboard/QuickActions';
 import { DashboardMetrics } from '@/types';
 
 export default function Dashboard() {
@@ -119,12 +118,9 @@ export default function Dashboard() {
         </ChartCard>
       </div>
 
-      {/* Recent Activities and Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RecentLoansTable />
-        </div>
-        <QuickActions />
+      {/* Recent Activities */}
+      <div className="w-full">
+        <RecentLoansTable />
       </div>
     </div>
   );

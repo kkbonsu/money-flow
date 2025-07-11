@@ -132,5 +132,8 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Fixed schema validation by adding dueDate transformation to handle string-to-Date conversion
     - ✅ **COMPLETED**: Full Mark as Paid functionality working correctly with proper validation and database updates
     - ✅ **COMPLETED**: Payment schedule automatically advances to next payment, progress bar updates, and status changes correctly
+    - ✅ **COMPLETED**: Mark as Unpaid functionality implemented to reverse paid status back to pending
+    - ✅ **COMPLETED**: Replaced disabled "Paid" buttons with active "Mark as Unpaid" buttons in payment modal
+    - ✅ **COMPLETED**: Dashboard Quick Actions card removed as requested
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
