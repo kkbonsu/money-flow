@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calculator, DollarSign, Calendar, TrendingUp, Sparkles, Plus, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -70,16 +70,14 @@ export default function LoanSimulator() {
   const createLoanMutation = useMutation({
     mutationFn: async (data: { customer: any; loan: any }) => {
       // First create the customer
-      const customerResponse = await apiRequest(`/api/customers`, {
+      const customerResponse = await apiRequest('/api/customers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data.customer),
       });
       
       // Then create the loan with the customer ID
-      const loanResponse = await apiRequest(`/api/loans`, {
+      const loanResponse = await apiRequest('/api/loans', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...data.loan,
           customerId: customerResponse.id
@@ -521,6 +519,9 @@ export default function LoanSimulator() {
                             <User className="w-5 h-5" />
                             Create New Loan
                           </DialogTitle>
+                          <DialogDescription>
+                            Create a new loan in the loan book using the calculated loan details and customer information.
+                          </DialogDescription>
                         </DialogHeader>
                         
                         <div className="space-y-6">
