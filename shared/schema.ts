@@ -259,6 +259,9 @@ export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).
   paidAmount: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined && val !== null ? val.toString() : undefined
   ),
+  dueDate: z.union([z.string(), z.date()]).transform((val) => 
+    val instanceof Date ? val : new Date(val)
+  ),
   paidDate: z.union([z.string(), z.date()]).optional().transform((val) => 
     val instanceof Date ? val : val ? new Date(val) : undefined
   ),
