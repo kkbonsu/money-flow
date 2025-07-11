@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Check } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { apiClient } from '@/lib/api';
 import { LoanBook, Customer } from '@shared/schema';
 
 export default function RecentLoansTable() {
+  const [, setLocation] = useLocation();
+  
   const { data: loans = [], isLoading: loansLoading } = useQuery({
     queryKey: ['/api/loans'],
     select: (data: LoanBook[]) => {
@@ -56,7 +58,7 @@ export default function RecentLoansTable() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Recent Loan Applications</CardTitle>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => setLocation('/loan-book')}>
             View All
           </Button>
         </div>
@@ -70,13 +72,12 @@ export default function RecentLoansTable() {
                 <th>Amount</th>
                 <th>Status</th>
                 <th>Date</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loans.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={4} className="text-center py-8 text-muted-foreground">
                     No recent loan applications found
                   </td>
                 </tr>
@@ -115,16 +116,6 @@ export default function RecentLoansTable() {
                         <span className="text-sm text-muted-foreground">
                           {new Date(loan.createdAt || '').toLocaleDateString()}
                         </span>
-                      </td>
-                      <td>
-                        <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Check className="w-4 h-4" />
-                          </Button>
-                        </div>
                       </td>
                     </tr>
                   );
