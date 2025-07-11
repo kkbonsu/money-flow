@@ -10,7 +10,7 @@ import {
   DollarSign, 
   Receipt, 
   Building, 
-  Coins, 
+
   Package, 
   HomeIcon, 
   BarChart, 
@@ -36,7 +36,6 @@ const navigationItems = [
       { name: 'Income Management', href: '/income', icon: DollarSign },
       { name: 'Expenses', href: '/expenses', icon: Receipt },
       { name: 'Bank Management', href: '/bank-management', icon: Building },
-      { name: 'Petty Cash', href: '/petty-cash', icon: Coins },
     ]
   },
   { 

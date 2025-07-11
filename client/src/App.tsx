@@ -14,7 +14,7 @@ import Staff from "@/pages/Staff";
 import Income from "@/pages/Income";
 import Expenses from "@/pages/Expenses";
 import BankManagement from "@/pages/BankManagement";
-import PettyCash from "@/pages/PettyCash";
+
 import Inventory from "@/pages/Inventory";
 import RentManagement from "@/pages/RentManagement";
 import Assets from "@/pages/Assets";
@@ -36,7 +36,7 @@ function Router() {
       <Route path="/income" component={Income} />
       <Route path="/expenses" component={Expenses} />
       <Route path="/bank-management" component={BankManagement} />
-      <Route path="/petty-cash" component={PettyCash} />
+
       <Route path="/inventory" component={Inventory} />
       <Route path="/rent-management" component={RentManagement} />
       <Route path="/assets" component={Assets} />
