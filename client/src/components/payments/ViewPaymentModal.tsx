@@ -65,6 +65,43 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
     },
   });
 
+  const markAsUnpaidMutation = useMutation({
+    mutationFn: (paymentId: number) => {
+      const paymentToUpdate = allPayments.find((p: PaymentSchedule) => p.id === paymentId);
+      if (!paymentToUpdate) throw new Error('Payment not found');
+      
+      const updateData = {
+        loanId: paymentToUpdate.loanId,
+        dueDate: paymentToUpdate.dueDate,
+        amount: paymentToUpdate.amount,
+        principalAmount: paymentToUpdate.principalAmount,
+        interestAmount: paymentToUpdate.interestAmount,
+        status: 'pending',
+        paidDate: null,
+        paidAmount: null
+      };
+      
+      console.log('Marking payment as unpaid with data:', JSON.stringify(updateData, null, 2));
+      return apiClient.put(`/payment-schedules/${paymentId}`, updateData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/payment-schedules'] });
+      toast({
+        title: "Payment Updated",
+        description: "Payment has been marked as unpaid successfully.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Payment unpaid error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update payment status.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!payment || !loan) return null;
 
   const customer = customers.find((c: Customer) => c.id === loan.customerId);
@@ -241,9 +278,14 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
               )}
               {nextPayment.status === 'paid' && (
                 <div className="pt-4 border-t">
-                  <Button disabled className="w-full bg-green-100 text-green-800 cursor-not-allowed">
+                  <Button
+                    onClick={() => markAsUnpaidMutation.mutate(nextPayment.id)}
+                    disabled={markAsUnpaidMutation.isPending}
+                    className="w-full"
+                    variant="outline"
+                  >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Paid
+                    {markAsUnpaidMutation.isPending ? 'Processing...' : 'Mark as Unpaid'}
                   </Button>
                 </div>
               )}
@@ -305,11 +347,12 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                               <Button
                                 variant="outline"
                                 size="sm"
-                                disabled
-                                className="h-6 px-2 text-xs bg-green-100 text-green-800 cursor-not-allowed"
+                                onClick={() => markAsUnpaidMutation.mutate(p.id)}
+                                disabled={markAsUnpaidMutation.isPending}
+                                className="h-6 px-2 text-xs"
                               >
                                 <CheckCircle className="w-3 h-3 mr-1" />
-                                Paid
+                                Mark Unpaid
                               </Button>
                             ) : null}
                           </td>
