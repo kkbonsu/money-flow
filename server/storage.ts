@@ -602,6 +602,37 @@ export class DatabaseStorage implements IStorage {
     await db.delete(reports).where(eq(reports.id, id));
   }
 
+  // Get loan portfolio data by month
+  async getLoanPortfolioData(): Promise<any> {
+    const currentYear = new Date().getFullYear();
+    const months = [];
+    
+    // Generate data for all 12 months of current year
+    for (let month = 1; month <= 12; month++) {
+      const startOfMonth = new Date(currentYear, month - 1, 1);
+      const endOfMonth = new Date(currentYear, month, 0);
+      
+      const [monthData] = await db
+        .select({ 
+          total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
+          count: sql<number>`COUNT(*)` 
+        })
+        .from(loanBooks)
+        .where(sql`
+          ${loanBooks.status} IN ('approved', 'disbursed') 
+          AND ${loanBooks.createdAt} <= ${endOfMonth}
+        `);
+      
+      months.push({
+        month: new Date(currentYear, month - 1, 1).toLocaleString('default', { month: 'short' }),
+        totalLoans: monthData?.total || 0,
+        loanCount: monthData?.count || 0
+      });
+    }
+    
+    return months;
+  }
+
   // Dashboard metrics
   async getDashboardMetrics(): Promise<any> {
     const [totalLoansResult] = await db

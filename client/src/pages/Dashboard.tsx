@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { BookOpen, Users, Clock, DollarSign } from 'lucide-react';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ChartCard from '@/components/dashboard/ChartCard';
+import LoanPortfolioChart from '@/components/dashboard/LoanPortfolioChart';
 import RecentLoansTable from '@/components/dashboard/RecentLoansTable';
 import { DashboardMetrics } from '@/types';
 
@@ -81,7 +82,7 @@ export default function Dashboard() {
 
       {/* Charts and Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Loan Portfolio Overview" />
+        <LoanPortfolioChart />
         <ChartCard title="Payment Status">
           <div className="space-y-4">
             <div className="flex items-center justify-between">

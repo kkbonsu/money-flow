@@ -146,5 +146,8 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Backfill functionality added to create income records for existing paid payments
     - ✅ **COMPLETED**: Monthly revenue card simplified to show only sum of income table amounts ($375)
     - ✅ **COMPLETED**: Monthly revenue card renamed to "Monthly Income" and updated to show current month income only
+    - ✅ **COMPLETED**: Loan Portfolio Overview card now displays line chart showing total loans by month
+    - ✅ **COMPLETED**: Added backend API endpoint for loan portfolio data across all months of current year
+    - ✅ **COMPLETED**: Implemented responsive line chart using recharts library with proper formatting
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.

@@ -674,6 +674,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Loan portfolio data
+  app.get("/api/dashboard/loan-portfolio", authenticateToken, async (req, res) => {
+    try {
+      const data = await storage.getLoanPortfolioData();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loan portfolio data" });
+    }
+  });
+
   // Backfill interest payments to income table
   app.post("/api/backfill/interest-payments", authenticateToken, async (req, res) => {
     try {
