@@ -262,84 +262,84 @@ export default function LoanSimulator() {
               transition={{ duration: 0.6, delay: 0.3 }}
             >
               <Card className="overflow-hidden border-2 border-primary/20 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border-b">
-                  <CardTitle className="flex items-center gap-3 text-xl">
+                <CardHeader className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border-b py-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <motion.div
                       animate={{ scale: [1, 1.1, 1] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full"
+                      className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-full"
                     >
-                      <DollarSign className="w-6 h-6 text-green-600" />
+                      <DollarSign className="w-5 h-5 text-green-600" />
                     </motion.div>
                     Loan Summary
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-4">
                   {/* Key Metrics Row */}
-                  <div className="grid grid-cols-1 gap-6 mb-8">
+                  <div className="grid grid-cols-1 gap-3 mb-4">
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.5 }}
-                      className="text-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/20"
+                      className="text-center p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/20"
                     >
-                      <div className="text-sm text-muted-foreground mb-2">Monthly Payment</div>
-                      <div className="text-4xl font-bold text-primary">
+                      <div className="text-xs text-muted-foreground mb-1">Monthly Payment</div>
+                      <div className="text-2xl font-bold text-primary">
                         ${simulation.monthlyPayment.toFixed(2)}
                       </div>
                     </motion.div>
                   </div>
 
                   {/* Details Grid */}
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 gap-2">
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.6 }}
-                      className="flex justify-between items-center p-4 bg-muted/30 rounded-lg"
+                      className="flex justify-between items-center p-3 bg-muted/30 rounded-lg"
                     >
-                      <span className="font-medium text-foreground">Loan Amount</span>
-                      <span className="text-lg font-bold text-foreground">${simulation.loanAmount.toLocaleString()}</span>
+                      <span className="text-sm font-medium text-foreground">Loan Amount</span>
+                      <span className="text-sm font-bold text-foreground">${simulation.loanAmount.toLocaleString()}</span>
                     </motion.div>
                     
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.7 }}
-                      className="flex justify-between items-center p-4 bg-muted/30 rounded-lg"
+                      className="flex justify-between items-center p-3 bg-muted/30 rounded-lg"
                     >
-                      <span className="font-medium text-foreground">Interest Rate</span>
-                      <span className="text-lg font-bold text-orange-600">{simulation.interestRate}%</span>
+                      <span className="text-sm font-medium text-foreground">Interest Rate</span>
+                      <span className="text-sm font-bold text-orange-600">{simulation.interestRate}%</span>
                     </motion.div>
                     
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.8 }}
-                      className="flex justify-between items-center p-4 bg-muted/30 rounded-lg"
+                      className="flex justify-between items-center p-3 bg-muted/30 rounded-lg"
                     >
-                      <span className="font-medium text-foreground">Loan Term</span>
-                      <span className="text-lg font-bold text-blue-600">{simulation.loanTerm} months</span>
+                      <span className="text-sm font-medium text-foreground">Loan Term</span>
+                      <span className="text-sm font-bold text-blue-600">{simulation.loanTerm} months</span>
                     </motion.div>
                     
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.9 }}
-                      className="flex justify-between items-center p-4 bg-muted/30 rounded-lg"
+                      className="flex justify-between items-center p-3 bg-muted/30 rounded-lg"
                     >
-                      <span className="font-medium text-foreground">Total Payments</span>
-                      <span className="text-lg font-bold text-foreground">${simulation.totalPayments.toFixed(2)}</span>
+                      <span className="text-sm font-medium text-foreground">Total Payments</span>
+                      <span className="text-sm font-bold text-foreground">${simulation.totalPayments.toFixed(2)}</span>
                     </motion.div>
                     
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 1.0 }}
-                      className="flex justify-between items-center p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800"
+                      className="flex justify-between items-center p-3 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg border border-red-200 dark:border-red-800"
                     >
-                      <span className="font-medium text-foreground">Total Interest</span>
-                      <span className="text-lg font-bold text-red-600">${simulation.totalInterest.toFixed(2)}</span>
+                      <span className="text-sm font-medium text-foreground">Total Interest</span>
+                      <span className="text-sm font-bold text-red-600">${simulation.totalInterest.toFixed(2)}</span>
                     </motion.div>
                   </div>
 
@@ -348,10 +348,10 @@ export default function LoanSimulator() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 1.1 }}
-                    className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 rounded-lg border"
+                    className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 rounded-lg border"
                   >
-                    <div className="text-sm font-medium text-center mb-3">Payment Breakdown</div>
-                    <div className="flex h-4 rounded-full overflow-hidden">
+                    <div className="text-xs font-medium text-center mb-2">Payment Breakdown</div>
+                    <div className="flex h-3 rounded-full overflow-hidden">
                       <div 
                         className="bg-green-500 transition-all duration-1000"
                         style={{ width: `${(simulation.loanAmount / simulation.totalPayments) * 100}%` }}
@@ -361,7 +361,7 @@ export default function LoanSimulator() {
                         style={{ width: `${(simulation.totalInterest / simulation.totalPayments) * 100}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs mt-2">
+                    <div className="flex justify-between text-xs mt-1">
                       <span className="text-green-600">● Principal ({((simulation.loanAmount / simulation.totalPayments) * 100).toFixed(1)}%)</span>
                       <span className="text-red-600">● Interest ({((simulation.totalInterest / simulation.totalPayments) * 100).toFixed(1)}%)</span>
                     </div>
