@@ -23,10 +23,7 @@ export async function apiRequest(
 ): Promise<Response> {
   const res = await fetch(url, {
     method,
-    headers: {
-      ...getAuthHeaders(),
-      ...(data ? {} : { 'Content-Type': 'application/json' }),
-    },
+    headers: getAuthHeaders(),
     body: data ? JSON.stringify(data) : undefined,
   });
 
