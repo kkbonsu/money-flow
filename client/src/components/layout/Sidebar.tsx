@@ -30,7 +30,7 @@ const navigationItems = [
       { name: 'Payment Schedule', href: '/payment-schedule', icon: Calendar },
       { name: 'Income Management', href: '/income', icon: DollarSign },
       { name: 'Expense Management', href: '/expenses', icon: Receipt },
-      { name: 'Debt Management', href: '/debt-management', icon: CreditCard },
+      { name: 'Debt Management (coming soon)', href: '/debt-management', icon: CreditCard },
       { name: 'Banking (coming soon)', href: '/bank-management', icon: Building },
     ]
   },
