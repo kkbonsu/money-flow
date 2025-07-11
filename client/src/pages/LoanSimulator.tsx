@@ -60,6 +60,15 @@ export default function LoanSimulator() {
     purpose: ''
   });
 
+  const [loanData, setLoanData] = useState({
+    status: 'pending',
+    collateral: '',
+    notes: '',
+    employerName: '',
+    monthlyIncome: '',
+    existingDebt: ''
+  });
+
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     setLocation('/login');
@@ -208,10 +217,25 @@ export default function LoanSimulator() {
       creditScore: '',
       purpose: ''
     });
+    setLoanData({
+      status: 'pending',
+      collateral: '',
+      notes: '',
+      employerName: '',
+      monthlyIncome: '',
+      existingDebt: ''
+    });
   };
 
   const handleCustomerInputChange = (field: string, value: string) => {
     setCustomerData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleLoanInputChange = (field: string, value: string) => {
+    setLoanData(prev => ({
       ...prev,
       [field]: value
     }));
@@ -231,12 +255,27 @@ export default function LoanSimulator() {
       status: 'active'
     };
 
+    // Create a detailed purpose description including additional information
+    let purposeDescription = customerData.purpose || 'Personal loan';
+    
+    // Add additional information to the purpose field
+    const additionalInfo = [];
+    if (loanData.employerName) additionalInfo.push(`Employer: ${loanData.employerName}`);
+    if (loanData.monthlyIncome) additionalInfo.push(`Monthly Income: $${loanData.monthlyIncome}`);
+    if (loanData.existingDebt) additionalInfo.push(`Existing Debt: $${loanData.existingDebt}`);
+    if (loanData.collateral) additionalInfo.push(`Collateral: ${loanData.collateral}`);
+    if (loanData.notes) additionalInfo.push(`Notes: ${loanData.notes}`);
+    
+    if (additionalInfo.length > 0) {
+      purposeDescription += ` | ${additionalInfo.join(' | ')}`;
+    }
+
     const loanPayload = {
       loanAmount: simulation.loanAmount,
       interestRate: simulation.interestRate,
       term: simulation.loanTerm,
-      status: 'pending',
-      purpose: customerData.purpose || 'Personal loan',
+      status: loanData.status || 'pending',
+      purpose: purposeDescription,
       dateApplied: new Date(),
       startDate: simulation.startDate,
       disbursedAmount: simulation.loanAmount,
@@ -656,6 +695,86 @@ export default function LoanSimulator() {
                                   <SelectItem value="Other">Other</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </div>
+                          </div>
+
+                          {/* Additional Loan Information */}
+                          <div className="space-y-4">
+                            <h3 className="font-semibold">Additional Loan Information</h3>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="status">Loan Status</Label>
+                                <Select value={loanData.status} onValueChange={(value) => handleLoanInputChange('status', value)}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select loan status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="approved">Approved</SelectItem>
+                                    <SelectItem value="rejected">Rejected</SelectItem>
+                                    <SelectItem value="disbursed">Disbursed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="monthlyIncome">Monthly Income</Label>
+                                <Input
+                                  id="monthlyIncome"
+                                  type="number"
+                                  value={loanData.monthlyIncome}
+                                  onChange={(e) => handleLoanInputChange('monthlyIncome', e.target.value)}
+                                  placeholder="Enter monthly income"
+                                  min="0"
+                                  step="0.01"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="employerName">Employer Name</Label>
+                                <Input
+                                  id="employerName"
+                                  value={loanData.employerName}
+                                  onChange={(e) => handleLoanInputChange('employerName', e.target.value)}
+                                  placeholder="Enter employer name"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="existingDebt">Existing Debt</Label>
+                                <Input
+                                  id="existingDebt"
+                                  type="number"
+                                  value={loanData.existingDebt}
+                                  onChange={(e) => handleLoanInputChange('existingDebt', e.target.value)}
+                                  placeholder="Enter existing debt amount"
+                                  min="0"
+                                  step="0.01"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="collateral">Collateral/Security</Label>
+                              <Input
+                                id="collateral"
+                                value={loanData.collateral}
+                                onChange={(e) => handleLoanInputChange('collateral', e.target.value)}
+                                placeholder="Enter collateral details (if any)"
+                              />
+                            </div>
+
+                            <div>
+                              <Label htmlFor="notes">Additional Notes</Label>
+                              <textarea
+                                id="notes"
+                                value={loanData.notes}
+                                onChange={(e) => handleLoanInputChange('notes', e.target.value)}
+                                placeholder="Enter any additional notes or comments"
+                                className="w-full p-2 border border-input rounded-md resize-none"
+                                rows={3}
+                              />
                             </div>
                           </div>
 
