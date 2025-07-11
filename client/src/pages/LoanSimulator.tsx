@@ -70,21 +70,17 @@ export default function LoanSimulator() {
   const createLoanMutation = useMutation({
     mutationFn: async (data: { customer: any; loan: any }) => {
       // First create the customer
-      const customerResponse = await apiRequest('/api/customers', {
-        method: 'POST',
-        body: JSON.stringify(data.customer),
-      });
+      const customerResponse = await apiRequest('POST', '/api/customers', data.customer);
+      const customerJson = await customerResponse.json();
       
       // Then create the loan with the customer ID
-      const loanResponse = await apiRequest('/api/loans', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...data.loan,
-          customerId: customerResponse.id
-        }),
+      const loanResponse = await apiRequest('POST', '/api/loans', {
+        ...data.loan,
+        customerId: customerJson.id
       });
+      const loanJson = await loanResponse.json();
       
-      return { customer: customerResponse, loan: loanResponse };
+      return { customer: customerJson, loan: loanJson };
     },
     onSuccess: () => {
       toast({
