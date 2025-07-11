@@ -81,10 +81,7 @@ export default function UserProfile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
-      await apiRequest('/api/users/profile', {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
+      await apiRequest('PUT', '/api/users/profile', data);
     },
     onSuccess: () => {
       toast({
@@ -104,10 +101,7 @@ export default function UserProfile() {
 
   const updatePasswordMutation = useMutation({
     mutationFn: async (data: any) => {
-      await apiRequest('/api/users/password', {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
+      await apiRequest('PUT', '/api/users/password', data);
     },
     onSuccess: () => {
       toast({
