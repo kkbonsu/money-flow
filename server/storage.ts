@@ -622,7 +622,7 @@ export class DatabaseStorage implements IStorage {
       .from(paymentSchedules)
       .where(eq(paymentSchedules.status, 'pending'));
 
-    const [monthlyRevenueResult] = await db
+    const [monthlyIncomeResult] = await db
       .select({ total: sql<number>`COALESCE(SUM(${incomeManagement.amount}), 0)` })
       .from(incomeManagement)
       .where(sql`DATE_TRUNC('month', ${incomeManagement.date}) = DATE_TRUNC('month', CURRENT_DATE)`);
@@ -631,7 +631,7 @@ export class DatabaseStorage implements IStorage {
       totalLoans: `$${totalLoansResult?.total?.toLocaleString() || '0'}`,
       activeCustomers: activeCustomersResult?.count || 0,
       pendingPayments: `$${pendingPaymentsResult?.total?.toLocaleString() || '0'}`,
-      monthlyRevenue: `$${monthlyRevenueResult?.total?.toLocaleString() || '0'}`,
+      monthlyIncome: `$${monthlyIncomeResult?.total?.toLocaleString() || '0'}`,
       loanGrowth: 12.5,
       customerGrowth: 8.2,
       paymentGrowth: -3.1,

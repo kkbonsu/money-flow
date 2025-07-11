@@ -2,7 +2,7 @@ export interface DashboardMetrics {
   totalLoans: string;
   activeCustomers: number;
   pendingPayments: string;
-  monthlyRevenue: string;
+  monthlyIncome: string;
   loanGrowth: number;
   customerGrowth: number;
   paymentGrowth: number;

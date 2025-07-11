@@ -69,8 +69,8 @@ export default function Dashboard() {
           }}
         />
         <MetricCard
-          title="Monthly Revenue"
-          value={metrics?.monthlyRevenue || '$0'}
+          title="Monthly Income"
+          value={metrics?.monthlyIncome || '$0'}
           icon={DollarSign}
           trend={{
             value: metrics?.revenueGrowth || 0,

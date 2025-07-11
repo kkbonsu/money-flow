@@ -145,5 +145,6 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Interest payments removed from income table when payments are marked as unpaid
     - ✅ **COMPLETED**: Backfill functionality added to create income records for existing paid payments
     - ✅ **COMPLETED**: Monthly revenue card simplified to show only sum of income table amounts ($375)
+    - ✅ **COMPLETED**: Monthly revenue card renamed to "Monthly Income" and updated to show current month income only
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
