@@ -5,10 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calculator, DollarSign, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calculator, DollarSign, Calendar, TrendingUp, Sparkles, Plus, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface LoanSimulation {
   loanAmount: number;
@@ -33,6 +37,8 @@ interface PaymentScheduleItem {
 export default function LoanSimulator() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     loanAmount: '',
     interestRate: '',
@@ -42,12 +48,65 @@ export default function LoanSimulator() {
   });
   const [simulation, setSimulation] = useState<LoanSimulation | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [showCreateLoanModal, setShowCreateLoanModal] = useState(false);
+  const [customerData, setCustomerData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    nationalId: '',
+    creditScore: '',
+    purpose: ''
+  });
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     setLocation('/login');
     return null;
   }
+
+  // Mutation for creating customer and loan
+  const createLoanMutation = useMutation({
+    mutationFn: async (data: { customer: any; loan: any }) => {
+      // First create the customer
+      const customerResponse = await apiRequest(`/api/customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data.customer),
+      });
+      
+      // Then create the loan with the customer ID
+      const loanResponse = await apiRequest(`/api/loans`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data.loan,
+          customerId: customerResponse.id
+        }),
+      });
+      
+      return { customer: customerResponse, loan: loanResponse };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Customer and loan created successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/loans'] });
+      setShowCreateLoanModal(false);
+      resetCustomerData();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create customer and loan. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error creating loan:', error);
+    },
+  });
 
   const calculateLoan = async () => {
     setIsCalculating(true);
@@ -132,6 +191,58 @@ export default function LoanSimulator() {
       startDate: new Date().toISOString().split('T')[0]
     });
     setSimulation(null);
+  };
+
+  const resetCustomerData = () => {
+    setCustomerData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: '',
+      nationalId: '',
+      creditScore: '',
+      purpose: ''
+    });
+  };
+
+  const handleCustomerInputChange = (field: string, value: string) => {
+    setCustomerData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleCreateLoan = () => {
+    if (!simulation) return;
+
+    const customerPayload = {
+      firstName: customerData.firstName,
+      lastName: customerData.lastName,
+      email: customerData.email,
+      phone: customerData.phone,
+      address: customerData.address,
+      nationalId: customerData.nationalId,
+      creditScore: customerData.creditScore ? parseInt(customerData.creditScore) : null,
+      status: 'active'
+    };
+
+    const loanPayload = {
+      loanAmount: simulation.loanAmount.toString(),
+      interestRate: simulation.interestRate.toString(),
+      term: simulation.loanTerm,
+      status: 'pending',
+      purpose: customerData.purpose || 'Personal loan',
+      dateApplied: new Date().toISOString(),
+      startDate: simulation.startDate.toISOString(),
+      disbursedAmount: simulation.loanAmount.toString(),
+      outstandingBalance: simulation.loanAmount.toString(),
+    };
+
+    createLoanMutation.mutate({
+      customer: customerPayload,
+      loan: loanPayload
+    });
   };
 
   return (
@@ -385,6 +496,186 @@ export default function LoanSimulator() {
                       <span className="text-green-600">● Principal ({((simulation.loanAmount / simulation.totalPayments) * 100).toFixed(1)}%)</span>
                       <span className="text-red-600">● Interest ({((simulation.totalInterest / simulation.totalPayments) * 100).toFixed(1)}%)</span>
                     </div>
+                  </motion.div>
+
+                  {/* Create Loan Button */}
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 1.2 }}
+                    className="mt-4"
+                  >
+                    <Dialog open={showCreateLoanModal} onOpenChange={setShowCreateLoanModal}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center gap-2"
+                          onClick={() => setShowCreateLoanModal(true)}
+                        >
+                          <Plus className="w-4 h-4" />
+                          Create Loan in Loan Book
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <User className="w-5 h-5" />
+                            Create New Loan
+                          </DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="space-y-6">
+                          {/* Loan Summary */}
+                          <div className="bg-muted/20 p-4 rounded-lg">
+                            <h3 className="font-semibold mb-3">Loan Details</h3>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div className="flex justify-between">
+                                <span>Loan Amount:</span>
+                                <span className="font-medium">${simulation.loanAmount.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Interest Rate:</span>
+                                <span className="font-medium">{simulation.interestRate}%</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Term:</span>
+                                <span className="font-medium">{simulation.loanTerm} months</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Monthly Payment:</span>
+                                <span className="font-medium">${simulation.monthlyPayment.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Customer Details Form */}
+                          <div className="space-y-4">
+                            <h3 className="font-semibold">Customer Information</h3>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="firstName">First Name *</Label>
+                                <Input
+                                  id="firstName"
+                                  value={customerData.firstName}
+                                  onChange={(e) => handleCustomerInputChange('firstName', e.target.value)}
+                                  placeholder="Enter first name"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="lastName">Last Name *</Label>
+                                <Input
+                                  id="lastName"
+                                  value={customerData.lastName}
+                                  onChange={(e) => handleCustomerInputChange('lastName', e.target.value)}
+                                  placeholder="Enter last name"
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="email">Email *</Label>
+                                <Input
+                                  id="email"
+                                  type="email"
+                                  value={customerData.email}
+                                  onChange={(e) => handleCustomerInputChange('email', e.target.value)}
+                                  placeholder="Enter email address"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="phone">Phone *</Label>
+                                <Input
+                                  id="phone"
+                                  value={customerData.phone}
+                                  onChange={(e) => handleCustomerInputChange('phone', e.target.value)}
+                                  placeholder="Enter phone number"
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="address">Address *</Label>
+                              <Input
+                                id="address"
+                                value={customerData.address}
+                                onChange={(e) => handleCustomerInputChange('address', e.target.value)}
+                                placeholder="Enter full address"
+                                required
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="nationalId">National ID</Label>
+                                <Input
+                                  id="nationalId"
+                                  value={customerData.nationalId}
+                                  onChange={(e) => handleCustomerInputChange('nationalId', e.target.value)}
+                                  placeholder="Enter national ID"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="creditScore">Credit Score</Label>
+                                <Input
+                                  id="creditScore"
+                                  type="number"
+                                  value={customerData.creditScore}
+                                  onChange={(e) => handleCustomerInputChange('creditScore', e.target.value)}
+                                  placeholder="Enter credit score"
+                                  min="300"
+                                  max="850"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor="purpose">Loan Purpose</Label>
+                              <Select value={customerData.purpose} onValueChange={(value) => handleCustomerInputChange('purpose', value)}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select loan purpose" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Personal loan">Personal loan</SelectItem>
+                                  <SelectItem value="Business loan">Business loan</SelectItem>
+                                  <SelectItem value="Home improvement">Home improvement</SelectItem>
+                                  <SelectItem value="Education">Education</SelectItem>
+                                  <SelectItem value="Medical expenses">Medical expenses</SelectItem>
+                                  <SelectItem value="Vehicle purchase">Vehicle purchase</SelectItem>
+                                  <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => {
+                                setShowCreateLoanModal(false);
+                                resetCustomerData();
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              type="button" 
+                              onClick={handleCreateLoan}
+                              disabled={createLoanMutation.isPending || !customerData.firstName || !customerData.lastName || !customerData.email || !customerData.phone || !customerData.address}
+                              className="bg-primary hover:bg-primary/90"
+                            >
+                              {createLoanMutation.isPending ? 'Creating...' : 'Create Loan'}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </motion.div>
                 </CardContent>
               </Card>
