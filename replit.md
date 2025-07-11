@@ -159,5 +159,7 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Reorganized navigation structure: moved Staff to Assets & Operations, moved Financial tabs to Management section
     - ✅ **COMPLETED**: Renamed Bank Management to "Banking (coming soon)" as requested
     - ✅ **COMPLETED**: Removed select checkboxes from customer management table
+    - ✅ **COMPLETED**: Removed search field from header next to theme toggle
+    - ✅ **COMPLETED**: Removed "Dashboard" text from header left side
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
