@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity } from 'lucide-react';
+import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -184,9 +184,10 @@ export default function UserProfile() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -376,6 +377,73 @@ export default function UserProfile() {
                   </Button>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Account Settings
+              </CardTitle>
+              <CardDescription>
+                Manage your account preferences and settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Account Status</h4>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      Active
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Your account is active and fully operational
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Account Role</h4>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="capitalize">
+                      {user?.role}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Current access level and permissions
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Account Created</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.createdAt ? format(new Date(user.createdAt), 'PPP') : 'Not available'}
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Last Updated</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.updatedAt ? format(new Date(user.updatedAt), 'PPP') : 'Not available'}
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    <div>
+                      <h4 className="font-medium">Data Privacy</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Your account data is securely stored and protected according to our privacy policy
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
