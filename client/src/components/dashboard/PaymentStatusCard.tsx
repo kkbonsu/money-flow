@@ -47,21 +47,14 @@ export default function PaymentStatusCard() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Payment Status</CardTitle>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm">7D</Button>
-            <Button variant="ghost" size="sm">30D</Button>
-            <Button variant="ghost" size="sm">90D</Button>
-          </div>
-        </div>
+        <CardTitle className="text-lg font-semibold">Payment Status</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-muted-foreground">On Time</span>
+              <span className="text-sm text-muted-foreground">On-Time/Pending</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium">{paymentData?.onTime || 0}</span>
