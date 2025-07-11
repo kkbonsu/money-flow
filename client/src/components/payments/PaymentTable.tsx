@@ -188,25 +188,13 @@ export default function PaymentTable() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewClick(summary)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {summary.nextPayment && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={status === 'paid'}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Mark Paid
-                            </Button>
-                          )}
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewClick(summary)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
