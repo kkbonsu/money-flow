@@ -602,6 +602,63 @@ export class DatabaseStorage implements IStorage {
     await db.delete(reports).where(eq(reports.id, id));
   }
 
+  // Get payment status data
+  async getPaymentStatusData(): Promise<any> {
+    const currentDate = new Date();
+    const sevenDaysAgo = new Date(currentDate);
+    sevenDaysAgo.setDate(currentDate.getDate() - 7);
+    
+    const thirtyDaysAgo = new Date(currentDate);
+    thirtyDaysAgo.setDate(currentDate.getDate() - 30);
+    
+    const ninetyDaysAgo = new Date(currentDate);
+    ninetyDaysAgo.setDate(currentDate.getDate() - 90);
+
+    // Get pending payments
+    const [pendingPayments] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(paymentSchedules)
+      .where(eq(paymentSchedules.status, 'pending'));
+
+    // Get overdue payments by time ranges
+    const [overdue7Days] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(paymentSchedules)
+      .where(sql`
+        ${paymentSchedules.status} = 'pending' 
+        AND ${paymentSchedules.dueDate} < ${sevenDaysAgo}
+      `);
+
+    const [overdue30Days] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(paymentSchedules)
+      .where(sql`
+        ${paymentSchedules.status} = 'pending' 
+        AND ${paymentSchedules.dueDate} < ${thirtyDaysAgo}
+      `);
+
+    const [overdue90Days] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(paymentSchedules)
+      .where(sql`
+        ${paymentSchedules.status} = 'pending' 
+        AND ${paymentSchedules.dueDate} < ${ninetyDaysAgo}
+      `);
+
+    const totalOverdue = overdue7Days?.count || 0;
+    const totalPending = pendingPayments?.count || 0;
+    const onTime = Math.max(0, totalPending - totalOverdue);
+
+    return {
+      onTime,
+      overdue7Days: overdue7Days?.count || 0,
+      overdue30Days: overdue30Days?.count || 0,
+      overdue90Days: overdue90Days?.count || 0,
+      totalPending,
+      totalOverdue
+    };
+  }
+
   // Get loan portfolio data by month
   async getLoanPortfolioData(): Promise<any> {
     const currentYear = new Date().getFullYear();

@@ -684,6 +684,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment status data
+  app.get("/api/dashboard/payment-status", authenticateToken, async (req, res) => {
+    try {
+      const data = await storage.getPaymentStatusData();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment status data" });
+    }
+  });
+
   // Backfill interest payments to income table
   app.post("/api/backfill/interest-payments", authenticateToken, async (req, res) => {
     try {

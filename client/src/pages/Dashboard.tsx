@@ -5,6 +5,7 @@ import { BookOpen, Users, Clock, DollarSign } from 'lucide-react';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ChartCard from '@/components/dashboard/ChartCard';
 import LoanPortfolioChart from '@/components/dashboard/LoanPortfolioChart';
+import PaymentStatusCard from '@/components/dashboard/PaymentStatusCard';
 import RecentLoansTable from '@/components/dashboard/RecentLoansTable';
 import { DashboardMetrics } from '@/types';
 
@@ -83,40 +84,7 @@ export default function Dashboard() {
       {/* Charts and Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LoanPortfolioChart />
-        <ChartCard title="Payment Status">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-secondary rounded-full"></div>
-                <span className="text-sm text-muted-foreground">On Time</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">847</span>
-                <span className="text-sm text-secondary">68%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-accent rounded-full"></div>
-                <span className="text-sm text-muted-foreground">Late</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">284</span>
-                <span className="text-sm text-accent">23%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-destructive rounded-full"></div>
-                <span className="text-sm text-muted-foreground">Overdue</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">116</span>
-                <span className="text-sm text-destructive">9%</span>
-              </div>
-            </div>
-          </div>
-        </ChartCard>
+        <PaymentStatusCard />
       </div>
 
       {/* Recent Activities */}
