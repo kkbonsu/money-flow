@@ -43,8 +43,7 @@ export default function LoanSimulator() {
     loanAmount: '',
     interestRate: '',
     loanTerm: '',
-    loanTermType: 'months',
-    startDate: new Date().toISOString().split('T')[0]
+    loanTermType: 'months'
   });
   const [simulation, setSimulation] = useState<LoanSimulation | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -111,7 +110,7 @@ export default function LoanSimulator() {
         ? parseInt(formData.loanTerm) * 12 
         : parseInt(formData.loanTerm);
 
-      if (!principal || !annualRate || !termInMonths || !formData.startDate) {
+      if (!principal || !annualRate || !termInMonths) {
         setIsCalculating(false);
         return;
       }
@@ -123,10 +122,12 @@ export default function LoanSimulator() {
       const totalPayments = monthlyPayment * termInMonths;
       const totalInterest = totalPayments - principal;
 
-      // Generate payment schedule
+      // Generate payment schedule starting from next month
       const schedule: PaymentScheduleItem[] = [];
       let remainingBalance = principal;
-      const startDate = new Date(formData.startDate);
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() + 1);
+      startDate.setDate(1);
 
       for (let i = 1; i <= termInMonths; i++) {
         const interestAmount = remainingBalance * monthlyRate;
@@ -135,7 +136,7 @@ export default function LoanSimulator() {
 
         // Calculate payment date by adding months to start date
         const paymentDate = new Date(startDate);
-        paymentDate.setMonth(paymentDate.getMonth() + i);
+        paymentDate.setMonth(paymentDate.getMonth() + i - 1);
 
         schedule.push({
           paymentNumber: i,
@@ -151,7 +152,7 @@ export default function LoanSimulator() {
         loanAmount: principal,
         interestRate: annualRate * 100,
         loanTerm: termInMonths,
-        startDate: new Date(formData.startDate),
+        startDate: startDate,
         monthlyPayment,
         totalPayments,
         totalInterest,
@@ -177,8 +178,7 @@ export default function LoanSimulator() {
       loanAmount: '',
       interestRate: '',
       loanTerm: '',
-      loanTermType: 'months',
-      startDate: new Date().toISOString().split('T')[0]
+      loanTermType: 'months'
     });
     setSimulation(null);
   };
@@ -304,16 +304,6 @@ export default function LoanSimulator() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="startDate">Payment Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => handleInputChange('startDate', e.target.value)}
-              />
             </div>
 
             <div className="flex space-x-2">
