@@ -29,12 +29,21 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
   });
 
   const markAsPaidMutation = useMutation({
-    mutationFn: (paymentId: number) => 
-      apiClient.put(`/payment-schedules/${paymentId}`, {
+    mutationFn: (paymentId: number) => {
+      const paymentToUpdate = allPayments.find((p: PaymentSchedule) => p.id === paymentId);
+      if (!paymentToUpdate) throw new Error('Payment not found');
+      
+      return apiClient.put(`/payment-schedules/${paymentId}`, {
+        loanId: paymentToUpdate.loanId,
+        dueDate: paymentToUpdate.dueDate,
+        amount: paymentToUpdate.amount,
+        principalAmount: paymentToUpdate.principalAmount,
+        interestAmount: paymentToUpdate.interestAmount,
         status: 'paid',
-        paidDate: new Date().toISOString(),
-        paidAmount: allPayments.find((p: PaymentSchedule) => p.id === paymentId)?.amount || '0'
-      }),
+        paidDate: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
+        paidAmount: paymentToUpdate.amount
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-schedules'] });
       toast({
@@ -43,6 +52,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
       });
     },
     onError: (error: any) => {
+      console.error('Payment update error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update payment status.",
@@ -58,6 +68,18 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
 
   // Get all payments for this loan to show complete payment breakdown
   const loanPayments = allPayments.filter((p: PaymentSchedule) => p.loanId === payment.loanId);
+  
+  // Calculate totals
+  const totalPaid = loanPayments
+    .filter((p: PaymentSchedule) => p.status === 'paid')
+    .reduce((sum, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
+  const totalScheduled = loanPayments
+    .reduce((sum, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
+
+  // Find the next unpaid payment to show as current payment
+  const nextPayment = loanPayments
+    .filter((p: PaymentSchedule) => p.status === 'pending')
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0] || payment;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,13 +110,6 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
     return principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
            (Math.pow(1 + monthlyRate, numPayments) - 1);
   };
-
-  const totalPaid = loanPayments
-    .filter((p: PaymentSchedule) => p.status === 'paid')
-    .reduce((sum, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
-
-  const totalScheduled = loanPayments
-    .reduce((sum, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -183,31 +198,51 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Payment ID</p>
-                  <p className="text-sm">{payment.id}</p>
+                  <p className="text-sm">{nextPayment.id}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Due Date</p>
-                  <p className="text-sm">{new Date(payment.dueDate).toLocaleDateString()}</p>
+                  <p className="text-sm">{new Date(nextPayment.dueDate).toLocaleDateString()}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
-                  <p className="text-sm font-bold">{formatCurrency(payment.amount)}</p>
+                  <p className="text-sm font-bold">{formatCurrency(nextPayment.amount)}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <Badge className={getStatusColor(payment.status)}>
-                    {payment.status}
+                  <Badge className={getStatusColor(nextPayment.status)}>
+                    {nextPayment.status}
                   </Badge>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Principal Amount</p>
-                  <p className="text-sm">{formatCurrency(payment.principalAmount)}</p>
+                  <p className="text-sm">{formatCurrency(nextPayment.principalAmount)}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Interest Amount</p>
-                  <p className="text-sm">{formatCurrency(payment.interestAmount)}</p>
+                  <p className="text-sm">{formatCurrency(nextPayment.interestAmount)}</p>
                 </div>
               </div>
+              {nextPayment.status === 'pending' && (
+                <div className="pt-4 border-t">
+                  <Button
+                    onClick={() => markAsPaidMutation.mutate(nextPayment.id)}
+                    disabled={markAsPaidMutation.isPending}
+                    className="w-full"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {markAsPaidMutation.isPending ? 'Processing...' : 'Mark as Paid'}
+                  </Button>
+                </div>
+              )}
+              {nextPayment.status === 'paid' && (
+                <div className="pt-4 border-t">
+                  <Button disabled className="w-full bg-green-100 text-green-800 cursor-not-allowed">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Paid
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -251,7 +286,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                             </Badge>
                           </td>
                           <td className="p-2">
-                            {p.status === 'pending' && (
+                            {p.status === 'pending' ? (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -262,7 +297,17 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 Mark Paid
                               </Button>
-                            )}
+                            ) : p.status === 'paid' ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                className="h-6 px-2 text-xs bg-green-100 text-green-800 cursor-not-allowed"
+                              >
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Paid
+                              </Button>
+                            ) : null}
                           </td>
                         </tr>
                       ))}

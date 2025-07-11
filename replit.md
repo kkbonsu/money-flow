@@ -121,5 +121,13 @@ Preferred communication style: Simple, everyday language.
   - Removed Schedule Payment button as requested by user
   - Payment table now shows: customer name, loan ID, next due date, loan amount, total principal, total interest, and overall status
   - Individual payment details are accessible through the View button which opens detailed modal
+  - **Mark as Paid Functionality Implementation (July 11, 2025)**
+    - Added Mark as Paid button to Current Payment Information card in ViewPaymentModal
+    - Button automatically switches to next unpaid payment when current payment is marked as paid
+    - Payment progress bar updates in real-time showing percentage paid and remaining balance
+    - Buttons change state: "Mark as Paid" → "Paid" (disabled) after successful payment
+    - Fixed API call with proper payment schedule data structure for successful updates
+    - Added Mark as Paid buttons to Complete Payment Schedule table for individual payments
+    - Removed Mark as Paid button from main Payment Schedules table (only in detailed modal)
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
