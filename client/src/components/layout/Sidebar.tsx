@@ -110,22 +110,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User Profile Section */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
-            <Users className="w-4 h-4 text-sidebar-accent-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
-              {user?.username || 'User'}
-            </p>
-            <p className="text-xs text-sidebar-foreground/70 truncate">
-              {user?.role || 'User'}
-            </p>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }

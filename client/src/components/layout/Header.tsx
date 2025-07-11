@@ -1,6 +1,7 @@
 import { Sun, Moon, Menu, User, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -36,12 +37,16 @@ export default function Header() {
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage 
+                    src={user?.profilePicture ? `/uploads/${user.profilePicture}` : undefined} 
+                    alt={user?.username || 'User'} 
+                  />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
                     {user?.firstName?.[0] || user?.username?.charAt(0).toUpperCase() || 'U'}
-                  </span>
-                </div>
+                  </AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
