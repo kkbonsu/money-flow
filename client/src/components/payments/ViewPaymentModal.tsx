@@ -78,43 +78,6 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Current Payment Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Current Payment Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Payment ID</p>
-                  <p className="text-sm">{payment.id}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Due Date</p>
-                  <p className="text-sm">{new Date(payment.dueDate).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
-                  <p className="text-sm font-bold">{formatCurrency(payment.amount)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <Badge className={getStatusColor(payment.status)}>
-                    {payment.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Principal Amount</p>
-                  <p className="text-sm">{formatCurrency(payment.principalAmount)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Interest Amount</p>
-                  <p className="text-sm">{formatCurrency(payment.interestAmount)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Loan Summary */}
           <Card>
             <CardHeader>
@@ -179,6 +142,43 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
               <p className="text-xs text-muted-foreground text-center">
                 {((totalPaid / totalScheduled) * 100).toFixed(1)}% paid
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Current Payment Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Current Payment Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Payment ID</p>
+                  <p className="text-sm">{payment.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Due Date</p>
+                  <p className="text-sm">{new Date(payment.dueDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                  <p className="text-sm font-bold">{formatCurrency(payment.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <Badge className={getStatusColor(payment.status)}>
+                    {payment.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Principal Amount</p>
+                  <p className="text-sm">{formatCurrency(payment.principalAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Interest Amount</p>
+                  <p className="text-sm">{formatCurrency(payment.interestAmount)}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
