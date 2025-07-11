@@ -216,21 +216,21 @@ export default function LoanSimulator() {
       email: customerData.email,
       phone: customerData.phone,
       address: customerData.address,
-      nationalId: customerData.nationalId,
+      nationalId: customerData.nationalId || null,
       creditScore: customerData.creditScore ? parseInt(customerData.creditScore) : null,
       status: 'active'
     };
 
     const loanPayload = {
-      loanAmount: simulation.loanAmount.toString(),
-      interestRate: simulation.interestRate.toString(),
+      loanAmount: simulation.loanAmount,
+      interestRate: simulation.interestRate,
       term: simulation.loanTerm,
       status: 'pending',
       purpose: customerData.purpose || 'Personal loan',
-      dateApplied: new Date().toISOString(),
-      startDate: simulation.startDate.toISOString(),
-      disbursedAmount: simulation.loanAmount.toString(),
-      outstandingBalance: simulation.loanAmount.toString(),
+      dateApplied: new Date(),
+      startDate: simulation.startDate,
+      disbursedAmount: simulation.loanAmount,
+      outstandingBalance: simulation.loanAmount,
     };
 
     createLoanMutation.mutate({
