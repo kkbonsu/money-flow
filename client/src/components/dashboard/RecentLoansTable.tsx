@@ -4,13 +4,24 @@ import { Badge } from '@/components/ui/badge';
 import { Eye, Check } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
-import { LoanBook } from '@shared/schema';
+import { LoanBook, Customer } from '@shared/schema';
 
 export default function RecentLoansTable() {
-  const { data: loans = [], isLoading } = useQuery({
+  const { data: loans = [], isLoading: loansLoading } = useQuery({
     queryKey: ['/api/loans'],
-    select: (data: LoanBook[]) => data.slice(0, 5), // Get only recent 5 loans
+    select: (data: LoanBook[]) => {
+      // Sort by creation date (newest first) and get latest 7
+      return data
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .slice(0, 7);
+    },
   });
+
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ['/api/customers'],
+  });
+
+  const isLoading = loansLoading || customersLoading;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -70,48 +81,54 @@ export default function RecentLoansTable() {
                   </td>
                 </tr>
               ) : (
-                loans.map((loan) => (
-                  <tr key={loan.id}>
-                    <td>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium">
-                            {loan.customerId?.toString().charAt(0) || 'U'}
-                          </span>
+                loans.map((loan) => {
+                  const customer = customers.find((c: Customer) => c.id === loan.customerId);
+                  const customerName = customer ? `${customer.firstName} ${customer.lastName}` : `Customer #${loan.customerId}`;
+                  const customerInitials = customer ? `${customer.firstName.charAt(0)}${customer.lastName.charAt(0)}` : 'U';
+                  
+                  return (
+                    <tr key={loan.id}>
+                      <td>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium">
+                              {customerInitials}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{customerName}</p>
+                            <p className="text-xs text-muted-foreground">Loan ID: {loan.id}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">Customer #{loan.customerId}</p>
-                          <p className="text-xs text-muted-foreground">ID: {loan.id}</p>
+                      </td>
+                      <td>
+                        <span className="text-sm font-medium">
+                          ${parseFloat(loan.loanAmount).toLocaleString()}
+                        </span>
+                      </td>
+                      <td>
+                        <Badge className={`status-badge ${getStatusColor(loan.status)}`}>
+                          {loan.status}
+                        </Badge>
+                      </td>
+                      <td>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(loan.createdAt || '').toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex space-x-2">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Check className="w-4 h-4" />
+                          </Button>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="text-sm font-medium">
-                        ${parseFloat(loan.loanAmount).toLocaleString()}
-                      </span>
-                    </td>
-                    <td>
-                      <Badge className={`status-badge ${getStatusColor(loan.status)}`}>
-                        {loan.status}
-                      </Badge>
-                    </td>
-                    <td>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(loan.createdAt || '').toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Check className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
