@@ -1,7 +1,7 @@
 import { 
   users, customers, loanBooks, paymentSchedules, staff, incomeManagement, 
   expenses, bankManagement, pettyCash, inventory, rentManagement, assets, 
-  liabilities, equity, reports,
+  liabilities, equity, reports, userAuditLogs,
   type User, type InsertUser, type Customer, type InsertCustomer,
   type LoanBook, type InsertLoanBook, type PaymentSchedule, type InsertPaymentSchedule,
   type Staff, type InsertStaff, type IncomeManagement, type InsertIncomeManagement,
@@ -9,7 +9,7 @@ import {
   type PettyCash, type InsertPettyCash, type Inventory, type InsertInventory,
   type RentManagement, type InsertRentManagement, type Asset, type InsertAsset,
   type Liability, type InsertLiability, type Equity, type InsertEquity,
-  type Report, type InsertReport
+  type Report, type InsertReport, type UserAuditLog, type InsertUserAuditLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -19,6 +19,13 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  updateUserPassword(id: number, hashedPassword: string): Promise<User>;
+  updateUserLastLogin(id: number): Promise<User>;
+  
+  // User audit log methods
+  getUserAuditLogs(userId: number): Promise<UserAuditLog[]>;
+  createUserAuditLog(log: InsertUserAuditLog): Promise<UserAuditLog>;
 
   // Customer methods
   getCustomers(): Promise<Customer[]>;
@@ -129,6 +136,49 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUser(id: number, updateUser: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updateUser, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserPassword(id: number, hashedPassword: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserLastLogin(id: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ lastLogin: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getUserAuditLogs(userId: number): Promise<UserAuditLog[]> {
+    return await db
+      .select()
+      .from(userAuditLogs)
+      .where(eq(userAuditLogs.userId, userId))
+      .orderBy(desc(userAuditLogs.timestamp));
+  }
+
+  async createUserAuditLog(insertLog: InsertUserAuditLog): Promise<UserAuditLog> {
+    const [log] = await db
+      .insert(userAuditLogs)
+      .values(insertLog)
+      .returning();
+    return log;
   }
 
   // Customer methods
@@ -271,7 +321,7 @@ export class DatabaseStorage implements IStorage {
           source: 'Interest Payment',
           amount: schedule.interestAmount,
           description: `Interest payment from loan payment schedule #${schedule.id}`,
-          date: schedule.paidDate || new Date(),
+          date: schedule.paidDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
           category: 'Loan Interest'
         });
       }
@@ -308,7 +358,7 @@ export class DatabaseStorage implements IStorage {
             source: 'Interest Payment',
             amount: payment.interestAmount,
             description: `Interest payment from loan payment schedule #${payment.id}`,
-            date: payment.paidDate || new Date(),
+            date: payment.paidDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
             category: 'Loan Interest'
           });
         }

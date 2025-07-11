@@ -16,7 +16,8 @@ import {
   insertAssetSchema,
   insertLiabilitySchema,
   insertEquitySchema,
-  insertReportSchema
+  insertReportSchema,
+  insertUserAuditLogSchema
 } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -81,9 +82,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { expiresIn: '24h' }
       );
       
+      // Update last login and log the login
+      await storage.updateUserLastLogin(user.id);
+      await storage.createUserAuditLog({
+        userId: user.id,
+        action: 'login',
+        description: 'User logged in successfully',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+      
       res.json({ user: { id: user.id, username: user.username, email: user.email, role: user.role }, token });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Login failed" });
+    }
+  });
+
+  // User account management routes
+  app.get("/api/users/profile", authenticateToken, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      // Remove password from response
+      const { password, ...userProfile } = user;
+      res.json(userProfile);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/users/profile", authenticateToken, async (req, res) => {
+    try {
+      const updateData = req.body;
+      // Remove password from update data - password should be updated separately
+      const { password, ...safeUpdateData } = updateData;
+      
+      const user = await storage.updateUser(req.user.id, safeUpdateData);
+      
+      // Log profile update
+      await storage.createUserAuditLog({
+        userId: req.user.id,
+        action: 'profile_update',
+        description: 'User profile updated',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+      
+      // Remove password from response
+      const { password: _, ...userProfile } = user;
+      res.json(userProfile);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update profile" });
+    }
+  });
+
+  app.put("/api/users/password", authenticateToken, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      // Verify current password
+      const user = await storage.getUser(req.user.id);
+      if (!user || !await bcrypt.compare(currentPassword, user.password)) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+      
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      // Update password
+      await storage.updateUserPassword(req.user.id, hashedPassword);
+      
+      // Log password change
+      await storage.createUserAuditLog({
+        userId: req.user.id,
+        action: 'password_change',
+        description: 'User password changed',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update password" });
+    }
+  });
+
+  app.get("/api/users/audit-logs", authenticateToken, async (req, res) => {
+    try {
+      const logs = await storage.getUserAuditLogs(req.user.id);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch audit logs" });
     }
   });
 

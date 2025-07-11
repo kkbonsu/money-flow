@@ -9,6 +9,12 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"),
+  profilePicture: text("profile_picture"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  lastLogin: timestamp("last_login"),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -178,6 +184,16 @@ export const reports = pgTable("reports", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const userAuditLogs = pgTable("user_audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  action: text("action").notNull(), // login, logout, password_change, profile_update, etc.
+  description: text("description"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
 // Relations
 export const customersRelations = relations(customers, ({ many }) => ({
   loans: many(loanBooks),
@@ -209,6 +225,14 @@ export const staffRelations = relations(staff, ({ many }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   approvedLoans: many(loanBooks),
   reports: many(reports),
+  auditLogs: many(userAuditLogs),
+}));
+
+export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [userAuditLogs.userId],
+    references: [users.id],
+  }),
 }));
 
 export const reportsRelations = relations(reports, ({ one }) => ({
@@ -344,6 +368,11 @@ export const insertReportSchema = createInsertSchema(reports).omit({
   createdAt: true,
 });
 
+export const insertUserAuditLogSchema = createInsertSchema(userAuditLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -389,3 +418,6 @@ export type InsertEquity = z.infer<typeof insertEquitySchema>;
 
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
+
+export type UserAuditLog = typeof userAuditLogs.$inferSelect;
+export type InsertUserAuditLog = z.infer<typeof insertUserAuditLogSchema>;

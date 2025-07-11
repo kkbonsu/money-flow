@@ -21,6 +21,7 @@ import Assets from "@/pages/Assets";
 import Liabilities from "@/pages/Liabilities";
 import Reports from "@/pages/Reports";
 import Equity from "@/pages/Equity";
+import UserProfile from "@/pages/UserProfile";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/liabilities" component={Liabilities} />
       <Route path="/reports" component={Reports} />
       <Route path="/equity" component={Equity} />
+      <Route path="/profile" component={UserProfile} />
       <Route component={NotFound} />
     </Switch>
   );
