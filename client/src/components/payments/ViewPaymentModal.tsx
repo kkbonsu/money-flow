@@ -33,7 +33,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
       const paymentToUpdate = allPayments.find((p: PaymentSchedule) => p.id === paymentId);
       if (!paymentToUpdate) throw new Error('Payment not found');
       
-      return apiClient.put(`/payment-schedules/${paymentId}`, {
+      const updateData = {
         loanId: paymentToUpdate.loanId,
         dueDate: paymentToUpdate.dueDate,
         amount: paymentToUpdate.amount,
@@ -42,7 +42,10 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
         status: 'paid',
         paidDate: new Date().toISOString(), // Send as full ISO timestamp
         paidAmount: paymentToUpdate.amount
-      });
+      };
+      
+      console.log('Updating payment with data:', JSON.stringify(updateData, null, 2));
+      return apiClient.put(`/payment-schedules/${paymentId}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-schedules'] });
@@ -53,6 +56,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
     },
     onError: (error: any) => {
       console.error('Payment update error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Error",
         description: error.message || "Failed to update payment status.",

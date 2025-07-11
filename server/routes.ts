@@ -192,10 +192,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/payment-schedules/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log('PUT payment schedule request body:', JSON.stringify(req.body, null, 2));
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);
+      console.log('Parsed schedule data:', JSON.stringify(scheduleData, null, 2));
       const schedule = await storage.updatePaymentSchedule(id, scheduleData);
       res.json(schedule);
     } catch (error) {
+      console.error('Payment schedule update error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update payment schedule" });
     }
   });
