@@ -674,6 +674,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Backfill interest payments to income table
+  app.post("/api/backfill/interest-payments", authenticateToken, async (req, res) => {
+    try {
+      await storage.backfillInterestPayments();
+      res.json({ message: "Interest payments backfilled successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to backfill interest payments" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

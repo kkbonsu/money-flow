@@ -140,5 +140,9 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: View All button now redirects to loan book page
     - ✅ **COMPLETED**: Dashboard metrics fixed to include disbursed loans in total loan calculation
     - ✅ **COMPLETED**: Monthly revenue card updated to display total interest payments received instead of income management
+    - ✅ **COMPLETED**: Monthly revenue now combines both interest payments and income management records
+    - ✅ **COMPLETED**: Interest payments automatically added to income table when payments are marked as paid
+    - ✅ **COMPLETED**: Interest payments removed from income table when payments are marked as unpaid
+    - ✅ **COMPLETED**: Backfill functionality added to create income records for existing paid payments
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
