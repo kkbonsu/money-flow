@@ -142,13 +142,19 @@ export default function UserProfile() {
       const formData = new FormData();
       formData.append('profilePicture', file);
       
+      const token = localStorage.getItem('token');
+      
       const response = await fetch('/api/users/profile-picture', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
       
       if (!response.ok) {
-        throw new Error('Failed to upload profile picture');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to upload profile picture');
       }
       
       return response.json();
