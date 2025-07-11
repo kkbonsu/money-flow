@@ -37,15 +37,6 @@ export default function IncomeTable() {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Income Records</CardTitle>
-          <Button className="btn-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Income
-          </Button>
-        </div>
-      </CardHeader>
       <CardContent>
         <div className="flex items-center space-x-4 mb-6">
           <div className="relative">

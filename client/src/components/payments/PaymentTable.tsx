@@ -107,15 +107,6 @@ export default function PaymentTable() {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Payment Schedules</CardTitle>
-          <Button className="btn-primary">
-            <Calendar className="w-4 h-4 mr-2" />
-            Schedule Payment
-          </Button>
-        </div>
-      </CardHeader>
       <CardContent>
         <div className="flex items-center space-x-4 mb-6">
           <div className="relative">

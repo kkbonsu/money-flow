@@ -88,21 +88,6 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Customer Management</CardTitle>
-          <div className="flex space-x-3">
-            <Button onClick={onAddCustomer} className="btn-primary">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Customer
-            </Button>
-            <Button variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
