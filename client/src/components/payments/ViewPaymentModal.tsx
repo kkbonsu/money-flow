@@ -40,7 +40,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
         principalAmount: paymentToUpdate.principalAmount,
         interestAmount: paymentToUpdate.interestAmount,
         status: 'paid',
-        paidDate: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
+        paidDate: new Date().toISOString(), // Send as full ISO timestamp
         paidAmount: paymentToUpdate.amount
       });
     },

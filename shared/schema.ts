@@ -252,6 +252,16 @@ export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({
   id: true,
   createdAt: true,
+}).extend({
+  amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  principalAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  interestAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  paidAmount: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null ? val.toString() : undefined
+  ),
+  paidDate: z.union([z.string(), z.date()]).optional().transform((val) => 
+    val instanceof Date ? val : val ? new Date(val) : undefined
+  ),
 });
 
 export const insertStaffSchema = createInsertSchema(staff).omit({
