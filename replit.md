@@ -117,5 +117,9 @@ Preferred communication style: Simple, everyday language.
   - Created comprehensive ViewPaymentModal showing complete payment breakdown with progress tracking
   - Added date validation fixes for loan forms with proper transformation handling
   - Payment schedules now automatically calculate monthly payments and create complete amortization schedules
+  - Restructured payment schedule table to display loan summaries instead of individual payments
+  - Removed Schedule Payment button as requested by user
+  - Payment table now shows: customer name, loan ID, next due date, loan amount, total principal, total interest, and overall status
+  - Individual payment details are accessible through the View button which opens detailed modal
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.

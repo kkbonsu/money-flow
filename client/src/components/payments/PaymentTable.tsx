@@ -110,10 +110,6 @@ export default function PaymentTable() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Payment Schedules</CardTitle>
-          <Button className="btn-primary">
-            <Calendar className="w-4 h-4 mr-2" />
-            Schedule Payment
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
