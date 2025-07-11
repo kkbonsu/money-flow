@@ -244,6 +244,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User management routes (Admin only)
+  app.get("/api/users", authenticateToken, async (req, res) => {
+    try {
+      // Check if user is admin
+      const currentUser = await storage.getUser(req.user.id);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const users = await storage.getAllUsers();
+      // Remove passwords from response
+      const safeUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch users" });
+    }
+  });
+
+  app.delete("/api/users/:id", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Check if user is admin
+      const currentUser = await storage.getUser(req.user.id);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Prevent admin from deleting themselves
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      await storage.deleteUser(userId);
+      
+      // Log user deletion
+      await storage.createUserAuditLog({
+        userId: req.user.id,
+        action: 'user_delete',
+        description: `Admin deleted user with ID: ${userId}`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete user" });
+    }
+  });
+
+  app.put("/api/users/:id/status", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      // Check if user is admin
+      const currentUser = await storage.getUser(req.user.id);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Prevent admin from deactivating themselves
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot change your own account status" });
+      }
+
+      await storage.updateUser(userId, { isActive });
+      
+      // Log user status change
+      await storage.createUserAuditLog({
+        userId: req.user.id,
+        action: 'user_status_change',
+        description: `Admin ${isActive ? 'activated' : 'deactivated'} user with ID: ${userId}`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      res.json({ message: "User status updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update user status" });
+    }
+  });
+
   // Customer routes
   app.get("/api/customers", authenticateToken, async (req, res) => {
     try {

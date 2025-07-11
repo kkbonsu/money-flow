@@ -18,10 +18,12 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   updateUserPassword(id: number, hashedPassword: string): Promise<User>;
   updateUserLastLogin(id: number): Promise<User>;
+  deleteUser(id: number): Promise<void>;
   
   // User audit log methods
   getUserAuditLogs(userId: number): Promise<UserAuditLog[]>;
@@ -130,6 +132,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    const allUsers = await db.select().from(users);
+    return allUsers;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -179,6 +186,10 @@ export class DatabaseStorage implements IStorage {
       .values(insertLog)
       .returning();
     return log;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Customer methods

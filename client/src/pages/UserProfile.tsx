@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload } from 'lucide-react';
+import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload, Users, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,6 +44,11 @@ export default function UserProfile() {
 
   const { data: auditLogs, isLoading: logsLoading } = useQuery({
     queryKey: ['/api/users/audit-logs'],
+  });
+
+  const { data: allUsers, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: user?.role === 'admin',
   });
 
   const profileForm = useForm({
@@ -217,6 +222,56 @@ export default function UserProfile() {
     }
   };
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      await apiRequest('DELETE', `/api/users/${userId}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "User deleted",
+        description: "User has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, isActive }: { userId: number, isActive: boolean }) => {
+      await apiRequest('PUT', `/api/users/${userId}/status`, { isActive });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User status updated",
+        description: "User status has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteUser = (userId: number, username: string) => {
+    if (window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
+
+  const handleToggleUserStatus = (userId: number, currentStatus: boolean) => {
+    updateUserStatusMutation.mutate({ userId, isActive: !currentStatus });
+  };
+
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'login':
@@ -266,11 +321,14 @@ export default function UserProfile() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          {user?.role === 'admin' && (
+            <TabsTrigger value="users">Users</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="profile">
@@ -633,6 +691,102 @@ export default function UserProfile() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {user?.role === 'admin' && (
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  User Management
+                </CardTitle>
+                <CardDescription>
+                  Manage user accounts and permissions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {usersLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-sm text-muted-foreground">Loading users...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-4">
+                      {allUsers?.map((userItem: any) => (
+                        <div key={userItem.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                              {userItem.profilePicture ? (
+                                <img 
+                                  src={userItem.profilePicture} 
+                                  alt="Profile" 
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                userItem.firstName?.[0] || userItem.username?.[0]?.toUpperCase() || 'U'
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="font-medium">
+                                {userItem.firstName && userItem.lastName 
+                                  ? `${userItem.firstName} ${userItem.lastName}` 
+                                  : userItem.username}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">{userItem.email}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="secondary" className="text-xs capitalize">
+                                  {userItem.role}
+                                </Badge>
+                                <Badge 
+                                  variant={userItem.isActive ? "default" : "secondary"} 
+                                  className={`text-xs ${userItem.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                                >
+                                  {userItem.isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                                {userItem.lastLogin && (
+                                  <span className="text-xs text-muted-foreground">
+                                    Last login: {format(new Date(userItem.lastLogin), 'MMM d, yyyy')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant={userItem.isActive ? "outline" : "default"}
+                              onClick={() => handleToggleUserStatus(userItem.id, userItem.isActive)}
+                              disabled={userItem.id === user?.id || updateUserStatusMutation.isPending}
+                            >
+                              {userItem.isActive ? 'Deactivate' : 'Activate'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteUser(userItem.id, userItem.username)}
+                              disabled={userItem.id === user?.id || deleteUserMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {allUsers?.length === 0 && (
+                      <div className="text-center py-8">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No users found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
