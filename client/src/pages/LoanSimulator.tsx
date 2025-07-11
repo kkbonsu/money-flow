@@ -14,6 +14,7 @@ interface LoanSimulation {
   loanAmount: number;
   interestRate: number;
   loanTerm: number;
+  startDate: Date;
   monthlyPayment: number;
   totalPayments: number;
   totalInterest: number;
@@ -36,7 +37,8 @@ export default function LoanSimulator() {
     loanAmount: '',
     interestRate: '',
     loanTerm: '',
-    loanTermType: 'months'
+    loanTermType: 'months',
+    startDate: new Date().toISOString().split('T')[0]
   });
   const [simulation, setSimulation] = useState<LoanSimulation | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -74,7 +76,7 @@ export default function LoanSimulator() {
     // Generate payment schedule
     const schedule: PaymentScheduleItem[] = [];
     let remainingBalance = principal;
-    const startDate = new Date();
+    const startDate = new Date(formData.startDate);
 
     for (let i = 1; i <= termInMonths; i++) {
       const interestAmount = remainingBalance * monthlyRate;
@@ -98,6 +100,7 @@ export default function LoanSimulator() {
       loanAmount: principal,
       interestRate: annualRate * 100,
       loanTerm: termInMonths,
+      startDate: new Date(formData.startDate),
       monthlyPayment,
       totalPayments,
       totalInterest,
@@ -119,7 +122,8 @@ export default function LoanSimulator() {
       loanAmount: '',
       interestRate: '',
       loanTerm: '',
-      loanTermType: 'months'
+      loanTermType: 'months',
+      startDate: new Date().toISOString().split('T')[0]
     });
     setSimulation(null);
   };
@@ -207,6 +211,16 @@ export default function LoanSimulator() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="startDate">Payment Start Date</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => handleInputChange('startDate', e.target.value)}
+              />
             </div>
 
             <div className="flex space-x-2">
