@@ -70,7 +70,7 @@ export default function Sidebar() {
             <BarChart className="w-6 h-6 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-sidebar-foreground">FinanceFlow</h1>
+            <h1 className="text-xl font-bold text-sidebar-foreground">Money Flow</h1>
             <p className="text-sm text-sidebar-foreground/70">Loan Management</p>
           </div>
         </div>

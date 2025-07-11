@@ -50,7 +50,7 @@ export default function Login() {
               <BarChart className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Welcome to FinanceFlow</CardTitle>
+          <CardTitle className="text-2xl">Welcome to Money Flow</CardTitle>
           <CardDescription>
             Sign in to your loan management system
           </CardDescription>

@@ -1,8 +1,8 @@
-# FinanceFlow - Financial Management System
+# Money Flow - Financial Management System
 
 ## Overview
 
-FinanceFlow is a comprehensive financial management system built with a modern full-stack architecture. It's designed to handle loan management, customer relations, payment schedules, staff management, and various financial operations including income/expense tracking, asset management, and reporting.
+Money Flow is a comprehensive financial management system built with a modern full-stack architecture. It's designed to handle loan management, customer relations, payment schedules, staff management, and various financial operations including income/expense tracking, asset management, and reporting.
 
 ## User Preferences
 
@@ -152,5 +152,6 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Payment Status card updated to show actual payment data with time-based overdue categories
     - ✅ **COMPLETED**: Added backend API for payment status data including 7, 30, 90 day overdue calculations
     - ✅ **COMPLETED**: Created PaymentStatusCard component with proper icons and percentage calculations
+    - ✅ **COMPLETED**: Application name changed from "FinanceFlow" to "Money Flow" in sidebar and login page
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
