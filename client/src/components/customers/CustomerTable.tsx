@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Eye, Edit, Trash2, Plus, Download, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -146,9 +145,6 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>
-                  <Checkbox />
-                </th>
                 <th>Customer</th>
                 <th>Phone</th>
                 <th>National ID</th>
@@ -161,16 +157,13 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
             <tbody>
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </td>
                 </tr>
               ) : (
                 filteredCustomers.slice(0, pageSize).map((customer: Customer) => (
                   <tr key={customer.id}>
-                    <td>
-                      <Checkbox />
-                    </td>
                     <td>
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">

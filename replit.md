@@ -158,5 +158,6 @@ Preferred communication style: Simple, everyday language.
     - ✅ **COMPLETED**: Removed Petty Cash tab from Financial section navigation
     - ✅ **COMPLETED**: Reorganized navigation structure: moved Staff to Assets & Operations, moved Financial tabs to Management section
     - ✅ **COMPLETED**: Renamed Bank Management to "Banking (coming soon)" as requested
+    - ✅ **COMPLETED**: Removed select checkboxes from customer management table
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
