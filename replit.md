@@ -209,5 +209,9 @@ Preferred communication style: Simple, everyday language.
       - Generated detailed payment schedule table showing principal, interest, and remaining balance
       - Included loan summary card with key financial metrics
       - Limited payment schedule display to first 12 payments for better UI performance
+      - Simplified loan creation form by replacing complex custom form with Add New Loan modal structure
+      - Fixed schema validation issues with proper date transformers for loan creation
+      - Removed loan payment start date field and functionality from calculator form
+      - Automated payment start date calculation to first of next month for simplicity
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
