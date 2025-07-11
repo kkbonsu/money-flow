@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,15 +65,17 @@ export default function UserProfile() {
   });
 
   // Update form when user data is loaded
-  if (user && !profileForm.formState.isDirty) {
-    profileForm.reset({
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      phone: user.phone || '',
-    });
-  }
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
