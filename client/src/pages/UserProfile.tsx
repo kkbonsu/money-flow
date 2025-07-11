@@ -142,7 +142,7 @@ export default function UserProfile() {
       const formData = new FormData();
       formData.append('profilePicture', file);
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       
       const response = await fetch('/api/users/profile-picture', {
         method: 'POST',
