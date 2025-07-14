@@ -34,24 +34,8 @@ export default function Liora() {
     setIsTyping(true);
 
     try {
-      // Call the AI API with proper authentication
-      const response = await fetch('/api/liora/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...((() => {
-            const authData = localStorage.getItem('authData');
-            return authData ? { Authorization: `Bearer ${JSON.parse(authData).token}` } : {};
-          })())
-        },
-        body: JSON.stringify({ message: userMessage }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`${response.status}: ${errorText}`);
-      }
-
+      // Call the AI API using the proper apiRequest method
+      const response = await apiRequest('POST', '/api/liora/chat', { message: userMessage });
       const data = await response.json();
       setConversation(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
@@ -76,6 +60,14 @@ export default function Liora() {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
       event.preventDefault();
+      // Also add error to conversation if it's a LIORA-related error
+      if (event.reason?.message?.includes('liora') || event.reason?.message?.includes('chat')) {
+        setConversation(prev => [...prev, { 
+          role: 'assistant', 
+          content: 'I encountered an unexpected error. Please try your question again.' 
+        }]);
+        setIsTyping(false);
+      }
     };
 
     window.addEventListener('error', handleError);
