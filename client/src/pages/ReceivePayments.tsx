@@ -234,44 +234,53 @@ export default function ReceivePayments() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Point-of-Sale Settings */}
+              {/* Paystack POS Settings */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground border-b pb-2">Point-of-Sale System</h3>
+                <h3 className="text-lg font-semibold text-foreground border-b pb-2">Paystack Payment System</h3>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">POS Terminal ID</label>
+                  <label className="text-sm font-medium">Paystack Public Key</label>
                   <input 
                     type="text" 
-                    placeholder="Enter terminal ID" 
+                    placeholder="pk_test_xxxxxxxxxxxxxxxxxxxxxxxx" 
                     className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Merchant Account</label>
+                  <label className="text-sm font-medium">Environment</label>
                   <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option>Select merchant account</option>
-                    <option>Primary Account - *1234</option>
-                    <option>Secondary Account - *5678</option>
+                    <option>Test Mode</option>
+                    <option>Live Mode</option>
                   </select>
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Processing Schedule</label>
+                  <label className="text-sm font-medium">Supported Currencies</label>
                   <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option>Real-time processing</option>
-                    <option>Batch processing (Daily)</option>
-                    <option>Batch processing (Weekly)</option>
+                    <option>NGN (Nigerian Naira)</option>
+                    <option>USD (US Dollar)</option>
+                    <option>GHS (Ghana Cedi)</option>
+                    <option>ZAR (South African Rand)</option>
+                    <option>KES (Kenyan Shilling)</option>
                   </select>
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Transaction Limit</label>
+                  <label className="text-sm font-medium">Webhook URL</label>
                   <input 
-                    type="number" 
-                    placeholder="Enter daily limit" 
+                    type="url" 
+                    placeholder="https://your-domain.com/paystack-webhook" 
                     className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Transaction Fee Bearer</label>
+                  <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option>Customer pays fees</option>
+                    <option>Merchant pays fees</option>
+                  </select>
                 </div>
               </div>
               
@@ -329,8 +338,8 @@ export default function ReceivePayments() {
             
             <div className="mt-6 flex gap-2">
               <Button>Save Configuration</Button>
-              <Button variant="outline">Test POS Connection</Button>
-              <Button variant="outline">Test Crypto Wallets</Button>
+              <Button variant="outline">Test Paystack Integration</Button>
+              <Button variant="outline">Test Privy Wallets</Button>
             </div>
           </CardContent>
         </Card>
