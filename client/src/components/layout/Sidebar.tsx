@@ -30,6 +30,7 @@ const navigationItems = [
       { name: 'Customers', href: '/customers', icon: Users },
       { name: 'Loan Book', href: '/loan-book', icon: BookOpen },
       { name: 'Payment Schedule', href: '/payment-schedule', icon: Calendar },
+      { name: 'Receive Loan Payments (auto)', href: '/receive-payments', icon: Calendar },
       { name: 'Income Management', href: '/income', icon: DollarSign },
       { name: 'Expense Management', href: '/expenses', icon: Receipt },
       { name: 'Debt Management (coming soon)', href: '/debt-management', icon: CreditCard },

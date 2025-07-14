@@ -12,6 +12,7 @@ import Liora from "@/pages/Liora";
 import Customers from "@/pages/Customers";
 import LoanBook from "@/pages/LoanBook";
 import PaymentSchedule from "@/pages/PaymentSchedule";
+import ReceivePayments from "@/pages/ReceivePayments";
 import Staff from "@/pages/Staff";
 import Income from "@/pages/Income";
 import Expenses from "@/pages/Expenses";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/customers" component={Customers} />
       <Route path="/loan-book" component={LoanBook} />
       <Route path="/payment-schedule" component={PaymentSchedule} />
+      <Route path="/receive-payments" component={ReceivePayments} />
       <Route path="/staff" component={Staff} />
       <Route path="/income" component={Income} />
       <Route path="/expenses" component={Expenses} />
