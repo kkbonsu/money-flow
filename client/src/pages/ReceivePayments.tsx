@@ -72,16 +72,16 @@ export default function ReceivePayments() {
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Point-of-Sale System</span>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Online
-                  </Badge>
+                  <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
+                    Configure
+                  </Button>
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Cryptocurrency Deposits</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    Active
-                  </Badge>
+                  <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
+                    Configure
+                  </Button>
                 </div>
               </div>
             </CardContent>
