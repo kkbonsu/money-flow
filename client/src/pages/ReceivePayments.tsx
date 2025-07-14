@@ -66,13 +66,23 @@ export default function ReceivePayments() {
                   Active
                 </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Next Processing</span>
-                <span className="text-sm text-muted-foreground">In 2 hours</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Success Rate</span>
-                <span className="text-sm text-green-600">98.5%</span>
+              
+              <div className="space-y-3 pt-2">
+                <div className="text-sm font-medium text-muted-foreground">Payment Methods:</div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Point-of-Sale System</span>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    Online
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Cryptocurrency Deposits</span>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    Active
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
