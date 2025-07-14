@@ -15,6 +15,10 @@ export default function ReceivePayments() {
     queryKey: ['/api/payments/today'],
   });
 
+  const { data: monthlyPayments, isLoading: isLoadingMonthly } = useQuery({
+    queryKey: ['/api/payments/monthly'],
+  });
+
   const formatAmount = (amount: string) => {
     return `$${parseFloat(amount).toLocaleString()}`;
   };
@@ -115,7 +119,7 @@ export default function ReceivePayments() {
           </Card>
         </motion.div>
 
-        {/* Payment Methods */}
+        {/* This Month's Collections */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -125,27 +129,33 @@ export default function ReceivePayments() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-primary" />
-                Payment Methods
+                This Month's Collections
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Bank Transfer</span>
-                  <span className="text-sm text-muted-foreground">85%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Direct Debit</span>
-                  <span className="text-sm text-muted-foreground">12%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Card Payment</span>
-                  <span className="text-sm text-muted-foreground">3%</span>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full">
-                Configure Methods
-              </Button>
+              {isLoadingMonthly ? (
+                <div className="text-2xl font-bold text-primary">Loading...</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-primary">
+                    {formatAmount(monthlyPayments?.totalAmount?.toString() || '0')}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Successful</span>
+                      <span className="text-sm text-green-600">{monthlyPayments?.paidCount || 0} payments</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Pending</span>
+                      <span className="text-sm text-yellow-600">{monthlyPayments?.pendingCount || 0} payments</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Overdue</span>
+                      <span className="text-sm text-red-600">{monthlyPayments?.overdueCount || 0} payments</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>

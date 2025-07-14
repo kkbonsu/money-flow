@@ -1073,6 +1073,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/payments/monthly", authenticateToken, async (req, res) => {
+    try {
+      const monthlyPayments = await storage.getMonthlyPayments();
+      res.json(monthlyPayments);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch monthly payments" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
