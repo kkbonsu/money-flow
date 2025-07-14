@@ -233,47 +233,93 @@ export default function ReceivePayments() {
             <CardTitle>Auto-Payment Configuration</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Processing Schedule</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option>Daily at 9:00 AM</option>
-                  <option>Twice daily (9:00 AM & 3:00 PM)</option>
-                  <option>Weekly on Mondays</option>
-                </select>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Point-of-Sale Settings */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground border-b pb-2">Point-of-Sale System</h3>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">POS Terminal ID</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter terminal ID" 
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Merchant Account</label>
+                  <select className="w-full p-2 border rounded-md">
+                    <option>Select merchant account</option>
+                    <option>Primary Account - *1234</option>
+                    <option>Secondary Account - *5678</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Processing Schedule</label>
+                  <select className="w-full p-2 border rounded-md">
+                    <option>Real-time processing</option>
+                    <option>Batch processing (Daily)</option>
+                    <option>Batch processing (Weekly)</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Transaction Limit</label>
+                  <input 
+                    type="number" 
+                    placeholder="Enter daily limit" 
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Retry Attempts</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option>3 attempts</option>
-                  <option>5 attempts</option>
-                  <option>7 attempts</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Notification Settings</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option>Email + SMS</option>
-                  <option>Email only</option>
-                  <option>SMS only</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Grace Period</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option>3 days</option>
-                  <option>5 days</option>
-                  <option>7 days</option>
-                </select>
+              {/* Cryptocurrency Settings */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground border-b pb-2">Cryptocurrency Deposits</h3>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Wallet Address (BTC)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter Bitcoin wallet address" 
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Wallet Address (ETH)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter Ethereum wallet address" 
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Confirmation Blocks</label>
+                  <select className="w-full p-2 border rounded-md">
+                    <option>3 confirmations</option>
+                    <option>6 confirmations</option>
+                    <option>12 confirmations</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Auto-Convert to USD</label>
+                  <select className="w-full p-2 border rounded-md">
+                    <option>Enabled</option>
+                    <option>Disabled</option>
+                  </select>
+                </div>
               </div>
             </div>
             
             <div className="mt-6 flex gap-2">
               <Button>Save Configuration</Button>
-              <Button variant="outline">Test Connection</Button>
+              <Button variant="outline">Test POS Connection</Button>
+              <Button variant="outline">Test Crypto Wallets</Button>
             </div>
           </CardContent>
         </Card>
