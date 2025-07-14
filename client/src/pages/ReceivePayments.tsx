@@ -275,43 +275,54 @@ export default function ReceivePayments() {
                 </div>
               </div>
               
-              {/* Cryptocurrency Settings */}
+              {/* Privy Crypto Settings */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground border-b pb-2">Cryptocurrency Deposits</h3>
+                <h3 className="text-lg font-semibold text-foreground border-b pb-2">Privy Wallet Integration</h3>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Wallet Address (BTC)</label>
+                  <label className="text-sm font-medium">Privy App ID</label>
                   <input 
                     type="text" 
-                    placeholder="Enter Bitcoin wallet address" 
+                    placeholder="Enter your Privy App ID" 
                     className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Wallet Address (ETH)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter Ethereum wallet address" 
-                    className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Confirmation Blocks</label>
+                  <label className="text-sm font-medium">Supported Chains</label>
                   <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option>3 confirmations</option>
-                    <option>6 confirmations</option>
-                    <option>12 confirmations</option>
+                    <option>Ethereum + Base + Arbitrum</option>
+                    <option>Ethereum + Polygon + Solana</option>
+                    <option>All EVM Chains</option>
+                    <option>Custom Selection</option>
                   </select>
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Auto-Convert to USD</label>
+                  <label className="text-sm font-medium">Wallet Creation Mode</label>
                   <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option>Enabled</option>
+                    <option>Auto-create for new users</option>
+                    <option>Create on first payment</option>
+                    <option>Manual creation only</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Gas Sponsorship</label>
+                  <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option>Enabled for all transactions</option>
+                    <option>Enabled for deposits only</option>
                     <option>Disabled</option>
                   </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Payment Collection Address</label>
+                  <input 
+                    type="text" 
+                    placeholder="Your organization's wallet address" 
+                    className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
                 </div>
               </div>
             </div>
