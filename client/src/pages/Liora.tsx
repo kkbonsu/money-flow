@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect } from 'react';
+import { apiRequest } from '@/lib/queryClient';
 
 const AnimatedLetter = ({ letter, index }: { letter: string; index: number }) => (
   <motion.span
