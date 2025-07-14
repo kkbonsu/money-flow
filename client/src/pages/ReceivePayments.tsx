@@ -1,10 +1,24 @@
 import { motion } from 'framer-motion';
-import { Calendar, CheckCircle, Clock, DollarSign, CreditCard } from 'lucide-react';
+import { Banknote, CheckCircle, Clock, DollarSign, CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
 
 export default function ReceivePayments() {
+  const { data: recentPayments, isLoading: isLoadingRecent } = useQuery({
+    queryKey: ['/api/payments/recent'],
+  });
+
+  const { data: todaysPayments, isLoading: isLoadingToday } = useQuery({
+    queryKey: ['/api/payments/today'],
+  });
+
+  const formatAmount = (amount: string) => {
+    return `$${parseFloat(amount).toLocaleString()}`;
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -20,7 +34,7 @@ export default function ReceivePayments() {
       >
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Calendar className="w-7 h-7 text-primary" />
+            <Banknote className="w-7 h-7 text-primary" />
             Receive Loan Payments (auto)
           </h1>
           <p className="text-muted-foreground">Automated payment processing and collection management</p>
@@ -74,21 +88,29 @@ export default function ReceivePayments() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-2xl font-bold text-primary">$12,450.00</div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Successful</span>
-                  <span className="text-sm text-green-600">15 payments</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Pending</span>
-                  <span className="text-sm text-yellow-600">3 payments</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Failed</span>
-                  <span className="text-sm text-red-600">1 payment</span>
-                </div>
-              </div>
+              {isLoadingToday ? (
+                <div className="text-2xl font-bold text-primary">Loading...</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-primary">
+                    {formatAmount(todaysPayments?.totalAmount?.toString() || '0')}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Successful</span>
+                      <span className="text-sm text-green-600">{todaysPayments?.paidCount || 0} payments</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Pending</span>
+                      <span className="text-sm text-yellow-600">{todaysPayments?.pendingCount || 0} payments</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Overdue</span>
+                      <span className="text-sm text-red-600">{todaysPayments?.overdueCount || 0} payments</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -144,44 +166,31 @@ export default function ReceivePayments() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="font-medium">Payment #1234</p>
-                  <p className="text-sm text-muted-foreground">Customer: John Doe</p>
+              {isLoadingRecent ? (
+                <div className="text-center py-4">Loading recent payments...</div>
+              ) : recentPayments && recentPayments.length > 0 ? (
+                recentPayments.map((payment: any) => (
+                  <div key={payment.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div>
+                      <p className="font-medium">Payment #{payment.id}</p>
+                      <p className="text-sm text-muted-foreground">Customer: {payment.customerName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Paid: {format(new Date(payment.paidDate), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{formatAmount(payment.amount)}</p>
+                      <Badge variant="default" className="bg-green-100 text-green-800">
+                        Paid
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  No recent payments found
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">$850.00</p>
-                  <Badge variant="default" className="bg-green-100 text-green-800">
-                    Successful
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="font-medium">Payment #1235</p>
-                  <p className="text-sm text-muted-foreground">Customer: Jane Smith</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">$1,200.00</p>
-                  <Badge variant="default" className="bg-yellow-100 text-yellow-800">
-                    Pending
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="font-medium">Payment #1236</p>
-                  <p className="text-sm text-muted-foreground">Customer: Bob Johnson</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">$675.00</p>
-                  <Badge variant="destructive">
-                    Failed
-                  </Badge>
-                </div>
-              </div>
+              )}
             </div>
             
             <div className="mt-4 pt-4 border-t">

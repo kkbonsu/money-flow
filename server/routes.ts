@@ -1054,6 +1054,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment Analytics routes
+  app.get("/api/payments/recent", authenticateToken, async (req, res) => {
+    try {
+      const recentPayments = await storage.getRecentPayments();
+      res.json(recentPayments);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch recent payments" });
+    }
+  });
+
+  app.get("/api/payments/today", authenticateToken, async (req, res) => {
+    try {
+      const todaysPayments = await storage.getTodaysPayments();
+      res.json(todaysPayments);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch today's payments" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

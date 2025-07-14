@@ -118,6 +118,10 @@ export interface IStorage {
 
   // Dashboard metrics
   getDashboardMetrics(): Promise<any>;
+
+  // Payment analytics methods
+  getRecentPayments(): Promise<any>;
+  getTodaysPayments(): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -850,6 +854,71 @@ export class DatabaseStorage implements IStorage {
       paymentGrowth,
       revenueGrowth: incomeGrowth,
     };
+  }
+
+  // Payment analytics methods
+  async getRecentPayments(): Promise<any> {
+    try {
+      const recentPayments = await db
+        .select({
+          id: paymentSchedules.id,
+          loanId: paymentSchedules.loanId,
+          amount: paymentSchedules.amount,
+          paidDate: paymentSchedules.paidDate,
+          status: paymentSchedules.status,
+          customerName: sql<string>`${customers.firstName} || ' ' || ${customers.lastName}`.as('customerName'),
+          loanAmount: loanBooks.loanAmount
+        })
+        .from(paymentSchedules)
+        .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
+        .innerJoin(customers, eq(loanBooks.customerId, customers.id))
+        .where(eq(paymentSchedules.status, 'paid'))
+        .orderBy(desc(paymentSchedules.paidDate))
+        .limit(10);
+
+      return recentPayments;
+    } catch (error) {
+      console.error('Error fetching recent payments:', error);
+      return [];
+    }
+  }
+
+  async getTodaysPayments(): Promise<any> {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      const todaysPayments = await db
+        .select({
+          totalAmount: sql<number>`SUM(CAST(${paymentSchedules.amount} AS NUMERIC))`.as('totalAmount'),
+          totalCount: sql<number>`COUNT(*)`.as('totalCount'),
+          paidCount: sql<number>`COUNT(CASE WHEN ${paymentSchedules.status} = 'paid' THEN 1 END)`.as('paidCount'),
+          pendingCount: sql<number>`COUNT(CASE WHEN ${paymentSchedules.status} = 'pending' THEN 1 END)`.as('pendingCount'),
+          overdueCount: sql<number>`COUNT(CASE WHEN ${paymentSchedules.status} = 'overdue' THEN 1 END)`.as('overdueCount')
+        })
+        .from(paymentSchedules)
+        .where(
+          sql`${paymentSchedules.paidDate} >= ${startOfDay.toISOString()} AND ${paymentSchedules.paidDate} < ${endOfDay.toISOString()}`
+        );
+
+      return todaysPayments[0] || {
+        totalAmount: 0,
+        totalCount: 0,
+        paidCount: 0,
+        pendingCount: 0,
+        overdueCount: 0
+      };
+    } catch (error) {
+      console.error('Error fetching today\'s payments:', error);
+      return {
+        totalAmount: 0,
+        totalCount: 0,
+        paidCount: 0,
+        pendingCount: 0,
+        overdueCount: 0
+      };
+    }
   }
 }
 
