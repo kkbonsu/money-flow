@@ -985,6 +985,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // LIORA AI Assistant routes
+  app.post('/api/liora/chat', authenticateToken, async (req, res) => {
+    try {
+      const { message } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+
+      // Check if Perplexity API key is available
+      if (!process.env.PERPLEXITY_API_KEY) {
+        return res.json({
+          response: "I'm ready to help with loan management insights! However, I need the Perplexity API key to be configured to provide real-time financial analysis. You can ask your administrator to set up the PERPLEXITY_API_KEY environment variable.\n\nIn the meantime, I can help you with:\n- Loan calculation formulas\n- Risk assessment frameworks\n- Portfolio optimization strategies\n- Payment schedule analysis\n\nWhat would you like to know about?"
+        });
+      }
+
+      // Call Perplexity API
+      const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-sonar-small-128k-online',
+          messages: [
+            {
+              role: 'system',
+              content: `You are LIORA (Loan Intelligence & Optimization Recommendation Assistant), an AI assistant specialized in loan management and financial analysis. You help loan companies with:
+              - Risk assessment and credit scoring
+              - Loan portfolio optimization
+              - Payment schedule analysis
+              - Interest rate recommendations
+              - Regulatory compliance guidance
+              - Financial forecasting and planning
+              - Customer relationship management
+              - Debt collection strategies
+              
+              Provide professional, accurate, and actionable financial advice. Always cite sources when providing specific financial data or regulations.`
+            },
+            {
+              role: 'user',
+              content: message
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.2,
+          top_p: 0.9,
+          stream: false
+        })
+      });
+
+      if (!perplexityResponse.ok) {
+        throw new Error(`Perplexity API error: ${perplexityResponse.status}`);
+      }
+
+      const data = await perplexityResponse.json();
+      const response = data.choices[0].message.content;
+
+      res.json({ response });
+    } catch (error) {
+      console.error('LIORA chat error:', error);
+      res.status(500).json({ 
+        error: 'Failed to get AI response',
+        response: 'I apologize, but I encountered an error processing your request. Please try again or contact support if the issue persists.'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

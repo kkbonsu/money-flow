@@ -22,16 +22,41 @@ const AnimatedLetter = ({ letter, index }: { letter: string; index: number }) =>
 export default function Liora() {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversation, setConversation] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim()) return;
     
+    const userMessage = message;
+    setMessage('');
+    setConversation(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsTyping(true);
-    // Simulate AI processing
-    setTimeout(() => {
+
+    try {
+      // Call the AI API
+      const response = await fetch('/api/liora/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const data = await response.json();
+      setConversation(prev => [...prev, { role: 'assistant', content: data.response }]);
+    } catch (error) {
+      console.error('Error:', error);
+      setConversation(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'I apologize, but I encountered an error. Please check that the AI service is properly configured.' 
+      }]);
+    } finally {
       setIsTyping(false);
-      setMessage('');
-    }, 2000);
+    }
   };
 
   // Add error boundary for animations
@@ -134,40 +159,47 @@ export default function Liora() {
 
               {/* Chat Interface */}
               <div className="max-w-2xl mx-auto space-y-4">
-                <div className="bg-muted/30 rounded-lg p-4 min-h-[200px] flex items-center justify-center">
-                  <AnimatePresence mode="wait">
-                    {isTyping ? (
-                      <motion.div
-                        key="typing"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="flex items-center gap-2"
-                      >
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                          <Sparkles className="w-5 h-5 text-primary" />
-                        </motion.div>
-                        <span className="text-muted-foreground">Liora is analyzing your request...</span>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="welcome"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="text-center"
-                      >
+                <div className="bg-muted/30 rounded-lg p-4 min-h-[300px] max-h-[400px] overflow-y-auto">
+                  {conversation.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
                         <h3 className="text-lg font-semibold mb-2">Welcome to Liora!</h3>
                         <p className="text-muted-foreground">
                           Ask me anything about loan management, portfolio optimization, 
                           risk assessment, or financial recommendations for your company.
                         </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {conversation.map((msg, index) => (
+                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] p-3 rounded-lg ${
+                            msg.role === 'user' 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-background text-foreground border'
+                          }`}>
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {isTyping && (
+                        <div className="flex justify-start">
+                          <div className="bg-background border p-3 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              >
+                                <Sparkles className="w-4 h-4 text-primary" />
+                              </motion.div>
+                              <span className="text-sm text-muted-foreground">Liora is analyzing...</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex gap-2">
