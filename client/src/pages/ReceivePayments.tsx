@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Banknote, CheckCircle, Clock, DollarSign, CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,34 +23,20 @@ export default function ReceivePayments() {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="flex items-center justify-between"
-      >
+    <div className="space-y-6 fade-in">
+      <div className="flex items-center justify-between slide-in-left">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Banknote className="w-7 h-7 text-primary" />
+            <Banknote className="w-7 h-7 text-primary glow-animation" />
             Receive Loan Payments (auto)
           </h1>
           <p className="text-muted-foreground">Automated payment processing and collection management</p>
         </div>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Auto-Payment Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
+        <div className="slide-in-up" style={{ animationDelay: '0.2s' }}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -86,14 +71,10 @@ export default function ReceivePayments() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Today's Collections */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
+        <div className="slide-in-up" style={{ animationDelay: '0.3s' }}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -127,14 +108,10 @@ export default function ReceivePayments() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* This Month's Collections */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
+        <div className="slide-in-up" style={{ animationDelay: '0.4s' }}>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -168,15 +145,11 @@ export default function ReceivePayments() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       {/* Recent Transactions */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-      >
+      <div className="slide-in-up" style={{ animationDelay: '0.5s' }}>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -220,14 +193,10 @@ export default function ReceivePayments() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Auto-Payment Settings */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-      >
+      <div className="slide-in-up" style={{ animationDelay: '0.6s' }}>
         <Card>
           <CardHeader>
             <CardTitle>Auto-Payment Configuration</CardTitle>
@@ -343,7 +312,7 @@ export default function ReceivePayments() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

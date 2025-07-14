@@ -61,11 +61,11 @@ export default function Sidebar() {
   const { user } = useAuth();
 
   return (
-    <div className="hidden md:flex md:w-80 bg-sidebar-background shadow-lg border-r border-sidebar-border flex-col">
+    <div className="hidden md:flex md:w-80 glass-sidebar flex-col slide-in-left">
       {/* Logo Section */}
       <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
+        <div className="flex items-center space-x-3 scale-in">
+          <div className="w-10 h-10 bg-sidebar-primary rounded-xl flex items-center justify-center floating-animation shadow-lg">
             <BarChart className="w-6 h-6 text-sidebar-primary-foreground" />
           </div>
           <div>

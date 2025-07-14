@@ -42,15 +42,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <Card className="w-full max-w-md fade-in">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg glow-animation">
               <BarChart className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Welcome to Money Flow</CardTitle>
+          <CardTitle className="text-2xl text-foreground">Welcome to Money Flow</CardTitle>
           <CardDescription>
             Sign in to your loan management system
           </CardDescription>
@@ -90,7 +90,7 @@ export default function Login() {
             
             <Button 
               type="submit" 
-              className="w-full btn-primary"
+              className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? 'Signing in...' : 'Sign In'}

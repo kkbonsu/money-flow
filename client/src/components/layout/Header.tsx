@@ -19,7 +19,7 @@ export default function Header() {
   });
 
   return (
-    <header className="bg-background shadow-sm border-b border-border">
+    <header className="backdrop-blur-lg bg-card/50 border-b border-border/50 shadow-lg slide-in-right">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="icon" className="md:hidden">
@@ -33,6 +33,7 @@ export default function Header() {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
+            className="floating-animation hover:scale-110 transition-transform duration-300"
           >
             {theme === 'light' ? (
               <Sun className="w-5 h-5" />
