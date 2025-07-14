@@ -243,13 +243,13 @@ export default function ReceivePayments() {
                   <input 
                     type="text" 
                     placeholder="Enter terminal ID" 
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Merchant Account</label>
-                  <select className="w-full p-2 border rounded-md">
+                  <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>Select merchant account</option>
                     <option>Primary Account - *1234</option>
                     <option>Secondary Account - *5678</option>
@@ -258,7 +258,7 @@ export default function ReceivePayments() {
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Processing Schedule</label>
-                  <select className="w-full p-2 border rounded-md">
+                  <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>Real-time processing</option>
                     <option>Batch processing (Daily)</option>
                     <option>Batch processing (Weekly)</option>
@@ -270,7 +270,7 @@ export default function ReceivePayments() {
                   <input 
                     type="number" 
                     placeholder="Enter daily limit" 
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
               </div>
@@ -284,7 +284,7 @@ export default function ReceivePayments() {
                   <input 
                     type="text" 
                     placeholder="Enter Bitcoin wallet address" 
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 
@@ -293,13 +293,13 @@ export default function ReceivePayments() {
                   <input 
                     type="text" 
                     placeholder="Enter Ethereum wallet address" 
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Confirmation Blocks</label>
-                  <select className="w-full p-2 border rounded-md">
+                  <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>3 confirmations</option>
                     <option>6 confirmations</option>
                     <option>12 confirmations</option>
@@ -308,7 +308,7 @@ export default function ReceivePayments() {
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Auto-Convert to USD</label>
-                  <select className="w-full p-2 border rounded-md">
+                  <select className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>Enabled</option>
                     <option>Disabled</option>
                   </select>
