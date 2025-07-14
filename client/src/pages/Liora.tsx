@@ -3,7 +3,7 @@ import { Bot, Send, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const AnimatedLetter = ({ letter, index }: { letter: string; index: number }) => (
   <motion.span
@@ -11,10 +11,7 @@ const AnimatedLetter = ({ letter, index }: { letter: string; index: number }) =>
     animate={{ opacity: 1, y: 0 }}
     transition={{ 
       duration: 0.5, 
-      delay: index * 0.1,
-      repeat: Infinity,
-      repeatType: "reverse",
-      repeatDelay: 3
+      delay: index * 0.1
     }}
     className="inline-block text-6xl font-bold text-primary"
   >
@@ -37,8 +34,20 @@ export default function Liora() {
     }, 2000);
   };
 
+  // Add error boundary for animations
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Runtime error caught:', event.error);
+      // Prevent the error from propagating
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
   const letterVariants = {
-    hover: { scale: 1.1, color: '#3b82f6' },
+    hover: { scale: 1.1 },
     tap: { scale: 0.9 }
   };
 
@@ -90,14 +99,10 @@ export default function Liora() {
                 >
                   <motion.div
                     animate={{ 
-                      boxShadow: [
-                        '0 0 0 0 rgb(59 130 246 / 0.7)',
-                        '0 0 0 20px rgb(59 130 246 / 0)',
-                        '0 0 0 0 rgb(59 130 246 / 0)'
-                      ]
+                      scale: [1, 1.05, 1]
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mb-4 mx-auto"
+                    className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg"
                   >
                     <Bot className="w-10 h-10 text-white" />
                   </motion.div>
