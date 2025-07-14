@@ -23,7 +23,7 @@ import {
 const navigationItems = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Loan Simulator', href: '/loan-simulator', icon: Calculator },
-  { name: 'Liora', href: '/liora', icon: Bot },
+  { name: 'LIORA (AI Assistant)', href: '/liora', icon: Bot },
   { 
     name: 'Management', 
     items: [
