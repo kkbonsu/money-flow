@@ -33,42 +33,57 @@ export default function Liora() {
     setIsTyping(true);
 
     try {
-      // Call the AI API
+      // Call the AI API with proper authentication
       const response = await fetch('/api/liora/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...((() => {
+            const authData = localStorage.getItem('authData');
+            return authData ? { Authorization: `Bearer ${JSON.parse(authData).token}` } : {};
+          })())
         },
         body: JSON.stringify({ message: userMessage }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get AI response');
+        const errorText = await response.text();
+        throw new Error(`${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
       setConversation(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
       console.error('Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setConversation(prev => [...prev, { 
         role: 'assistant', 
-        content: 'I apologize, but I encountered an error. Please check that the AI service is properly configured.' 
+        content: `I apologize, but I encountered an error: ${errorMessage}. Please try again or contact support if the issue persists.` 
       }]);
     } finally {
       setIsTyping(false);
     }
   };
 
-  // Add error boundary for animations
+  // Add error boundary for animations and promises
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       console.error('Runtime error caught:', event.error);
-      // Prevent the error from propagating
+      event.preventDefault();
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
       event.preventDefault();
     };
 
     window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   const letterVariants = {
