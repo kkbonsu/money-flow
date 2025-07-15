@@ -59,7 +59,9 @@ export default function CustomerDashboard() {
   const activeLoan = loans?.find((loan: any) => loan.status === 'active' || loan.status === 'disbursed');
   const totalOutstanding = loans?.reduce((sum: number, loan: any) => sum + parseFloat(loan.outstandingBalance || '0'), 0) || 0;
   const nextPayment = upcomingPayments?.[0];
-  const recentPayments = payments?.slice(0, 5) || [];
+  const recentPayments = payments?.filter((payment: any) => payment.status === 'paid').slice(0, 5) || [];
+  const totalPayments = payments?.length || 0;
+  const paidPayments = payments?.filter((payment: any) => payment.status === 'paid').length || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">

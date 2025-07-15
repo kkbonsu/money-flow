@@ -19,7 +19,7 @@ export default function CustomerPayments() {
   const [filter, setFilter] = useState('all');
   
   const { data: payments, isLoading } = useQuery({
-    queryKey: ['/api/customer/payments', filter],
+    queryKey: ['/api/customer/payments'],
   });
 
   const { data: upcomingPayments, isLoading: isLoadingUpcoming } = useQuery({

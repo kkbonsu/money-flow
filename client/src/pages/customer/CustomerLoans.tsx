@@ -225,11 +225,11 @@ export default function CustomerLoans() {
                           Repayment Progress
                         </span>
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {Math.round(calculateProgress(loan.loanAmount, loan.outstandingBalance))}%
+                          {Math.round(calculateProgress(loan.id))}%
                         </span>
                       </div>
                       <Progress 
-                        value={calculateProgress(loan.loanAmount, loan.outstandingBalance)} 
+                        value={calculateProgress(loan.id)} 
                         className="h-2"
                       />
                     </div>
