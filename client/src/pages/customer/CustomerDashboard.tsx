@@ -63,6 +63,16 @@ export default function CustomerDashboard() {
   const totalPayments = payments?.length || 0;
   const paidPayments = payments?.filter((payment: any) => payment.status === 'paid').length || 0;
 
+  const calculateProgress = (loanId: number) => {
+    if (!payments) return 0;
+    
+    const loanPayments = payments.filter((payment: any) => payment.loanId === loanId);
+    const totalPayments = loanPayments.length;
+    const paidPayments = loanPayments.filter((payment: any) => payment.status === 'paid').length;
+    
+    return totalPayments > 0 ? (paidPayments / totalPayments) * 100 : 0;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
@@ -195,11 +205,11 @@ export default function CustomerDashboard() {
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium">Payment Progress</span>
                             <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {Math.round(((parseFloat(loan.loanAmount) - parseFloat(loan.outstandingBalance || '0')) / parseFloat(loan.loanAmount)) * 100)}%
+                              {Math.round(calculateProgress(loan.id))}%
                             </span>
                           </div>
                           <Progress 
-                            value={((parseFloat(loan.loanAmount) - parseFloat(loan.outstandingBalance || '0')) / parseFloat(loan.loanAmount)) * 100} 
+                            value={calculateProgress(loan.id)} 
                             className="h-2"
                           />
                         </div>
