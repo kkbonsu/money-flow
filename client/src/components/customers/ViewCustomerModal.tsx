@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Customer } from '@shared/schema';
-import { Calendar, CreditCard, Mail, Phone, MapPin, User, Hash } from 'lucide-react';
+import { Calendar, CreditCard, Mail, Phone, MapPin, User, Hash, Copy, Check, Key } from 'lucide-react';
 
 interface ViewCustomerModalProps {
   isOpen: boolean;
