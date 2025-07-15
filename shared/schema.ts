@@ -29,6 +29,9 @@ export const customers = pgTable("customers", {
   nationalId: text("national_id"),
   creditScore: integer("credit_score"),
   status: text("status").notNull().default("active"),
+  password: text("password"), // For customer portal login
+  isPortalActive: boolean("is_portal_active").default(false),
+  lastPortalLogin: timestamp("last_portal_login"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
