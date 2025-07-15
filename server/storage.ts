@@ -32,9 +32,17 @@ export interface IStorage {
   // Customer methods
   getCustomers(): Promise<Customer[]>;
   getCustomer(id: number): Promise<Customer | undefined>;
+  getCustomerByEmail(email: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
+  updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer>;
+  updateCustomerLastLogin(id: number): Promise<Customer>;
   deleteCustomer(id: number): Promise<void>;
+  
+  // Customer portal methods
+  getCustomerLoans(customerId: number): Promise<LoanBook[]>;
+  getCustomerPayments(customerId: number): Promise<PaymentSchedule[]>;
+  getCustomerUpcomingPayments(customerId: number): Promise<PaymentSchedule[]>;
 
   // Loan methods
   getLoans(): Promise<LoanBook[]>;
@@ -207,6 +215,11 @@ export class DatabaseStorage implements IStorage {
     return customer || undefined;
   }
 
+  async getCustomerByEmail(email: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.email, email));
+    return customer || undefined;
+  }
+
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const [customer] = await db
       .insert(customers)
@@ -224,8 +237,54 @@ export class DatabaseStorage implements IStorage {
     return customer;
   }
 
+  async updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer> {
+    const [customer] = await db
+      .update(customers)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(customers.id, id))
+      .returning();
+    return customer;
+  }
+
+  async updateCustomerLastLogin(id: number): Promise<Customer> {
+    const [customer] = await db
+      .update(customers)
+      .set({ lastPortalLogin: new Date(), updatedAt: new Date() })
+      .where(eq(customers.id, id))
+      .returning();
+    return customer;
+  }
+
   async deleteCustomer(id: number): Promise<void> {
     await db.delete(customers).where(eq(customers.id, id));
+  }
+
+  // Customer portal methods
+  async getCustomerLoans(customerId: number): Promise<LoanBook[]> {
+    return await db.select().from(loanBooks).where(eq(loanBooks.customerId, customerId));
+  }
+
+  async getCustomerPayments(customerId: number): Promise<PaymentSchedule[]> {
+    return await db
+      .select()
+      .from(paymentSchedules)
+      .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
+      .where(eq(loanBooks.customerId, customerId))
+      .orderBy(desc(paymentSchedules.dueDate));
+  }
+
+  async getCustomerUpcomingPayments(customerId: number): Promise<PaymentSchedule[]> {
+    return await db
+      .select()
+      .from(paymentSchedules)
+      .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
+      .where(
+        and(
+          eq(loanBooks.customerId, customerId),
+          eq(paymentSchedules.status, 'pending')
+        )
+      )
+      .orderBy(paymentSchedules.dueDate);
   }
 
   // Loan methods

@@ -5,7 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 import AppLayout from "@/components/layout/AppLayout";
+import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
 import LoanSimulator from "@/pages/LoanSimulator";
 import Liora from "@/pages/Liora";
@@ -28,9 +30,25 @@ import UserProfile from "@/pages/UserProfile";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
+// Customer Portal Components
+import CustomerLogin from "@/pages/customer/CustomerLogin";
+import CustomerDashboard from "@/pages/customer/CustomerDashboard";
+import CustomerPayments from "@/pages/customer/CustomerPayments";
+import CustomerProfile from "@/pages/customer/CustomerProfile";
+
 function Router() {
   return (
     <Switch>
+      {/* Customer Portal Routes */}
+      <Route path="/customer/login" component={CustomerLogin} />
+      <Route path="/customer/dashboard" component={CustomerDashboard} />
+      <Route path="/customer/payments" component={CustomerPayments} />
+      <Route path="/customer/profile" component={CustomerProfile} />
+      <Route path="/customer">
+        <CustomerLogin />
+      </Route>
+
+      {/* Staff Portal Routes */}
       <Route path="/login" component={Login} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
@@ -61,15 +79,33 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <AppLayout>
-              <Router />
-            </AppLayout>
-          </TooltipProvider>
+          <CustomerAuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <AppLayoutSelector />
+            </TooltipProvider>
+          </CustomerAuthProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
+  );
+}
+
+function AppLayoutSelector() {
+  const isCustomerPortal = window.location.pathname.startsWith('/customer');
+  
+  if (isCustomerPortal) {
+    return (
+      <CustomerLayout>
+        <Router />
+      </CustomerLayout>
+    );
+  }
+  
+  return (
+    <AppLayout>
+      <Router />
+    </AppLayout>
   );
 }
 

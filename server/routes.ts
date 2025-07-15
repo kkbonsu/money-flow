@@ -77,6 +77,27 @@ const authenticateToken = (req: any, res: any, next: any) => {
   });
 };
 
+// Middleware to verify customer JWT token
+const authenticateCustomerToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Access token required" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err: any, customer: any) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid token" });
+    }
+    if (customer.type !== 'customer') {
+      return res.status(403).json({ message: "Invalid customer token" });
+    }
+    req.customer = customer;
+    next();
+  });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from uploads directory
   app.use('/uploads', express.static(uploadsDir));
@@ -132,6 +153,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ user: { id: user.id, username: user.username, email: user.email, role: user.role }, token });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Login failed" });
+    }
+  });
+
+  // Customer authentication routes
+  app.post("/api/customer/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      const customer = await storage.getCustomerByEmail(email);
+      
+      if (!customer || !customer.password || !await bcrypt.compare(password, customer.password)) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      if (!customer.isPortalActive) {
+        return res.status(401).json({ message: "Portal access is not active for this account" });
+      }
+      
+      const token = jwt.sign(
+        { id: customer.id, email: customer.email, type: 'customer' },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      
+      // Update last portal login
+      await storage.updateCustomerLastLogin(customer.id);
+      
+      res.json({ 
+        customer: { 
+          id: customer.id, 
+          firstName: customer.firstName, 
+          lastName: customer.lastName, 
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          creditScore: customer.creditScore,
+          isPortalActive: customer.isPortalActive
+        }, 
+        token 
+      });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Login failed" });
+    }
+  });
+
+  // Customer profile routes
+  app.get("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
+    try {
+      const customer = await storage.getCustomer(req.customer.id);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      // Remove password from response
+      const { password, ...customerProfile } = customer;
+      res.json(customerProfile);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
+    try {
+      const updateData = req.body;
+      const customer = await storage.updateCustomer(req.customer.id, updateData);
+      const { password, ...customerProfile } = customer;
+      res.json(customerProfile);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update profile" });
+    }
+  });
+
+  app.put("/api/customer/password", authenticateCustomerToken, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const customer = await storage.getCustomer(req.customer.id);
+      
+      if (!customer || !customer.password || !await bcrypt.compare(currentPassword, customer.password)) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+      
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await storage.updateCustomerPassword(req.customer.id, hashedPassword);
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update password" });
+    }
+  });
+
+  // Customer loan routes
+  app.get("/api/customer/loans", authenticateCustomerToken, async (req, res) => {
+    try {
+      const loans = await storage.getCustomerLoans(req.customer.id);
+      res.json(loans);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loans" });
+    }
+  });
+
+  // Customer payment routes
+  app.get("/api/customer/payments", authenticateCustomerToken, async (req, res) => {
+    try {
+      const payments = await storage.getCustomerPayments(req.customer.id);
+      res.json(payments);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payments" });
+    }
+  });
+
+  app.get("/api/customer/payments/upcoming", authenticateCustomerToken, async (req, res) => {
+    try {
+      const upcomingPayments = await storage.getCustomerUpcomingPayments(req.customer.id);
+      res.json(upcomingPayments);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch upcoming payments" });
     }
   });
 
