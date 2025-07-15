@@ -23,6 +23,14 @@ export default function CustomerLoans() {
     queryKey: ['/api/customer/profile'],
   });
 
+  const { data: payments } = useQuery({
+    queryKey: ['/api/customer/payments'],
+  });
+
+  const { data: upcomingPayments } = useQuery({
+    queryKey: ['/api/customer/payments/upcoming'],
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
@@ -56,10 +64,24 @@ export default function CustomerLoans() {
     }
   };
 
-  const calculateProgress = (loanAmount: string, outstandingBalance: string) => {
-    const total = parseFloat(loanAmount);
-    const outstanding = parseFloat(outstandingBalance || '0');
-    return ((total - outstanding) / total) * 100;
+  const calculateProgress = (loanId: number) => {
+    if (!payments) return 0;
+    
+    const loanPayments = payments.filter((payment: any) => payment.loanId === loanId);
+    const totalPayments = loanPayments.length;
+    const paidPayments = loanPayments.filter((payment: any) => payment.status === 'paid').length;
+    
+    return totalPayments > 0 ? (paidPayments / totalPayments) * 100 : 0;
+  };
+
+  const getNextPaymentDate = (loanId: number) => {
+    if (!upcomingPayments) return null;
+    
+    const nextPayment = upcomingPayments
+      .filter((payment: any) => payment.loanId === loanId)
+      .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+    
+    return nextPayment ? new Date(nextPayment.dueDate) : null;
   };
 
   return (
@@ -190,7 +212,7 @@ export default function CustomerLoans() {
                     <div>
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Next Payment Date</p>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {loan.nextPaymentDate ? format(new Date(loan.nextPaymentDate), 'MMM dd, yyyy') : 'N/A'}
+                        {getNextPaymentDate(loan.id) ? format(getNextPaymentDate(loan.id), 'MMM dd, yyyy') : 'N/A'}
                       </p>
                     </div>
                   </div>
