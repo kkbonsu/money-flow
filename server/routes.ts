@@ -200,7 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer profile routes
   app.get("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
-      const customer = await storage.getCustomer(req.customer.id);
+      const customerId = parseInt(req.customer.id);
+      const customer = await storage.getCustomer(customerId);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
@@ -208,6 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...customerProfile } = customer;
       res.json(customerProfile);
     } catch (error) {
+      console.error("Customer profile error:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch profile" });
     }
   });
@@ -244,9 +246,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer loan routes
   app.get("/api/customer/loans", authenticateCustomerToken, async (req, res) => {
     try {
-      const loans = await storage.getCustomerLoans(req.customer.id);
+      const customerId = parseInt(req.customer.id);
+      const loans = await storage.getCustomerLoans(customerId);
       res.json(loans);
     } catch (error) {
+      console.error("Customer loans error:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loans" });
     }
   });
@@ -254,18 +258,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer payment routes
   app.get("/api/customer/payments", authenticateCustomerToken, async (req, res) => {
     try {
-      const payments = await storage.getCustomerPayments(req.customer.id);
+      const customerId = parseInt(req.customer.id);
+      const payments = await storage.getCustomerPayments(customerId);
       res.json(payments);
     } catch (error) {
+      console.error("Customer payments error:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payments" });
     }
   });
 
   app.get("/api/customer/payments/upcoming", authenticateCustomerToken, async (req, res) => {
     try {
-      const upcomingPayments = await storage.getCustomerUpcomingPayments(req.customer.id);
+      const customerId = parseInt(req.customer.id);
+      const upcomingPayments = await storage.getCustomerUpcomingPayments(customerId);
       res.json(upcomingPayments);
     } catch (error) {
+      console.error("Customer upcoming payments error:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch upcoming payments" });
     }
   });

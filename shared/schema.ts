@@ -65,6 +65,7 @@ export const paymentSchedules = pgTable("payment_schedules", {
   paidDate: timestamp("paid_date"),
   paidAmount: decimal("paid_amount", { precision: 15, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const staff = pgTable("staff", {
