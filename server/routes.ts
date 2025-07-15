@@ -516,8 +516,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/customers", authenticateToken, async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
-      const customer = await storage.createCustomer(customerData);
-      res.json(customer);
+      
+      // Generate a default password for the customer portal
+      const defaultPassword = Math.random().toString(36).slice(-8); // 8 character random password
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+      
+      // Create customer with portal credentials
+      const customerWithPortal = {
+        ...customerData,
+        password: hashedPassword,
+        isPortalActive: true
+      };
+      
+      const customer = await storage.createCustomer(customerWithPortal);
+      
+      // Return customer data with generated credentials
+      res.json({
+        ...customer,
+        portalCredentials: {
+          email: customer.email,
+          password: defaultPassword,
+          loginUrl: `/customer`
+        }
+      });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create customer" });
     }
