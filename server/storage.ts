@@ -265,48 +265,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomerPayments(customerId: number): Promise<PaymentSchedule[]> {
+    // Get all payment schedules for this customer's loans directly
     const result = await db
-      .select({
-        id: paymentSchedules.id,
-        loanId: paymentSchedules.loanId,
-        dueDate: paymentSchedules.dueDate,
-        amount: paymentSchedules.amount,
-        principalAmount: paymentSchedules.principalAmount,
-        interestAmount: paymentSchedules.interestAmount,
-        status: paymentSchedules.status,
-        paidDate: paymentSchedules.paidDate,
-        paidAmount: paymentSchedules.paidAmount,
-        createdAt: paymentSchedules.createdAt,
-        updatedAt: paymentSchedules.updatedAt
-      })
+      .select()
       .from(paymentSchedules)
-      .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
-      .where(eq(loanBooks.customerId, customerId))
+      .where(
+        sql`${paymentSchedules.loanId} IN (
+          SELECT id FROM loan_books WHERE customer_id = ${customerId}
+        )`
+      )
       .orderBy(desc(paymentSchedules.dueDate));
     
     return result;
   }
 
   async getCustomerUpcomingPayments(customerId: number): Promise<PaymentSchedule[]> {
+    // Get all pending payment schedules for this customer's loans directly
     const result = await db
-      .select({
-        id: paymentSchedules.id,
-        loanId: paymentSchedules.loanId,
-        dueDate: paymentSchedules.dueDate,
-        amount: paymentSchedules.amount,
-        principalAmount: paymentSchedules.principalAmount,
-        interestAmount: paymentSchedules.interestAmount,
-        status: paymentSchedules.status,
-        paidDate: paymentSchedules.paidDate,
-        paidAmount: paymentSchedules.paidAmount,
-        createdAt: paymentSchedules.createdAt,
-        updatedAt: paymentSchedules.updatedAt
-      })
+      .select()
       .from(paymentSchedules)
-      .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
       .where(
         and(
-          eq(loanBooks.customerId, customerId),
+          sql`${paymentSchedules.loanId} IN (
+            SELECT id FROM loan_books WHERE customer_id = ${customerId}
+          )`,
           eq(paymentSchedules.status, 'pending')
         )
       )
