@@ -24,11 +24,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedAuth = authApi.getStoredAuth();
-    if (storedAuth) {
-      setUser(storedAuth.user);
-    }
-    setIsLoading(false);
+    const initializeAuth = async () => {
+      try {
+        const storedAuth = authApi.getStoredAuth();
+        if (storedAuth) {
+          setUser(storedAuth.user);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        // Clear potentially corrupted auth data
+        authApi.logout();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials) => {

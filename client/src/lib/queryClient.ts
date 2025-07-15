@@ -37,16 +37,21 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      headers: getAuthHeaders(),
-    });
+    try {
+      const res = await fetch(queryKey.join("/") as string, {
+        headers: getAuthHeaders(),
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      return await res.json();
+    } catch (error) {
+      console.error('Query fetch error:', error);
+      throw error;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({
@@ -61,5 +66,9 @@ export const queryClient = new QueryClient({
     mutations: {
       retry: false,
     },
+  },
+  errorHandler: (error) => {
+    // Handle global query errors to prevent unhandled promise rejections
+    console.error('Query error:', error);
   },
 });
