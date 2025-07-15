@@ -14,6 +14,8 @@ interface ViewCustomerModalProps {
 }
 
 export default function ViewCustomerModal({ isOpen, onClose, customer }: ViewCustomerModalProps) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  
   if (!customer) return null;
 
   const getStatusColor = (status: string) => {
@@ -25,6 +27,12 @@ export default function ViewCustomerModal({ isOpen, onClose, customer }: ViewCus
       default:
         return 'bg-muted text-muted-foreground';
     }
+  };
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   return (
@@ -118,6 +126,77 @@ export default function ViewCustomerModal({ isOpen, onClose, customer }: ViewCus
               </CardContent>
             </Card>
           </div>
+
+          {/* Customer Portal Credentials */}
+          {customer.isPortalActive && (
+            <>
+              <Separator />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <Key className="w-5 h-5" />
+                    <span>Customer Portal Access</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-blue-800 dark:text-blue-200 text-sm mb-3">
+                      Customer has access to the customer portal with the following credentials:
+                    </p>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium">Login URL:</span>
+                          <code className="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                            {window.location.origin}/customer
+                          </code>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(`${window.location.origin}/customer`, 'url')}
+                          className="ml-2"
+                        >
+                          {copiedField === 'url' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium">Email:</span>
+                          <code className="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                            {customer.email}
+                          </code>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(customer.email, 'email')}
+                          className="ml-2"
+                        >
+                          {copiedField === 'email' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium">Password:</span>
+                          <span className="ml-2 text-muted-foreground">
+                            Set during customer creation (customer can change it)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-blue-700 dark:text-blue-300 text-sm mt-3">
+                      Customer can access their loans, payment history, and profile through the portal.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-4">
