@@ -63,9 +63,20 @@ export default function CustomerPayments() {
 
   const totalOutstanding = upcomingPayments?.reduce((sum: number, payment: any) => sum + parseFloat(payment.amount), 0) || 0;
   const overduePayments = upcomingPayments?.filter((payment: any) => 
-    payment.status === 'overdue' || new Date(payment.dueDate) < new Date()
+    new Date(payment.dueDate) < new Date() && payment.status === 'pending'
   ) || [];
-  const nextPayment = upcomingPayments?.find((payment: any) => payment.status === 'pending');
+  const nextPayment = upcomingPayments?.sort((a: any, b: any) => 
+    new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+  )?.[0];
+  
+  // Filter payments based on current filter
+  const filteredPayments = payments?.filter((payment: any) => {
+    if (filter === 'all') return true;
+    if (filter === 'paid') return payment.status === 'paid';
+    if (filter === 'pending') return payment.status === 'pending';
+    if (filter === 'overdue') return new Date(payment.dueDate) < new Date() && payment.status === 'pending';
+    return true;
+  }) || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
@@ -205,18 +216,25 @@ export default function CustomerPayments() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {payments?.map((payment: any) => (
+              {filteredPayments?.map((payment: any) => (
                 <div key={payment.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      payment.status === 'paid' ? 'bg-green-100 dark:bg-green-900' : 
+                      payment.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900' : 
+                      'bg-red-100 dark:bg-red-900'
+                    }`}>
+                      {payment.status === 'paid' && <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />}
+                      {payment.status === 'pending' && <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />}
+                      {payment.status === 'overdue' && <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />}
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">
                         Payment #{payment.id}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Loan #{payment.loanId} • {format(new Date(payment.paidDate), 'MMM dd, yyyy')}
+                        Loan #{payment.loanId} • Due: {format(new Date(payment.dueDate), 'MMM dd, yyyy')}
+                        {payment.paidDate && ` • Paid: ${format(new Date(payment.paidDate), 'MMM dd, yyyy')}`}
                       </p>
                     </div>
                   </div>
@@ -229,15 +247,15 @@ export default function CustomerPayments() {
                         Principal: ${parseFloat(payment.principalAmount).toLocaleString()}
                       </p>
                     </div>
-                    <Badge className="bg-green-100 text-green-800 border-green-200">
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Paid
+                    <Badge className={getStatusColor(payment.status)}>
+                      {getStatusIcon(payment.status)}
+                      <span className="ml-1 capitalize">{payment.status}</span>
                     </Badge>
                   </div>
                 </div>
               ))}
               
-              {!payments || payments.length === 0 && (
+              {!filteredPayments || filteredPayments.length === 0 && (
                 <div className="text-center py-8">
                   <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400">No payment history found</p>
