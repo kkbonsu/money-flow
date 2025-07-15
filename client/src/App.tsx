@@ -34,7 +34,12 @@ import NotFound from "@/pages/not-found";
 // Customer Portal Components
 import CustomerLogin from "@/pages/customer/CustomerLogin";
 import CustomerDashboard from "@/pages/customer/CustomerDashboard";
+import CustomerLoans from "@/pages/customer/CustomerLoans";
 import CustomerPayments from "@/pages/customer/CustomerPayments";
+import CustomerPaymentSchedule from "@/pages/customer/CustomerPaymentSchedule";
+import CustomerDocuments from "@/pages/customer/CustomerDocuments";
+import CustomerSupport from "@/pages/customer/CustomerSupport";
+import CustomerHelp from "@/pages/customer/CustomerHelp";
 import CustomerProfile from "@/pages/customer/CustomerProfile";
 
 function Router() {
@@ -43,7 +48,12 @@ function Router() {
       {/* Customer Portal Routes */}
       <Route path="/customer/login" component={CustomerLogin} />
       <Route path="/customer/dashboard" component={CustomerDashboard} />
+      <Route path="/customer/loans" component={CustomerLoans} />
       <Route path="/customer/payments" component={CustomerPayments} />
+      <Route path="/customer/schedule" component={CustomerPaymentSchedule} />
+      <Route path="/customer/documents" component={CustomerDocuments} />
+      <Route path="/customer/support" component={CustomerSupport} />
+      <Route path="/customer/help" component={CustomerHelp} />
       <Route path="/customer/profile" component={CustomerProfile} />
       <Route path="/customer">
         <CustomerLogin />

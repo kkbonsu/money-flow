@@ -265,12 +265,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomerPayments(customerId: number): Promise<PaymentSchedule[]> {
-    return await db
-      .select()
+    const result = await db
+      .select({
+        id: paymentSchedules.id,
+        loanId: paymentSchedules.loanId,
+        dueDate: paymentSchedules.dueDate,
+        amount: paymentSchedules.amount,
+        principalAmount: paymentSchedules.principalAmount,
+        interestAmount: paymentSchedules.interestAmount,
+        status: paymentSchedules.status,
+        paidDate: paymentSchedules.paidDate,
+        paidAmount: paymentSchedules.paidAmount,
+        createdAt: paymentSchedules.createdAt,
+        updatedAt: paymentSchedules.updatedAt
+      })
       .from(paymentSchedules)
       .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
       .where(eq(loanBooks.customerId, customerId))
       .orderBy(desc(paymentSchedules.dueDate));
+    
+    return result;
   }
 
   async getCustomerUpcomingPayments(customerId: number): Promise<PaymentSchedule[]> {
