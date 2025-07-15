@@ -12,7 +12,7 @@ import {
   type Report, type InsertReport, type UserAuditLog, type InsertUserAuditLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -274,8 +274,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomerUpcomingPayments(customerId: number): Promise<PaymentSchedule[]> {
-    return await db
-      .select()
+    const result = await db
+      .select({
+        id: paymentSchedules.id,
+        loanId: paymentSchedules.loanId,
+        dueDate: paymentSchedules.dueDate,
+        amount: paymentSchedules.amount,
+        principalAmount: paymentSchedules.principalAmount,
+        interestAmount: paymentSchedules.interestAmount,
+        status: paymentSchedules.status,
+        paidDate: paymentSchedules.paidDate,
+        paidAmount: paymentSchedules.paidAmount,
+        createdAt: paymentSchedules.createdAt,
+        updatedAt: paymentSchedules.updatedAt
+      })
       .from(paymentSchedules)
       .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
       .where(
@@ -285,6 +297,8 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(paymentSchedules.dueDate);
+    
+    return result;
   }
 
   // Loan methods

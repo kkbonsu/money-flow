@@ -1,5 +1,6 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
+import { customerQueryClient } from "./lib/customerQueryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -96,16 +97,20 @@ function AppLayoutSelector() {
   
   if (isCustomerPortal) {
     return (
-      <CustomerLayout>
-        <Router />
-      </CustomerLayout>
+      <QueryClientProvider client={customerQueryClient}>
+        <CustomerLayout>
+          <Router />
+        </CustomerLayout>
+      </QueryClientProvider>
     );
   }
   
   return (
-    <AppLayout>
-      <Router />
-    </AppLayout>
+    <QueryClientProvider client={queryClient}>
+      <AppLayout>
+        <Router />
+      </AppLayout>
+    </QueryClientProvider>
   );
 }
 
