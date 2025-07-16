@@ -40,10 +40,7 @@ export function MfiRegistration() {
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertMfiRegistration) => {
-      return await apiRequest('/api/mfi-registration', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      return await apiRequest('POST', '/api/mfi-registration', data);
     },
     onSuccess: () => {
       toast({
@@ -64,10 +61,7 @@ export function MfiRegistration() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: InsertMfiRegistration) => {
-      return await apiRequest(`/api/mfi-registration/${mfiRegistration?.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
+      return await apiRequest('PUT', `/api/mfi-registration/${mfiRegistration?.id}`, data);
     },
     onSuccess: () => {
       toast({
