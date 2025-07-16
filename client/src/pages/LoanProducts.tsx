@@ -298,6 +298,15 @@ export default function LoanProducts() {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => handleView(product)}
+                    className="bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleEdit(product)}
                     className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                   >
@@ -331,6 +340,13 @@ export default function LoanProducts() {
           </p>
         </div>
       )}
+
+      {/* View Loan Product Modal */}
+      <ViewLoanProductModal
+        isOpen={isViewModalOpen}
+        onClose={handleViewModalClose}
+        loanProduct={viewingProduct}
+      />
     </div>
   );
 }
