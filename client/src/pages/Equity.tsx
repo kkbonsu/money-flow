@@ -228,6 +228,13 @@ export default function EquityPage() {
           </div>
         </CardContent>
       </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="shareholders">
+          <ShareholderManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
