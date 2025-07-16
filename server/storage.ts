@@ -1,9 +1,10 @@
 import { 
-  users, customers, loanBooks, paymentSchedules, staff, incomeManagement, 
+  users, customers, loanBooks, loanProducts, paymentSchedules, staff, incomeManagement, 
   expenses, bankManagement, pettyCash, inventory, rentManagement, assets, 
   liabilities, equity, reports, userAuditLogs, mfiRegistration, shareholders,
   type User, type InsertUser, type Customer, type InsertCustomer,
-  type LoanBook, type InsertLoanBook, type PaymentSchedule, type InsertPaymentSchedule,
+  type LoanBook, type InsertLoanBook, type LoanProduct, type InsertLoanProduct,
+  type PaymentSchedule, type InsertPaymentSchedule,
   type Staff, type InsertStaff, type IncomeManagement, type InsertIncomeManagement,
   type Expense, type InsertExpense, type BankManagement, type InsertBankManagement,
   type PettyCash, type InsertPettyCash, type Inventory, type InsertInventory,
@@ -44,6 +45,13 @@ export interface IStorage {
   getCustomerLoans(customerId: number): Promise<LoanBook[]>;
   getCustomerPayments(customerId: number): Promise<PaymentSchedule[]>;
   getCustomerUpcomingPayments(customerId: number): Promise<PaymentSchedule[]>;
+
+  // Loan Product methods
+  getLoanProducts(): Promise<LoanProduct[]>;
+  getLoanProduct(id: number): Promise<LoanProduct | undefined>;
+  createLoanProduct(loanProduct: InsertLoanProduct): Promise<LoanProduct>;
+  updateLoanProduct(id: number, loanProduct: Partial<InsertLoanProduct>): Promise<LoanProduct>;
+  deleteLoanProduct(id: number): Promise<void>;
 
   // Loan methods
   getLoans(): Promise<LoanBook[]>;
@@ -308,6 +316,37 @@ export class DatabaseStorage implements IStorage {
       .orderBy(paymentSchedules.dueDate);
     
     return result;
+  }
+
+  // Loan Product methods
+  async getLoanProducts(): Promise<LoanProduct[]> {
+    return await db.select().from(loanProducts).orderBy(desc(loanProducts.createdAt));
+  }
+
+  async getLoanProduct(id: number): Promise<LoanProduct | undefined> {
+    const [loanProduct] = await db.select().from(loanProducts).where(eq(loanProducts.id, id));
+    return loanProduct || undefined;
+  }
+
+  async createLoanProduct(insertLoanProduct: InsertLoanProduct): Promise<LoanProduct> {
+    const [loanProduct] = await db
+      .insert(loanProducts)
+      .values(insertLoanProduct)
+      .returning();
+    return loanProduct;
+  }
+
+  async updateLoanProduct(id: number, updateLoanProduct: Partial<InsertLoanProduct>): Promise<LoanProduct> {
+    const [loanProduct] = await db
+      .update(loanProducts)
+      .set({ ...updateLoanProduct, updatedAt: new Date() })
+      .where(eq(loanProducts.id, id))
+      .returning();
+    return loanProduct;
+  }
+
+  async deleteLoanProduct(id: number): Promise<void> {
+    await db.delete(loanProducts).where(eq(loanProducts.id, id));
   }
 
   // Loan methods
