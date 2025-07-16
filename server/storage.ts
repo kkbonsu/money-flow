@@ -1041,6 +1041,60 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
+
+  // MFI Registration methods
+  async getMfiRegistration(): Promise<MfiRegistration | undefined> {
+    const [mfi] = await db.select().from(mfiRegistration).limit(1);
+    return mfi;
+  }
+
+  async createMfiRegistration(insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
+    const [mfi] = await db
+      .insert(mfiRegistration)
+      .values(insertMfiRegistration)
+      .returning();
+    return mfi;
+  }
+
+  async updateMfiRegistration(id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
+    const [mfi] = await db
+      .update(mfiRegistration)
+      .set({ ...updateMfiRegistration, updatedAt: new Date() })
+      .where(eq(mfiRegistration.id, id))
+      .returning();
+    return mfi;
+  }
+
+  // Shareholder methods
+  async getShareholders(): Promise<Shareholder[]> {
+    return await db.select().from(shareholders).orderBy(desc(shareholders.createdAt));
+  }
+
+  async getShareholder(id: number): Promise<Shareholder | undefined> {
+    const [shareholder] = await db.select().from(shareholders).where(eq(shareholders.id, id));
+    return shareholder;
+  }
+
+  async createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder> {
+    const [shareholder] = await db
+      .insert(shareholders)
+      .values(insertShareholder)
+      .returning();
+    return shareholder;
+  }
+
+  async updateShareholder(id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
+    const [shareholder] = await db
+      .update(shareholders)
+      .set({ ...updateShareholder, updatedAt: new Date() })
+      .where(eq(shareholders.id, id))
+      .returning();
+    return shareholder;
+  }
+
+  async deleteShareholder(id: number): Promise<void> {
+    await db.delete(shareholders).where(eq(shareholders.id, id));
+  }
 }
 
 export const storage = new DatabaseStorage();

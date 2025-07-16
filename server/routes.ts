@@ -21,7 +21,9 @@ import {
   insertLiabilitySchema,
   insertEquitySchema,
   insertReportSchema,
-  insertUserAuditLogSchema
+  insertUserAuditLogSchema,
+  insertMfiRegistrationSchema,
+  insertShareholderSchema
 } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -1243,6 +1245,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(monthlyPayments);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch monthly payments" });
+    }
+  });
+
+  // MFI Registration routes
+  app.get("/api/mfi-registration", authenticateToken, async (req, res) => {
+    try {
+      const mfiRegistration = await storage.getMfiRegistration();
+      res.json(mfiRegistration);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch MFI registration" });
+    }
+  });
+
+  app.post("/api/mfi-registration", authenticateToken, async (req, res) => {
+    try {
+      const validatedData = insertMfiRegistrationSchema.parse(req.body);
+      const mfiRegistration = await storage.createMfiRegistration(validatedData);
+      res.status(201).json(mfiRegistration);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: error instanceof Error ? error.message : "Failed to create MFI registration" });
+      }
+    }
+  });
+
+  app.put("/api/mfi-registration/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertMfiRegistrationSchema.partial().parse(req.body);
+      const mfiRegistration = await storage.updateMfiRegistration(parseInt(id), validatedData);
+      res.json(mfiRegistration);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update MFI registration" });
+      }
+    }
+  });
+
+  // Shareholder Management routes
+  app.get("/api/shareholders", authenticateToken, async (req, res) => {
+    try {
+      const shareholders = await storage.getShareholders();
+      res.json(shareholders);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch shareholders" });
+    }
+  });
+
+  app.get("/api/shareholders/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const shareholder = await storage.getShareholder(parseInt(id));
+      if (!shareholder) {
+        return res.status(404).json({ message: "Shareholder not found" });
+      }
+      res.json(shareholder);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch shareholder" });
+    }
+  });
+
+  app.post("/api/shareholders", authenticateToken, async (req, res) => {
+    try {
+      const validatedData = insertShareholderSchema.parse(req.body);
+      const shareholder = await storage.createShareholder(validatedData);
+      res.status(201).json(shareholder);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: error instanceof Error ? error.message : "Failed to create shareholder" });
+      }
+    }
+  });
+
+  app.put("/api/shareholders/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertShareholderSchema.partial().parse(req.body);
+      const shareholder = await storage.updateShareholder(parseInt(id), validatedData);
+      res.json(shareholder);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update shareholder" });
+      }
+    }
+  });
+
+  app.delete("/api/shareholders/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteShareholder(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete shareholder" });
     }
   });
 
