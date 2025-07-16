@@ -25,6 +25,7 @@ const navigationItems = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Loan Simulator', href: '/loan-simulator', icon: Calculator },
   { name: 'LIORA (AI Assistant)', href: '/liora', icon: Bot },
+  { name: 'Loan Products', href: '/loan-products', icon: Package },
   { 
     name: 'Management', 
     items: [

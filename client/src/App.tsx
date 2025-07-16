@@ -12,6 +12,7 @@ import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
 import LoanSimulator from "@/pages/LoanSimulator";
 import Liora from "@/pages/Liora";
+import LoanProducts from "@/pages/LoanProducts";
 import Customers from "@/pages/Customers";
 import LoanBook from "@/pages/LoanBook";
 import PaymentSchedule from "@/pages/PaymentSchedule";
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
       <Route path="/liora" component={Liora} />
+      <Route path="/loan-products" component={LoanProducts} />
       <Route path="/customers" component={Customers} />
       <Route path="/loan-book" component={LoanBook} />
       <Route path="/payment-schedule" component={PaymentSchedule} />

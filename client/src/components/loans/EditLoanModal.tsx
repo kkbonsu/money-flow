@@ -26,6 +26,11 @@ export default function EditLoanModal({ isOpen, onClose, loan }: EditLoanModalPr
   const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['/api/customers'],
   });
+
+  // Fetch loan products for dropdown
+  const { data: loanProducts = [], isLoading: loanProductsLoading } = useQuery({
+    queryKey: ['/api/loan-products'],
+  });
   
   const {
     register,
@@ -60,6 +65,7 @@ export default function EditLoanModal({ isOpen, onClose, loan }: EditLoanModalPr
     if (loan && isOpen) {
       reset({
         customerId: loan.customerId,
+        loanProductId: loan.loanProductId,
         loanAmount: loan.loanAmount,
         interestRate: loan.interestRate,
         term: loan.term,
@@ -113,6 +119,37 @@ export default function EditLoanModal({ isOpen, onClose, loan }: EditLoanModalPr
             {errors.customerId && (
               <p className="text-sm text-destructive mt-1">
                 {errors.customerId.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="loanProductId">Loan Product</Label>
+            <Controller
+              name="loanProductId"
+              control={control}
+              render={({ field }) => (
+                <Select 
+                  value={field.value?.toString()} 
+                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  disabled={loanProductsLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={loanProductsLoading ? "Loading loan products..." : "Select a loan product"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loanProducts.map((product: any) => (
+                      <SelectItem key={product.id} value={product.id.toString()}>
+                        {product.name} - GHS {parseFloat(product.fee).toLocaleString()} fee
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.loanProductId && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.loanProductId.message}
               </p>
             )}
           </div>
