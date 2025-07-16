@@ -424,6 +424,29 @@ export const insertUserAuditLogSchema = createInsertSchema(userAuditLogs).omit({
   timestamp: true,
 });
 
+export const insertMfiRegistrationSchema = createInsertSchema(mfiRegistration).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  paidUpCapital: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  minimumCapitalRequired: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null ? val.toString() : "2000000.00"
+  ),
+  licenseExpiryDate: z.union([z.string(), z.date()]).optional().transform((val) => 
+    val instanceof Date ? val : val ? new Date(val) : undefined
+  ),
+});
+
+export const insertShareholderSchema = createInsertSchema(shareholders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  sharePercentage: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  investmentAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
