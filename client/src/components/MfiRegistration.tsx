@@ -28,14 +28,13 @@ export function MfiRegistration() {
     defaultValues: {
       companyName: "",
       registrationNumber: "",
-      licenseNumber: "",
-      licenseExpiryDate: "",
       registeredAddress: "",
+      physicalAddress: "",
       contactPhone: "",
       contactEmail: "",
-      capitalAmount: "",
-      shareholdersCount: 0,
-      tierLevel: "tier_3"
+      paidUpCapital: "",
+      boGLicenseNumber: "",
+      licenseExpiryDate: ""
     }
   });
 
@@ -100,14 +99,13 @@ export function MfiRegistration() {
       form.reset({
         companyName: mfiRegistration.companyName,
         registrationNumber: mfiRegistration.registrationNumber,
-        licenseNumber: mfiRegistration.licenseNumber,
-        licenseExpiryDate: mfiRegistration.licenseExpiryDate,
         registeredAddress: mfiRegistration.registeredAddress,
-        contactPhone: mfiRegistration.contactPhone,
-        contactEmail: mfiRegistration.contactEmail,
-        capitalAmount: mfiRegistration.capitalAmount,
-        shareholdersCount: mfiRegistration.shareholdersCount,
-        tierLevel: mfiRegistration.tierLevel
+        physicalAddress: mfiRegistration.physicalAddress || "",
+        contactPhone: mfiRegistration.contactPhone || "",
+        contactEmail: mfiRegistration.contactEmail || "",
+        paidUpCapital: mfiRegistration.paidUpCapital || "",
+        boGLicenseNumber: mfiRegistration.boGLicenseNumber || "",
+        licenseExpiryDate: mfiRegistration.licenseExpiryDate || ""
       });
     }
     setIsEditing(true);
@@ -163,13 +161,13 @@ export function MfiRegistration() {
 
   if (isEditing) {
     return (
-      <Card className="bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm border-white/20">
+      <Card className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-white/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
             <Shield className="h-5 w-5" />
             {mfiRegistration ? 'Edit MFI Registration' : 'Register MFI'}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-600 dark:text-gray-300">
             Complete your MFI registration details for Bank of Ghana compliance
           </CardDescription>
         </CardHeader>
@@ -199,12 +197,16 @@ export function MfiRegistration() {
                   name="registrationNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                      <FormLabel className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
                         <FileText className="h-4 w-4" />
                         Registration Number
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter registration number" {...field} />
+                        <Input 
+                          placeholder="Enter registration number" 
+                          {...field} 
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,29 +215,19 @@ export function MfiRegistration() {
 
                 <FormField
                   control={form.control}
-                  name="licenseNumber"
+                  name="physicalAddress"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Award className="h-4 w-4" />
-                        License Number
+                      <FormLabel className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                        <Building className="h-4 w-4" />
+                        Physical Address
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter license number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="licenseExpiryDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>License Expiry Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
+                        <Input 
+                          placeholder="Enter physical address" 
+                          {...field} 
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -247,12 +239,16 @@ export function MfiRegistration() {
                   name="contactPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                      <FormLabel className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
                         <Phone className="h-4 w-4" />
                         Contact Phone
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter contact phone" {...field} />
+                        <Input 
+                          placeholder="Enter contact phone" 
+                          {...field} 
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -264,12 +260,17 @@ export function MfiRegistration() {
                   name="contactEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                      <FormLabel className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
                         <Mail className="h-4 w-4" />
                         Contact Email
                       </FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Enter contact email" {...field} />
+                        <Input 
+                          type="email" 
+                          placeholder="Enter contact email" 
+                          {...field} 
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -278,15 +279,21 @@ export function MfiRegistration() {
 
                 <FormField
                   control={form.control}
-                  name="capitalAmount"
+                  name="paidUpCapital"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
+                      <FormLabel className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
                         <DollarSign className="h-4 w-4" />
-                        Capital Amount (GHS)
+                        Paid Up Capital (GHS)
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="Enter capital amount" {...field} />
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="Enter paid up capital" 
+                          {...field} 
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -295,15 +302,19 @@ export function MfiRegistration() {
 
                 <FormField
                   control={form.control}
-                  name="shareholdersCount"
+                  name="boGLicenseNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Number of Shareholders
+                      <FormLabel className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                        <Award className="h-4 w-4" />
+                        Bank of Ghana License Number
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Enter number of shareholders" {...field} />
+                        <Input 
+                          placeholder="Enter BoG license number" 
+                          {...field} 
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -312,22 +323,17 @@ export function MfiRegistration() {
 
                 <FormField
                   control={form.control}
-                  name="tierLevel"
+                  name="licenseExpiryDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tier Level</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select tier level" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="tier_1">Tier 1 MFI</SelectItem>
-                          <SelectItem value="tier_2">Tier 2 MFI</SelectItem>
-                          <SelectItem value="tier_3">Tier 3 MFI</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-gray-800 dark:text-gray-200">License Expiry Date</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          {...field} 
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -339,9 +345,13 @@ export function MfiRegistration() {
                 name="registeredAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Registered Address</FormLabel>
+                    <FormLabel className="text-gray-800 dark:text-gray-200">Registered Address</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter registered address" {...field} />
+                      <Textarea 
+                        placeholder="Enter registered address" 
+                        {...field} 
+                        className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -364,13 +374,13 @@ export function MfiRegistration() {
   }
 
   return (
-    <Card className="bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm border-white/20">
+    <Card className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-white/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
           <Shield className="h-5 w-5" />
           MFI Registration
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-gray-600 dark:text-gray-300">
           Your registered microfinance institution details
         </CardDescription>
       </CardHeader>
@@ -378,45 +388,45 @@ export function MfiRegistration() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium text-gray-600">Company Name</Label>
-              <p className="text-sm">{mfiRegistration.companyName}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Company Name</Label>
+              <p className="text-sm text-gray-900 dark:text-white">{mfiRegistration.companyName}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Registration Number</Label>
-              <p className="text-sm">{mfiRegistration.registrationNumber}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Registration Number</Label>
+              <p className="text-sm text-gray-900 dark:text-white">{mfiRegistration.registrationNumber}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">License Number</Label>
-              <p className="text-sm">{mfiRegistration.licenseNumber}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Bank of Ghana License</Label>
+              <p className="text-sm text-gray-900 dark:text-white">{mfiRegistration.boGLicenseNumber || 'Not provided'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">License Expiry Date</Label>
-              <p className="text-sm">{new Date(mfiRegistration.licenseExpiryDate).toLocaleDateString()}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">License Expiry Date</Label>
+              <p className="text-sm text-gray-900 dark:text-white">
+                {mfiRegistration.licenseExpiryDate ? new Date(mfiRegistration.licenseExpiryDate).toLocaleDateString() : 'Not provided'}
+              </p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Contact Phone</Label>
-              <p className="text-sm">{mfiRegistration.contactPhone}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Contact Phone</Label>
+              <p className="text-sm text-gray-900 dark:text-white">{mfiRegistration.contactPhone || 'Not provided'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Contact Email</Label>
-              <p className="text-sm">{mfiRegistration.contactEmail}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Contact Email</Label>
+              <p className="text-sm text-gray-900 dark:text-white">{mfiRegistration.contactEmail || 'Not provided'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Capital Amount</Label>
-              <p className="text-sm">GHS {parseFloat(mfiRegistration.capitalAmount).toLocaleString()}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Paid Up Capital</Label>
+              <p className="text-sm text-gray-900 dark:text-white">
+                GHS {mfiRegistration.paidUpCapital ? parseFloat(mfiRegistration.paidUpCapital).toLocaleString() : 'Not provided'}
+              </p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Shareholders Count</Label>
-              <p className="text-sm">{mfiRegistration.shareholdersCount}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-600">Tier Level</Label>
-              <p className="text-sm capitalize">{mfiRegistration.tierLevel.replace('_', ' ')}</p>
+              <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Physical Address</Label>
+              <p className="text-sm text-gray-900 dark:text-white">{mfiRegistration.physicalAddress || 'Not provided'}</p>
             </div>
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-600">Registered Address</Label>
-            <p className="text-sm">{mfiRegistration.registeredAddress}</p>
+            <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">Registered Address</Label>
+            <p className="text-sm text-gray-900 dark:text-white">{mfiRegistration.registeredAddress}</p>
           </div>
         </div>
         <div className="mt-6 flex justify-end">

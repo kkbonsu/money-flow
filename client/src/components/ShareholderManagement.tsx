@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -28,13 +29,18 @@ export function ShareholderManagement() {
   const form = useForm<InsertShareholder>({
     resolver: zodResolver(insertShareholderSchema),
     defaultValues: {
+      shareholderType: "local",
       name: "",
-      sharesOwned: 0,
-      ownershipPercentage: "",
       nationality: "",
+      idType: "ghana_card",
       idNumber: "",
+      address: "",
       contactPhone: "",
-      contactEmail: ""
+      contactEmail: "",
+      sharesOwned: 0,
+      sharePercentage: "",
+      investmentAmount: "",
+      investmentCurrency: "GHS"
     }
   });
 
@@ -122,13 +128,18 @@ export function ShareholderManagement() {
   const handleEdit = (shareholder: Shareholder) => {
     setEditingShareholder(shareholder);
     form.reset({
+      shareholderType: shareholder.shareholderType || "local",
       name: shareholder.name,
-      sharesOwned: shareholder.sharesOwned,
-      ownershipPercentage: shareholder.ownershipPercentage,
       nationality: shareholder.nationality,
+      idType: shareholder.idType || "ghana_card",
       idNumber: shareholder.idNumber,
+      address: shareholder.address || "",
       contactPhone: shareholder.contactPhone || "",
-      contactEmail: shareholder.contactEmail || ""
+      contactEmail: shareholder.contactEmail || "",
+      sharesOwned: shareholder.sharesOwned,
+      sharePercentage: shareholder.sharePercentage || "",
+      investmentAmount: shareholder.investmentAmount || "",
+      investmentCurrency: shareholder.investmentCurrency || "GHS"
     });
     setIsDialogOpen(true);
   };
@@ -146,17 +157,17 @@ export function ShareholderManagement() {
   };
 
   const totalShares = shareholders.reduce((sum, s) => sum + s.sharesOwned, 0);
-  const totalPercentage = shareholders.reduce((sum, s) => sum + parseFloat(s.ownershipPercentage), 0);
+  const totalPercentage = shareholders.reduce((sum, s) => sum + parseFloat(s.sharePercentage || "0"), 0);
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm border-white/20">
+      <Card className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-white/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
             <Users className="h-5 w-5" />
             Shareholder Management
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-600 dark:text-gray-300">
             Manage your company shareholders and ownership structure
           </CardDescription>
         </CardHeader>
@@ -165,15 +176,15 @@ export function ShareholderManagement() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">{shareholders.length}</div>
-                <div className="text-sm text-gray-600">Total Shareholders</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Total Shareholders</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">{totalShares.toLocaleString()}</div>
-                <div className="text-sm text-gray-600">Total Shares</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Total Shares</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">{totalPercentage.toFixed(2)}%</div>
-                <div className="text-sm text-gray-600">Total Ownership</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Total Ownership</div>
               </div>
             </div>
             <Button onClick={handleAddNew} className="flex items-center gap-2">
@@ -216,7 +227,7 @@ export function ShareholderManagement() {
                   <TableRow key={shareholder.id}>
                     <TableCell className="font-medium">{shareholder.name}</TableCell>
                     <TableCell>{shareholder.sharesOwned.toLocaleString()}</TableCell>
-                    <TableCell>{parseFloat(shareholder.ownershipPercentage).toFixed(2)}%</TableCell>
+                    <TableCell>{parseFloat(shareholder.sharePercentage || "0").toFixed(2)}%</TableCell>
                     <TableCell>{shareholder.nationality}</TableCell>
                     <TableCell>{shareholder.idNumber}</TableCell>
                     <TableCell>
@@ -339,7 +350,7 @@ export function ShareholderManagement() {
 
                 <FormField
                   control={form.control}
-                  name="ownershipPercentage"
+                  name="sharePercentage"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
@@ -388,6 +399,106 @@ export function ShareholderManagement() {
                   )}
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="shareholderType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shareholder Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select shareholder type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="local">Local Shareholder</SelectItem>
+                          <SelectItem value="foreign">Foreign Shareholder</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="idType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ID Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select ID type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="ghana_card">Ghana Card</SelectItem>
+                          <SelectItem value="passport">Passport</SelectItem>
+                          <SelectItem value="drivers_license">Driver's License</SelectItem>
+                          <SelectItem value="voters_id">Voter's ID</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="investmentAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Investment Amount</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="Enter investment amount" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="investmentCurrency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Investment Currency</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select currency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="GHS">GHS - Ghana Cedi</SelectItem>
+                          <SelectItem value="USD">USD - US Dollar</SelectItem>
+                          <SelectItem value="EUR">EUR - Euro</SelectItem>
+                          <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter shareholder address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
