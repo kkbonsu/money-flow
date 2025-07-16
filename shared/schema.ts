@@ -438,13 +438,17 @@ export const insertMfiRegistrationSchema = createInsertSchema(mfiRegistration).o
   ),
 });
 
-export const insertShareholderSchema = createInsertSchema(shareholders).omit({
+export const insertShareholderSchema = createInsertSchema(shareholders, {
+  sharesOwned: z.union([z.string(), z.number()]).transform((val) => {
+    const num = typeof val === 'string' ? parseInt(val) : val;
+    return isNaN(num) ? 0 : num;
+  }),
+  sharePercentage: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+  investmentAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-}).extend({
-  sharePercentage: z.union([z.string(), z.number()]).transform((val) => val.toString()),
-  investmentAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
 // Types
