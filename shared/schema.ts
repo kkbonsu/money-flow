@@ -36,9 +36,20 @@ export const customers = pgTable("customers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const loanProducts = pgTable("loan_products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  fee: decimal("fee", { precision: 15, scale: 2 }).notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const loanBooks = pgTable("loan_books", {
   id: serial("id").primaryKey(),
   customerId: integer("customer_id").references(() => customers.id),
+  loanProductId: integer("loan_product_id").references(() => loanProducts.id),
   loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
   interestRate: decimal("interest_rate", { precision: 5, scale: 2 }).notNull(),
   term: integer("term").notNull(), // in months
@@ -244,10 +255,18 @@ export const customersRelations = relations(customers, ({ many }) => ({
   loans: many(loanBooks),
 }));
 
+export const loanProductsRelations = relations(loanProducts, ({ many }) => ({
+  loans: many(loanBooks),
+}));
+
 export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
   customer: one(customers, {
     fields: [loanBooks.customerId],
     references: [customers.id],
+  }),
+  loanProduct: one(loanProducts, {
+    fields: [loanBooks.loanProductId],
+    references: [loanProducts.id],
   }),
   approver: one(users, {
     fields: [loanBooks.approvedBy],
@@ -451,6 +470,14 @@ export const insertShareholderSchema = createInsertSchema(shareholders, {
   updatedAt: true,
 });
 
+export const insertLoanProductSchema = createInsertSchema(loanProducts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  fee: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -505,3 +532,6 @@ export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
 
 export type Shareholder = typeof shareholders.$inferSelect;
 export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
+
+export type LoanProduct = typeof loanProducts.$inferSelect;
+export type InsertLoanProduct = z.infer<typeof insertLoanProductSchema>;
