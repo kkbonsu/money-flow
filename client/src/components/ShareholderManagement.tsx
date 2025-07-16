@@ -46,10 +46,7 @@ export function ShareholderManagement() {
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertShareholder) => {
-      return await apiRequest('/api/shareholders', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      return await apiRequest('POST', '/api/shareholders', data);
     },
     onSuccess: () => {
       toast({
@@ -71,10 +68,7 @@ export function ShareholderManagement() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: InsertShareholder) => {
-      return await apiRequest(`/api/shareholders/${editingShareholder?.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
+      return await apiRequest('PUT', `/api/shareholders/${editingShareholder?.id}`, data);
     },
     onSuccess: () => {
       toast({
@@ -97,9 +91,7 @@ export function ShareholderManagement() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/shareholders/${id}`, {
-        method: 'DELETE'
-      });
+      return await apiRequest('DELETE', `/api/shareholders/${id}`);
     },
     onSuccess: () => {
       toast({
