@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload, Users, Trash2 } from 'lucide-react';
+import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload, Users, Trash2, Building } from 'lucide-react';
+import { MfiRegistration } from '@/components/MfiRegistration';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -346,10 +347,11 @@ export default function UserProfile() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-5' : 'grid-cols-4'}`}>
+        <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="mfi">MFI Registration</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           {user?.role === 'admin' && (
             <TabsTrigger value="users">Users</TabsTrigger>
@@ -661,6 +663,10 @@ export default function UserProfile() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="mfi">
+          <MfiRegistration />
         </TabsContent>
 
         <TabsContent value="activity">

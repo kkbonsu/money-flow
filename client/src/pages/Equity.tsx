@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Eye, Edit, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Eye, Edit, Search, TrendingUp, TrendingDown, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Equity } from '@shared/schema';
+import { ShareholderManagement } from '@/components/ShareholderManagement';
 
 export default function EquityPage() {
   const { isAuthenticated } = useAuth();
@@ -61,9 +63,18 @@ export default function EquityPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Equity Management</h1>
-          <p className="text-muted-foreground">Track and manage company equity</p>
+          <p className="text-muted-foreground">Track and manage company equity & shareholders</p>
         </div>
       </div>
+
+      <Tabs defaultValue="equity" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="equity">Equity Records</TabsTrigger>
+          <TabsTrigger value="shareholders">Shareholders</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="equity">
+          <div className="space-y-6">
 
       {/* Equity Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
