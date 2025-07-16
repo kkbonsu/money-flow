@@ -198,6 +198,47 @@ export const userAuditLogs = pgTable("user_audit_logs", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
+// MFI Registration table for BoG compliance
+export const mfiRegistration = pgTable("mfi_registration", {
+  id: serial("id").primaryKey(),
+  companyName: text("company_name").notNull(),
+  registrationNumber: text("registration_number").notNull().unique(),
+  certificateOfIncorporation: text("certificate_of_incorporation"), // File path/URL
+  taxClearanceCertificate: text("tax_clearance_certificate"), // File path/URL
+  registeredAddress: text("registered_address").notNull(),
+  physicalAddress: text("physical_address").notNull(),
+  paidUpCapital: decimal("paid_up_capital", { precision: 15, scale: 2 }).notNull(),
+  minimumCapitalRequired: decimal("minimum_capital_required", { precision: 15, scale: 2 }).default("2000000.00"), // GHS 2M
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  boGLicenseNumber: text("bog_license_number"),
+  licenseExpiryDate: date("license_expiry_date"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shareholder Management table for GIPC compliance
+export const shareholders = pgTable("shareholders", {
+  id: serial("id").primaryKey(),
+  shareholderType: text("shareholder_type").notNull(), // 'local', 'foreign'
+  name: text("name").notNull(),
+  nationality: text("nationality").notNull(),
+  idType: text("id_type").notNull(), // 'ghana_card', 'passport', 'other'
+  idNumber: text("id_number").notNull(),
+  address: text("address").notNull(),
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  sharesOwned: integer("shares_owned").notNull(),
+  sharePercentage: decimal("share_percentage", { precision: 5, scale: 2 }).notNull(),
+  investmentAmount: decimal("investment_amount", { precision: 15, scale: 2 }).notNull(),
+  investmentCurrency: text("investment_currency").default("GHS"),
+  gipCertificate: text("gipc_certificate"), // File path/URL for foreign investors
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const customersRelations = relations(customers, ({ many }) => ({
   loans: many(loanBooks),
