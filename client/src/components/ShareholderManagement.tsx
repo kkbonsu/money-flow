@@ -285,7 +285,11 @@ export function ShareholderManagement() {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter full name" {...field} />
+                        <Input 
+                          placeholder="Enter full name" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,7 +306,11 @@ export function ShareholderManagement() {
                         Nationality
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter nationality" {...field} />
+                        <Input 
+                          placeholder="Enter nationality" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -319,7 +327,11 @@ export function ShareholderManagement() {
                         ID Number
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter ID number" {...field} />
+                        <Input 
+                          placeholder="Enter ID number" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -333,7 +345,12 @@ export function ShareholderManagement() {
                     <FormItem>
                       <FormLabel>Shares Owned</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Enter number of shares" {...field} />
+                        <Input 
+                          type="number" 
+                          placeholder="Enter number of shares" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -350,7 +367,13 @@ export function ShareholderManagement() {
                         Ownership Percentage
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="Enter percentage" {...field} />
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="Enter percentage" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -367,7 +390,11 @@ export function ShareholderManagement() {
                         Contact Phone
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter phone number" {...field} />
+                        <Input 
+                          placeholder="Enter phone number" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -384,7 +411,12 @@ export function ShareholderManagement() {
                         Contact Email
                       </FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Enter email address" {...field} />
+                        <Input 
+                          type="email" 
+                          placeholder="Enter email address" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -401,11 +433,11 @@ export function ShareholderManagement() {
                       <FormLabel>Shareholder Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                             <SelectValue placeholder="Select shareholder type" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                           <SelectItem value="local">Local Shareholder</SelectItem>
                           <SelectItem value="foreign">Foreign Shareholder</SelectItem>
                         </SelectContent>
@@ -423,11 +455,11 @@ export function ShareholderManagement() {
                       <FormLabel>ID Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                             <SelectValue placeholder="Select ID type" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                           <SelectItem value="ghana_card">Ghana Card</SelectItem>
                           <SelectItem value="passport">Passport</SelectItem>
                           <SelectItem value="drivers_license">Driver's License</SelectItem>
@@ -446,7 +478,13 @@ export function ShareholderManagement() {
                     <FormItem>
                       <FormLabel>Investment Amount</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="Enter investment amount" {...field} />
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="Enter investment amount" 
+                          {...field}
+                          className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -461,11 +499,11 @@ export function ShareholderManagement() {
                       <FormLabel>Investment Currency</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                             <SelectValue placeholder="Select currency" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                           <SelectItem value="GHS">GHS - Ghana Cedi</SelectItem>
                           <SelectItem value="USD">USD - US Dollar</SelectItem>
                           <SelectItem value="EUR">EUR - Euro</SelectItem>
@@ -485,7 +523,11 @@ export function ShareholderManagement() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter shareholder address" {...field} />
+                      <Textarea 
+                        placeholder="Enter shareholder address" 
+                        {...field}
+                        className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
