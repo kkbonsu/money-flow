@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit3, Trash2, Package } from "lucide-react";
+import { Plus, Edit3, Trash2, Package, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { type LoanProduct, type InsertLoanProduct } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import ViewLoanProductModal from "@/components/loans/ViewLoanProductModal";
 
 const loanProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -27,6 +28,8 @@ type LoanProductFormData = z.infer<typeof loanProductSchema>;
 export default function LoanProducts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<LoanProduct | null>(null);
+  const [viewingProduct, setViewingProduct] = useState<LoanProduct | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -135,10 +138,20 @@ export default function LoanProducts() {
     }
   };
 
+  const handleView = (product: LoanProduct) => {
+    setViewingProduct(product);
+    setIsViewModalOpen(true);
+  };
+
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setEditingProduct(null);
     form.reset();
+  };
+
+  const handleViewModalClose = () => {
+    setIsViewModalOpen(false);
+    setViewingProduct(null);
   };
 
   return (
