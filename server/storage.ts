@@ -1,7 +1,7 @@
 import { 
   users, customers, loanBooks, paymentSchedules, staff, incomeManagement, 
   expenses, bankManagement, pettyCash, inventory, rentManagement, assets, 
-  liabilities, equity, reports, userAuditLogs,
+  liabilities, equity, reports, userAuditLogs, mfiRegistration, shareholders,
   type User, type InsertUser, type Customer, type InsertCustomer,
   type LoanBook, type InsertLoanBook, type PaymentSchedule, type InsertPaymentSchedule,
   type Staff, type InsertStaff, type IncomeManagement, type InsertIncomeManagement,
@@ -9,7 +9,8 @@ import {
   type PettyCash, type InsertPettyCash, type Inventory, type InsertInventory,
   type RentManagement, type InsertRentManagement, type Asset, type InsertAsset,
   type Liability, type InsertLiability, type Equity, type InsertEquity,
-  type Report, type InsertReport, type UserAuditLog, type InsertUserAuditLog
+  type Report, type InsertReport, type UserAuditLog, type InsertUserAuditLog,
+  type MfiRegistration, type InsertMfiRegistration, type Shareholder, type InsertShareholder
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -123,6 +124,18 @@ export interface IStorage {
   createReport(report: InsertReport): Promise<Report>;
   updateReport(id: number, report: Partial<InsertReport>): Promise<Report>;
   deleteReport(id: number): Promise<void>;
+
+  // MFI Registration methods
+  getMfiRegistration(): Promise<MfiRegistration | undefined>;
+  createMfiRegistration(mfiRegistration: InsertMfiRegistration): Promise<MfiRegistration>;
+  updateMfiRegistration(id: number, mfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration>;
+
+  // Shareholder methods
+  getShareholders(): Promise<Shareholder[]>;
+  getShareholder(id: number): Promise<Shareholder | undefined>;
+  createShareholder(shareholder: InsertShareholder): Promise<Shareholder>;
+  updateShareholder(id: number, shareholder: Partial<InsertShareholder>): Promise<Shareholder>;
+  deleteShareholder(id: number): Promise<void>;
 
   // Dashboard metrics
   getDashboardMetrics(): Promise<any>;

@@ -495,3 +495,9 @@ export type InsertReport = z.infer<typeof insertReportSchema>;
 
 export type UserAuditLog = typeof userAuditLogs.$inferSelect;
 export type InsertUserAuditLog = z.infer<typeof insertUserAuditLogSchema>;
+
+export type MfiRegistration = typeof mfiRegistration.$inferSelect;
+export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
+
+export type Shareholder = typeof shareholders.$inferSelect;
+export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
