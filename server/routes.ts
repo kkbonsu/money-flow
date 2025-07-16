@@ -9,6 +9,7 @@ import {
   insertUserSchema, 
   insertCustomerSchema, 
   insertLoanBookSchema, 
+  insertLoanProductSchema,
   insertPaymentScheduleSchema,
   insertStaffSchema,
   insertIncomeManagementSchema,
@@ -613,6 +614,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Loan deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete loan" });
+    }
+  });
+
+  // Loan Products routes
+  app.get("/api/loan-products", authenticateToken, async (req, res) => {
+    try {
+      const loanProducts = await storage.getLoanProducts();
+      res.json(loanProducts);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loan products" });
+    }
+  });
+
+  app.post("/api/loan-products", authenticateToken, async (req, res) => {
+    try {
+      const loanProductData = insertLoanProductSchema.parse(req.body);
+      const loanProduct = await storage.createLoanProduct(loanProductData);
+      res.json(loanProduct);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create loan product" });
+    }
+  });
+
+  app.put("/api/loan-products/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const loanProductData = insertLoanProductSchema.parse(req.body);
+      const loanProduct = await storage.updateLoanProduct(id, loanProductData);
+      res.json(loanProduct);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update loan product" });
+    }
+  });
+
+  app.delete("/api/loan-products/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteLoanProduct(id);
+      res.json({ message: "Loan product deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete loan product" });
     }
   });
 
