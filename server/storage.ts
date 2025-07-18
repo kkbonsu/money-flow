@@ -420,8 +420,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(loanBooks.id, id))
       .returning();
     
-    // If loan status is being changed to approved, add loan product fee to income
-    if (updateLoan.status === 'approved' && currentLoan?.status !== 'approved' && loan.loanProductId) {
+    // If loan status is being changed to approved or disbursed, add loan product fee to income
+    if ((updateLoan.status === 'approved' || updateLoan.status === 'disbursed') && 
+        currentLoan?.status !== 'approved' && currentLoan?.status !== 'disbursed' && 
+        loan.loanProductId) {
       const loanProduct = await this.getLoanProduct(loan.loanProductId);
       if (loanProduct && loanProduct.fee) {
         const feeAmount = parseFloat(loanProduct.fee);

@@ -270,5 +270,13 @@ Preferred communication style: Simple, everyday language.
       - Enhanced modal with larger 4xl width and scrollable content for better user experience
       - Successfully tested functionality with real payment data and officer assignments
       - Modal now provides comprehensive loan overview with payment tracking capabilities
+    - ✅ **COMPLETED**: Loan Product Integration Enhancement (July 18, 2025)
+      - Added loan product name display in ViewLoanModal's Basic Information section
+      - Implemented automatic loan product fee processing when loans are approved or disbursed
+      - Enhanced updateLoan method to add processing fees to income table with proper tracking
+      - Income records include loan ID and product name for audit trail
+      - ViewLoanProductModal already displays comprehensive statistics and connected loans table
+      - Fixed fee processing logic to trigger on both 'approved' and 'disbursed' status changes
+      - Manually added processing fee for previously disbursed loan #11 (Business Loan - GHS 500)
 
 The application follows a monorepo structure with clear separation of concerns between frontend, backend, and shared code. The use of TypeScript throughout ensures type safety across the entire stack, while modern tooling provides excellent developer experience and production performance.
