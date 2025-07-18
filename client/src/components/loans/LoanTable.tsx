@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Eye, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Search, CheckCircle2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ import { LoanBook } from '@shared/schema';
 import AddLoanModal from './AddLoanModal';
 import ViewLoanModal from './ViewLoanModal';
 import EditLoanModal from './EditLoanModal';
+import LoanApprovalModal from './LoanApprovalModal';
 
 export default function LoanTable() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +21,7 @@ export default function LoanTable() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanBook | null>(null);
 
   const { toast } = useToast();
@@ -77,6 +79,11 @@ export default function LoanTable() {
     setIsEditModalOpen(true);
   };
 
+  const handleApprovalClick = (loan: LoanBook) => {
+    setSelectedLoan(loan);
+    setIsApprovalModalOpen(true);
+  };
+
   const deleteLoanMutation = useMutation({
     mutationFn: (loanId: number) => apiClient.delete(`/loans/${loanId}`),
     onSuccess: () => {
@@ -105,6 +112,7 @@ export default function LoanTable() {
     setIsAddModalOpen(false);
     setIsViewModalOpen(false);
     setIsEditModalOpen(false);
+    setIsApprovalModalOpen(false);
     setSelectedLoan(null);
   };
 
@@ -199,6 +207,14 @@ export default function LoanTable() {
                           onClick={() => handleViewClick(loan)}
                         >
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleApprovalClick(loan)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
