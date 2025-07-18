@@ -256,6 +256,73 @@ export const shareholders = pgTable("shareholders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Collateral Management table for Security Interest Registration
+export const collateral = pgTable("collateral", {
+  id: serial("id").primaryKey(),
+  loanId: integer("loan_id").references(() => loanBooks.id),
+  collateralType: text("collateral_type").notNull(), // 'real_estate', 'vehicle', 'equipment', 'inventory', 'other'
+  description: text("description").notNull(),
+  estimatedValue: decimal("estimated_value", { precision: 15, scale: 2 }).notNull(),
+  valuationDate: date("valuation_date"),
+  valuationMethod: text("valuation_method"), // 'professional_appraisal', 'market_comparison', 'book_value'
+  registrationNumber: text("registration_number"), // For vehicles, equipment, etc.
+  location: text("location"),
+  condition: text("condition"), // 'excellent', 'good', 'fair', 'poor'
+  ownershipDocument: text("ownership_document"), // File path/URL
+  registryReference: text("registry_reference"), // External registry reference
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Borrower Education Content table
+export const educationContent = pgTable("education_content", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  contentType: text("content_type").notNull(), // 'article', 'video', 'infographic', 'quiz'
+  category: text("category").notNull(), // 'loan_terms', 'financial_literacy', 'responsible_borrowing', 'rights_responsibilities'
+  language: text("language").notNull().default("en"), // 'en', 'tw', 'ee' (English, Twi, Ewe)
+  difficulty: text("difficulty").notNull().default("beginner"), // 'beginner', 'intermediate', 'advanced'
+  estimatedReadTime: integer("estimated_read_time"), // in minutes
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Borrower Feedback table
+export const borrowerFeedback = pgTable("borrower_feedback", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").references(() => customers.id),
+  loanId: integer("loan_id").references(() => loanBooks.id),
+  feedbackType: text("feedback_type").notNull(), // 'complaint', 'suggestion', 'clarification', 'compliment'
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'in_progress', 'resolved', 'closed'
+  assignedTo: integer("assigned_to").references(() => users.id),
+  response: text("response"),
+  responseDate: timestamp("response_date"),
+  priority: text("priority").notNull().default("medium"), // 'low', 'medium', 'high', 'urgent'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Debt Collection Activities table
+export const debtCollectionActivities = pgTable("debt_collection_activities", {
+  id: serial("id").primaryKey(),
+  loanId: integer("loan_id").references(() => loanBooks.id),
+  customerId: integer("customer_id").references(() => customers.id),
+  activityType: text("activity_type").notNull(), // 'reminder_call', 'email_reminder', 'sms_reminder', 'field_visit', 'payment_plan', 'legal_notice'
+  description: text("description").notNull(),
+  outcome: text("outcome"), // 'payment_made', 'payment_promised', 'no_contact', 'dispute_raised', 'payment_plan_agreed'
+  amountCollected: decimal("amount_collected", { precision: 15, scale: 2 }),
+  nextActionDate: date("next_action_date"),
+  performedBy: integer("performed_by").references(() => users.id),
+  isEthical: boolean("is_ethical").default(true), // Compliance with ethical collection practices
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const customersRelations = relations(customers, ({ many }) => ({
   loans: many(loanBooks),
