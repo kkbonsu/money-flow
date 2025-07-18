@@ -1193,6 +1193,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Advanced analytics data
+  app.get("/api/dashboard/advanced-analytics", authenticateToken, async (req, res) => {
+    try {
+      const data = await storage.getAdvancedAnalyticsData();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch advanced analytics data" });
+    }
+  });
+
   // Backfill interest payments to income table
   app.post("/api/backfill/interest-payments", authenticateToken, async (req, res) => {
     try {
