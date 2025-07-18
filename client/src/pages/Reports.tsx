@@ -64,10 +64,10 @@ export default function ReportsPage() {
       <Tabs defaultValue="reports" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="reports">BoG Reports</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
-          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance Alerts</TabsTrigger>
           <TabsTrigger value="risk">Risk Assessment</TabsTrigger>
-          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+          <TabsTrigger value="portfolio">Portfolio Analytics</TabsTrigger>
+          <TabsTrigger value="credit">Credit Scoring</TabsTrigger>
         </TabsList>
 
         {/* Tab 1: BoG Reports - Automated BoG regulatory reports generation */}
@@ -233,13 +233,13 @@ export default function ReportsPage() {
           </Card>
         </TabsContent>
 
-        {/* Tab 2: Compliance Monitoring - Automated compliance monitoring alerts */}
+        {/* Tab 2: Compliance Alerts - Automated compliance monitoring alerts */}
         <TabsContent value="compliance" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
-                Automated Compliance Monitoring
+                Automated Compliance Alerts
               </CardTitle>
             </CardHeader>
             <CardContent>
