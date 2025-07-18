@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download, Plus, Eye, Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, Download, Plus, Eye, Search, BarChart, TrendingUp, AlertTriangle, Target, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Report } from '@shared/schema';
 
