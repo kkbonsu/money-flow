@@ -668,6 +668,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/payment-schedules/loan/:loanId", authenticateToken, async (req, res) => {
+    try {
+      const loanId = parseInt(req.params.loanId);
+      const schedules = await storage.getPaymentSchedulesByLoan(loanId);
+      res.json(schedules);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment schedules for loan" });
+    }
+  });
+
   app.post("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);

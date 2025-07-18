@@ -63,6 +63,7 @@ export interface IStorage {
   // Payment Schedule methods
   getPaymentSchedules(): Promise<PaymentSchedule[]>;
   getPaymentSchedule(id: number): Promise<PaymentSchedule | undefined>;
+  getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]>;
   createPaymentSchedule(schedule: InsertPaymentSchedule): Promise<PaymentSchedule>;
   updatePaymentSchedule(id: number, schedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule>;
   deletePaymentSchedule(id: number): Promise<void>;
