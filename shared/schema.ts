@@ -355,6 +355,12 @@ export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
   endDate: z.union([z.string(), z.date()]).optional().transform((val) => 
     val instanceof Date ? val : val ? new Date(val) : undefined
   ),
+  approvalDate: z.union([z.string(), z.date()]).optional().transform((val) => 
+    val instanceof Date ? val : val ? new Date(val) : undefined
+  ),
+  disbursementDate: z.union([z.string(), z.date()]).optional().transform((val) => 
+    val instanceof Date ? val : val ? new Date(val) : undefined
+  ),
 });
 
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({
