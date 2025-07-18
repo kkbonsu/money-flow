@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
-import { LoanBook, Customer, PaymentSchedule, User } from '@shared/schema';
+import { LoanBook, Customer, PaymentSchedule, User, LoanProduct } from '@shared/schema';
 import { format } from 'date-fns';
 import { CheckCircle, Clock, User as UserIcon, Calendar, DollarSign, CreditCard } from 'lucide-react';
 
@@ -28,6 +28,10 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
 
   const { data: users = [] } = useQuery({
     queryKey: ['/api/users'],
+  });
+
+  const { data: loanProducts = [] } = useQuery({
+    queryKey: ['/api/loan-products'],
   });
 
   const { data: paymentSchedules = [] } = useQuery({
@@ -79,6 +83,12 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
     if (!userId) return 'Not assigned';
     const user = users.find((u: User) => u.id === userId);
     return user ? `${user.firstName} ${user.lastName}` || user.username : 'Unknown User';
+  };
+
+  const getLoanProductName = (loanProductId: number | null) => {
+    if (!loanProductId) return 'N/A';
+    const loanProduct = loanProducts.find((p: LoanProduct) => p.id === loanProductId);
+    return loanProduct ? loanProduct.name : 'Unknown Product';
   };
 
   const formatCurrency = (amount: string | number) => {
@@ -149,6 +159,10 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Customer</p>
                       <p className="text-sm">{getCustomerName(loan.customerId)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Loan Product</p>
+                      <p className="text-sm">{getLoanProductName(loan.loanProductId)}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Loan Amount</p>

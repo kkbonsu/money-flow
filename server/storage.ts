@@ -411,11 +411,32 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLoan(id: number, updateLoan: Partial<InsertLoanBook>): Promise<LoanBook> {
+    // Get the current loan before updating
+    const currentLoan = await this.getLoan(id);
+    
     const [loan] = await db
       .update(loanBooks)
       .set({ ...updateLoan, updatedAt: new Date() })
       .where(eq(loanBooks.id, id))
       .returning();
+    
+    // If loan status is being changed to approved, add loan product fee to income
+    if (updateLoan.status === 'approved' && currentLoan?.status !== 'approved' && loan.loanProductId) {
+      const loanProduct = await this.getLoanProduct(loan.loanProductId);
+      if (loanProduct && loanProduct.fee) {
+        const feeAmount = parseFloat(loanProduct.fee);
+        if (feeAmount > 0) {
+          await db.insert(incomeManagement).values({
+            source: 'Loan Processing Fee',
+            amount: loanProduct.fee,
+            description: `Processing fee for loan #${loan.id} (${loanProduct.name})`,
+            date: new Date().toISOString().split('T')[0],
+            category: 'Loan Fees'
+          });
+        }
+      }
+    }
+    
     return loan;
   }
 
