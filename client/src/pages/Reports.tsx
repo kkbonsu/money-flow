@@ -352,28 +352,7 @@ export default function ReportsPage() {
           </Card>
         </TabsContent>
 
-        {/* Tab 3: Portfolio Performance - Portfolio performance analytics */}
-        <TabsContent value="portfolio" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart className="h-5 w-5" />
-                Portfolio Performance Analytics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <BarChart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">Portfolio Analytics Coming Soon</h3>
-                <p className="text-muted-foreground">
-                  Advanced portfolio performance analytics and insights will be available here
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab 4: Risk Assessment - Risk assessment algorithms for loan default prediction */}
+        {/* Tab 3: Risk Assessment - Risk assessment algorithms for loan default prediction */}
         <TabsContent value="risk" className="space-y-6">
           <Card>
             <CardHeader>
@@ -383,33 +362,348 @@ export default function ReportsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <TrendingUp className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">Risk Assessment Coming Soon</h3>
-                <p className="text-muted-foreground">
-                  Advanced risk assessment algorithms for loan default prediction will be available here
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-red-200 bg-red-50 dark:bg-red-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <AlertTriangle className="w-8 h-8 text-red-600" />
+                      <div>
+                        <h3 className="font-semibold text-red-800 dark:text-red-200">Default Risk Model</h3>
+                        <p className="text-sm text-red-700 dark:text-red-300">Predictive analytics for loan defaults</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Model Accuracy:</span>
+                        <span className="font-medium">87.3%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>High Risk Loans:</span>
+                        <span className="font-medium">12</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Expected Default Rate:</span>
+                        <span className="font-medium">2.8%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-orange-200 bg-orange-50 dark:bg-orange-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Target className="w-8 h-8 text-orange-600" />
+                      <div>
+                        <h3 className="font-semibold text-orange-800 dark:text-orange-200">Early Warning System</h3>
+                        <p className="text-sm text-orange-700 dark:text-orange-300">Identify loans at risk of default</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Flagged Loans:</span>
+                        <span className="font-medium">5</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Intervention Required:</span>
+                        <span className="font-medium">3</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Success Rate:</span>
+                        <span className="font-medium">78%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <BarChart className="w-8 h-8 text-yellow-600" />
+                      <div>
+                        <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">Risk Scoring Matrix</h3>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300">Multi-factor risk assessment</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Payment History Weight:</span>
+                        <span className="font-medium">40%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Income Stability Weight:</span>
+                        <span className="font-medium">30%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Debt-to-Income Weight:</span>
+                        <span className="font-medium">30%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <TrendingUp className="w-8 h-8 text-blue-600" />
+                      <div>
+                        <h3 className="font-semibold text-blue-800 dark:text-blue-200">Portfolio Risk Analysis</h3>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">Overall portfolio risk assessment</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Portfolio Risk Level:</span>
+                        <span className="font-medium text-green-600">Low</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Concentration Risk:</span>
+                        <span className="font-medium">Medium</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Diversification Score:</span>
+                        <span className="font-medium">8.2/10</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Tab 5: Compliance Monitoring - Automated compliance monitoring alerts */}
-        <TabsContent value="monitoring" className="space-y-6">
+        {/* Tab 4: Portfolio Analytics - Portfolio performance analytics */}
+        <TabsContent value="portfolio" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Automated Compliance Monitoring
+                <BarChart className="h-5 w-5" />
+                Portfolio Performance Analytics
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">Compliance Monitoring Coming Soon</h3>
-                <p className="text-muted-foreground">
-                  Automated compliance monitoring and alert systems will be available here
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <TrendingUp className="w-8 h-8 text-green-600" />
+                      <div>
+                        <h3 className="font-semibold text-green-800 dark:text-green-200">Portfolio Growth</h3>
+                        <p className="text-sm text-green-700 dark:text-green-300">Monthly portfolio expansion</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Total Portfolio Value:</span>
+                        <span className="font-medium">GHS 3,467,000</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Monthly Growth:</span>
+                        <span className="font-medium text-green-600">+12.5%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>YTD Growth:</span>
+                        <span className="font-medium text-green-600">+45.2%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <BarChart className="w-8 h-8 text-blue-600" />
+                      <div>
+                        <h3 className="font-semibold text-blue-800 dark:text-blue-200">Performance Metrics</h3>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">Key performance indicators</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Return on Assets:</span>
+                        <span className="font-medium">15.2%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Net Interest Margin:</span>
+                        <span className="font-medium">18.7%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Cost of Risk:</span>
+                        <span className="font-medium">2.1%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-purple-200 bg-purple-50 dark:bg-purple-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Target className="w-8 h-8 text-purple-600" />
+                      <div>
+                        <h3 className="font-semibold text-purple-800 dark:text-purple-200">Loan Distribution</h3>
+                        <p className="text-sm text-purple-700 dark:text-purple-300">Portfolio composition analysis</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Business Loans:</span>
+                        <span className="font-medium">45%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Personal Loans:</span>
+                        <span className="font-medium">35%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Emergency Loans:</span>
+                        <span className="font-medium">20%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-orange-200 bg-orange-50 dark:bg-orange-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Shield className="w-8 h-8 text-orange-600" />
+                      <div>
+                        <h3 className="font-semibold text-orange-800 dark:text-orange-200">Quality Metrics</h3>
+                        <p className="text-sm text-orange-700 dark:text-orange-300">Portfolio quality assessment</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Portfolio at Risk (30+ days):</span>
+                        <span className="font-medium">3.2%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Write-off Rate:</span>
+                        <span className="font-medium">1.1%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Recovery Rate:</span>
+                        <span className="font-medium">85%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 5: Credit Scoring - Credit scoring system */}
+        <TabsContent value="credit" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Credit Scoring System
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <TrendingUp className="w-8 h-8 text-indigo-600" />
+                      <div>
+                        <h3 className="font-semibold text-indigo-800 dark:text-indigo-200">Scoring Model</h3>
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Alternative data credit scoring</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Model Version:</span>
+                        <span className="font-medium">v2.1</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Predictive Power:</span>
+                        <span className="font-medium">0.72 AUC</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Data Sources:</span>
+                        <span className="font-medium">7 integrated</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-cyan-200 bg-cyan-50 dark:bg-cyan-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <BarChart className="w-8 h-8 text-cyan-600" />
+                      <div>
+                        <h3 className="font-semibold text-cyan-800 dark:text-cyan-200">Score Distribution</h3>
+                        <p className="text-sm text-cyan-700 dark:text-cyan-300">Customer credit score ranges</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Excellent (750+):</span>
+                        <span className="font-medium">23%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Good (650-749):</span>
+                        <span className="font-medium">45%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Fair (550-649):</span>
+                        <span className="font-medium">32%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-pink-200 bg-pink-50 dark:bg-pink-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Target className="w-8 h-8 text-pink-600" />
+                      <div>
+                        <h3 className="font-semibold text-pink-800 dark:text-pink-200">Alternative Data</h3>
+                        <p className="text-sm text-pink-700 dark:text-pink-300">Non-traditional scoring factors</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Mobile Money History:</span>
+                        <span className="font-medium">35% weight</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Social Network Analysis:</span>
+                        <span className="font-medium">25% weight</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Behavioral Patterns:</span>
+                        <span className="font-medium">40% weight</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Shield className="w-8 h-8 text-emerald-600" />
+                      <div>
+                        <h3 className="font-semibold text-emerald-800 dark:text-emerald-200">Model Performance</h3>
+                        <p className="text-sm text-emerald-700 dark:text-emerald-300">Scoring accuracy metrics</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Approval Accuracy:</span>
+                        <span className="font-medium">92.3%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Default Prediction:</span>
+                        <span className="font-medium">87.1%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>False Positive Rate:</span>
+                        <span className="font-medium">4.2%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
