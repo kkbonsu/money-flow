@@ -258,6 +258,7 @@ export default function LoanTable() {
       <AddLoanModal isOpen={isAddModalOpen} onClose={closeModals} />
       <ViewLoanModal isOpen={isViewModalOpen} onClose={closeModals} loan={selectedLoan} />
       <EditLoanModal isOpen={isEditModalOpen} onClose={closeModals} loan={selectedLoan} />
+      <LoanApprovalModal isOpen={isApprovalModalOpen} onClose={closeModals} loan={selectedLoan} />
     </Card>
   );
 }
