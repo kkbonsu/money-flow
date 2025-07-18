@@ -3,10 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
-import { LoanBook, Customer } from '@shared/schema';
+import { LoanBook, Customer, PaymentSchedule, User } from '@shared/schema';
+import { format } from 'date-fns';
+import { CheckCircle, Clock, User as UserIcon, Calendar, DollarSign, CreditCard } from 'lucide-react';
 
 interface ViewLoanModalProps {
   isOpen: boolean;
@@ -20,6 +24,16 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
   
   const { data: customers = [] } = useQuery({
     queryKey: ['/api/customers'],
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/users'],
+  });
+
+  const { data: paymentSchedules = [] } = useQuery({
+    queryKey: ['/api/payment-schedules/loan', loan?.id],
+    queryFn: () => apiClient.get(`/payment-schedules/loan/${loan?.id}`),
+    enabled: !!loan?.id,
   });
 
   const updateLoanStatusMutation = useMutation({
@@ -61,6 +75,25 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
     return customer ? `${customer.firstName} ${customer.lastName}` : `Customer #${customerId}`;
   };
 
+  const getUserName = (userId: number | null) => {
+    if (!userId) return 'Not assigned';
+    const user = users.find((u: User) => u.id === userId);
+    return user ? `${user.firstName} ${user.lastName}` || user.username : 'Unknown User';
+  };
+
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: 'GHS',
+    }).format(numAmount);
+  };
+
+  const paidPayments = paymentSchedules.filter((p: PaymentSchedule) => p.status === 'paid');
+  const upcomingPayments = paymentSchedules.filter((p: PaymentSchedule) => p.status === 'pending');
+  const totalScheduled = paymentSchedules.reduce((sum: number, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
+  const totalPaid = paidPayments.reduce((sum: number, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -76,13 +109,7 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
     }
   };
 
-  const formatCurrency = (amount: string | number) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(numAmount);
-  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

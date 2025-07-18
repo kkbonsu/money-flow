@@ -433,6 +433,12 @@ export class DatabaseStorage implements IStorage {
     return schedule || undefined;
   }
 
+  async getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]> {
+    return await db.select().from(paymentSchedules)
+      .where(eq(paymentSchedules.loanId, loanId))
+      .orderBy(paymentSchedules.dueDate);
+  }
+
   async createPaymentSchedule(insertSchedule: InsertPaymentSchedule): Promise<PaymentSchedule> {
     const [schedule] = await db
       .insert(paymentSchedules)
