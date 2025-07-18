@@ -7,6 +7,7 @@ import ChartCard from '@/components/dashboard/ChartCard';
 import LoanPortfolioChart from '@/components/dashboard/LoanPortfolioChart';
 import PaymentStatusCard from '@/components/dashboard/PaymentStatusCard';
 import RecentLoansTable from '@/components/dashboard/RecentLoansTable';
+import AdvancedAnalytics from '@/components/dashboard/AdvancedAnalytics';
 import { DashboardMetrics } from '@/types';
 
 export default function Dashboard() {
@@ -89,6 +90,11 @@ export default function Dashboard() {
         <div className="slide-in-right">
           <PaymentStatusCard />
         </div>
+      </div>
+
+      {/* Advanced Analytics & Compliance */}
+      <div className="w-full slide-in-up">
+        <AdvancedAnalytics />
       </div>
 
       {/* Recent Activities */}
