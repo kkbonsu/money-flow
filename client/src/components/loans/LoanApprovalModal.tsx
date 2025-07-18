@@ -14,6 +14,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { LoanBook, Customer, User } from '@shared/schema';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { CheckCircle, XCircle, User as UserIcon, CreditCard, Calendar, DollarSign, FileText, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { z } from 'zod';
@@ -94,8 +95,8 @@ export default function LoanApprovalModal({ isOpen, onClose, loan }: LoanApprova
         notes: data.notes,
         approvalDate: data.status === 'approved' ? new Date().toISOString() : undefined,
         disbursementDate: data.status === 'disbursed' ? new Date().toISOString() : undefined,
-        approvedBy: data.status === 'approved' ? 1 : undefined, // Using current user ID
-        disbursedBy: data.status === 'disbursed' ? 1 : undefined, // Using current user ID
+        approvedBy: data.status === 'approved' ? user?.id : undefined,
+        disbursedBy: data.status === 'disbursed' ? user?.id : undefined
       };
 
       return apiClient.put(`/loans/${loan?.id}`, updateData);
