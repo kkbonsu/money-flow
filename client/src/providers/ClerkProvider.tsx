@@ -13,6 +13,11 @@ interface ClerkProviderProps {
 }
 
 export function ClerkProvider({ children }: ClerkProviderProps) {
+  if (!publishableKey) {
+    // Return children without Clerk if no key is available
+    return <>{children}</>;
+  }
+
   return (
     <ClerkProviderBase 
       publishableKey={publishableKey}

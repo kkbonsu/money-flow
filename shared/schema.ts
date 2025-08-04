@@ -18,6 +18,18 @@ export const organizations = pgTable("organizations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Organization members junction table for multi-organization support
+export const organizationMembers = pgTable("organization_members", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: text("role").notNull().default("member"), // owner, admin, manager, member
+  permissions: jsonb("permissions").default([]), // Organization-specific permissions
+  joinedAt: timestamp("joined_at").defaultNow(),
+  invitedBy: integer("invited_by").references(() => users.id),
+  status: text("status").notNull().default("active"), // active, suspended, removed
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   organizationId: integer("organization_id").references(() => organizations.id).notNull(),

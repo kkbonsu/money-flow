@@ -1,66 +1,95 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth, useOrganization } from "@clerk/clerk-react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Organization } from "@shared/schema";
+import { queryClient } from "@/lib/queryClient";
+
+interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  subscriptionPlan: string;
+  subscriptionStatus: string;
+  settings?: any;
+  features?: any;
+  branding?: any;
+  userRole?: string;
+}
 
 interface OrganizationContextType {
   currentOrganization: Organization | null;
+  setCurrentOrganization: (org: Organization) => void;
   isLoading: boolean;
-  switchOrganization: (orgId: string) => Promise<void>;
-  refreshOrganization: () => void;
+  organizations: Organization[];
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
-export function OrganizationProvider({ children }: { children: React.ReactNode }) {
-  const { isLoaded: authLoaded, userId } = useAuth();
-  const { organization: clerkOrg, setActive } = useOrganization();
-  const [isLoading, setIsLoading] = useState(true);
+export function OrganizationProvider({ children }: { children: ReactNode }) {
+  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
 
-  // Fetch organization details from our database
-  const { data: currentOrganization, refetch: refreshOrganization } = useQuery({
-    queryKey: ["/api/organization", clerkOrg?.id],
-    enabled: !!clerkOrg?.id && authLoaded && !!userId,
-    retry: false,
+  // Fetch organizations the user has access to
+  const { data: organizations = [], isLoading } = useQuery<Organization[]>({
+    queryKey: ["/api/organizations"],
   });
 
+  // Set the first organization as current if none is selected
   useEffect(() => {
-    if (authLoaded) {
-      setIsLoading(false);
+    if (organizations.length > 0 && !currentOrganization) {
+      const savedOrgId = localStorage.getItem("currentOrganizationId");
+      const savedOrg = organizations.find((org: Organization) => org.id === savedOrgId);
+      
+      if (savedOrg) {
+        setCurrentOrganization(savedOrg);
+      } else {
+        setCurrentOrganization(organizations[0]);
+      }
     }
-  }, [authLoaded]);
+  }, [organizations, currentOrganization]);
 
-  const switchOrganization = async (orgId: string) => {
-    try {
-      setIsLoading(true);
-      await setActive({ organization: orgId });
-      await refreshOrganization();
-    } catch (error) {
-      console.error("Failed to switch organization:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+  // Save current organization to localStorage
+  useEffect(() => {
+    if (currentOrganization) {
+      localStorage.setItem("currentOrganizationId", currentOrganization.id);
+      // Update query client defaults to include organizationId
+      queryClient.setDefaultOptions({
+        queries: {
+          queryFn: async ({ queryKey }) => {
+            const url = queryKey[0] as string;
+            const response = await fetch(url, {
+              headers: {
+                "X-Organization-Id": currentOrganization.id,
+              },
+              credentials: "include",
+            });
+            
+            if (!response.ok) {
+              throw new Error(`${response.status}: ${response.statusText}`);
+            }
+            
+            return response.json();
+          },
+        },
+      });
     }
-  };
-
-  const value: OrganizationContextType = {
-    currentOrganization: currentOrganization || null,
-    isLoading,
-    switchOrganization,
-    refreshOrganization,
-  };
+  }, [currentOrganization]);
 
   return (
-    <OrganizationContext.Provider value={value}>
+    <OrganizationContext.Provider
+      value={{
+        currentOrganization,
+        setCurrentOrganization,
+        isLoading,
+        organizations,
+      }}
+    >
       {children}
     </OrganizationContext.Provider>
   );
 }
 
-export function useOrganizationContext() {
+export function useOrganization() {
   const context = useContext(OrganizationContext);
   if (context === undefined) {
-    throw new Error("useOrganizationContext must be used within an OrganizationProvider");
+    throw new Error("useOrganization must be used within an OrganizationProvider");
   }
   return context;
 }

@@ -1,4 +1,4 @@
-import { clerkClient } from "@clerk/backend";
+import { createClerkClient } from "@clerk/backend";
 import type { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { organizations, users } from "@shared/schema";
@@ -6,7 +6,7 @@ import { eq, and } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
 // Initialize Clerk client
-const clerk = clerkClient({
+const clerk = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY!,
 });
 

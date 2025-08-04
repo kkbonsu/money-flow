@@ -36,6 +36,7 @@ import Liabilities from "@/pages/Liabilities";
 import Reports from "@/pages/Reports";
 import Equity from "@/pages/Equity";
 import UserProfile from "@/pages/UserProfile";
+import OrganizationSettings from "@/pages/OrganizationSettings";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
@@ -93,6 +94,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/equity" component={Equity} />
       <Route path="/profile" component={UserProfile} />
+      <Route path="/organization" component={OrganizationSettings} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -133,11 +135,9 @@ function AppLayoutSelector() {
   
   // Staff portal - all routes go through Router, auth handled inside
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppLayout>
-        <Router />
-      </AppLayout>
-    </QueryClientProvider>
+    <AppLayout>
+      <Router />
+    </AppLayout>
   );
 }
 

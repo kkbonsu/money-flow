@@ -29,6 +29,7 @@ import {
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import organizationRoutes from "./routes/organizations";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -105,7 +106,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from uploads directory
   app.use('/uploads', express.static(uploadsDir));
   
+  // Organization routes (Clerk auth)
+  app.use('/api/organizations', organizationRoutes);
+  
   // Auth routes
+  app.get("/api/auth/user", authenticateToken, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);

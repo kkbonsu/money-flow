@@ -1,14 +1,15 @@
 import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
-import { useOrganizationContext } from "@/contexts/OrganizationContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import type { User } from "@shared/schema";
 
 export function useAuth() {
   const { isLoaded, isSignedIn, userId, getToken } = useClerkAuth();
   const { user: clerkUser } = useUser();
-  const { currentOrganization } = useOrganizationContext();
+  const { currentOrganization } = useOrganization();
 
   // Fetch user details from our database
-  const { data: dbUser, isLoading: isLoadingUser } = useQuery({
+  const { data: dbUser, isLoading: isLoadingUser } = useQuery<User>({
     queryKey: ["/api/auth/user"],
     enabled: isSignedIn && !!userId,
     retry: false,
