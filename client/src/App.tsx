@@ -5,7 +5,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { ClerkProvider } from "@/providers/ClerkProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 import AppLayout from "@/components/layout/AppLayout";
@@ -101,20 +100,18 @@ function Router() {
 
 function App() {
   return (
-    <ClerkProvider>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <CustomerAuthProvider>
-              <TooltipProvider>
-                <Toaster />
-                <AppLayoutSelector />
-              </TooltipProvider>
-            </CustomerAuthProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </AuthProvider>
-    </ClerkProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <CustomerAuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <AppLayoutSelector />
+            </TooltipProvider>
+          </CustomerAuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 

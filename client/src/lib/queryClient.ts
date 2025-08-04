@@ -7,23 +7,14 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// This will be set by the auth context when available
-let getClerkToken: (() => Promise<string | null>) | null = null;
-
-export function setGetClerkToken(fn: () => Promise<string | null>) {
-  getClerkToken = fn;
-}
-
 async function getAuthHeaders(): Promise<HeadersInit> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
 
-  if (getClerkToken) {
-    const token = await getClerkToken();
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   return headers;

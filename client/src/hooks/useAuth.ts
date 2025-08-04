@@ -1,38 +1,45 @@
-import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import type { User } from "@shared/schema";
 
 export function useAuth() {
-  const { isLoaded, isSignedIn, userId, getToken } = useClerkAuth();
-  const { user: clerkUser } = useUser();
+  const [, setLocation] = useLocation();
+  
+  // Get auth token from localStorage
+  const token = localStorage.getItem("auth_token");
+  const isAuthenticated = !!token;
 
   // Fetch user details from our database
-  const { data: dbUser, isLoading: isLoadingUser } = useQuery<User>({
+  const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/auth/user"],
-    enabled: isSignedIn && !!userId,
+    enabled: isAuthenticated,
     retry: false,
   });
 
-  // Helper to get auth token for API requests
-  const getAuthToken = async () => {
-    if (!isSignedIn) return null;
-    return await getToken();
-  };
+  const logout = useMutation({
+    mutationFn: async () => {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      queryClient.clear();
+    },
+    onSuccess: () => {
+      setLocation("/login");
+    },
+  });
 
   return {
-    isLoading: !isLoaded || isLoadingUser,
-    isAuthenticated: isSignedIn,
-    user: dbUser,
-    clerkUser,
-    userId,
-    getAuthToken,
-    hasRole: (role: string) => dbUser?.role === role,
+    isLoading,
+    isAuthenticated,
+    user,
+    logout: logout.mutate,
+    hasRole: (role: string) => user?.role === role,
     hasPermission: (permission: string) => {
-      const permissions = dbUser?.permissions || [];
+      const permissions = user?.permissions || [];
       return permissions.includes(permission);
     },
-    isSuperAdmin: () => dbUser?.role === "super_admin",
-    isOrgAdmin: () => dbUser?.role === "org_admin" || dbUser?.role === "super_admin",
-    isManager: () => ["manager", "org_admin", "super_admin"].includes(dbUser?.role || ""),
+    isSuperAdmin: () => user?.role === "super_admin",
+    isOrgAdmin: () => user?.role === "org_admin" || user?.role === "super_admin",
+    isManager: () => ["manager", "org_admin", "super_admin"].includes(user?.role || ""),
   };
 }
