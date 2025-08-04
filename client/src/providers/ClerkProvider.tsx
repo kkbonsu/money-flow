@@ -1,9 +1,11 @@
 import { ClerkProvider as ClerkProviderBase } from "@clerk/clerk-react";
 
-const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY;
+// Get the publishable key from environment
+const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 
+  (typeof window !== 'undefined' && (window as any).CLERK_PUBLISHABLE_KEY) || '';
 
 if (!publishableKey) {
-  throw new Error("Missing Clerk Publishable Key");
+  console.warn("Clerk Publishable Key not found. Authentication features will be disabled.");
 }
 
 interface ClerkProviderProps {
