@@ -1,14 +1,32 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Organizations table for multi-tenancy
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(), // URL-friendly identifier
+  subscriptionPlan: text("subscription_plan").notNull().default("basic"), // basic, professional, enterprise
+  subscriptionStatus: text("subscription_status").notNull().default("active"), // active, suspended, cancelled
+  clerkOrganizationId: text("clerk_organization_id").unique(), // Clerk's organization ID
+  settings: jsonb("settings").default({}), // Organization-specific settings
+  features: jsonb("features").default({}), // Feature flags
+  branding: jsonb("branding").default({}), // Custom branding settings
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull().unique(),
-  role: text("role").notNull().default("user"),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  clerkUserId: text("clerk_user_id").unique().notNull(), // Clerk's user ID
+  username: text("username").notNull(),
+  password: text("password"), // Optional - managed by Clerk
+  email: text("email").notNull(),
+  role: text("role").notNull().default("user"), // super_admin, org_admin, manager, staff, viewer
+  permissions: jsonb("permissions").default([]), // Granular permissions
   profilePicture: text("profile_picture"),
   firstName: text("first_name"),
   lastName: text("last_name"),
@@ -21,9 +39,10 @@ export const users = pgTable("users", {
 
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   phone: text("phone").notNull(),
   address: text("address").notNull(),
   nationalId: text("national_id"),
@@ -38,6 +57,7 @@ export const customers = pgTable("customers", {
 
 export const loanProducts = pgTable("loan_products", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   name: text("name").notNull(),
   fee: decimal("fee", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
@@ -48,6 +68,7 @@ export const loanProducts = pgTable("loan_products", {
 
 export const loanBooks = pgTable("loan_books", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   loanProductId: integer("loan_product_id").references(() => loanProducts.id),
   loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
