@@ -1,14 +1,9 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
-import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
 export function useAuth() {
-  const [, setLocation] = useLocation();
-  
-  // Get auth token from localStorage
-  const token = localStorage.getItem("auth_token");
-  const isAuthenticated = !!token;
+  // Temporarily use a simple auth check while Clerk is being configured
+  const isAuthenticated = !!localStorage.getItem("auth_token");
 
   // Fetch user details from our database
   const { data: user, isLoading } = useQuery<User>({
@@ -17,22 +12,11 @@ export function useAuth() {
     retry: false,
   });
 
-  const logout = useMutation({
-    mutationFn: async () => {
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
-      queryClient.clear();
-    },
-    onSuccess: () => {
-      setLocation("/login");
-    },
-  });
-
   return {
     isLoading,
     isAuthenticated,
     user,
-    logout: logout.mutate,
+    clerkUser: null,
     hasRole: (role: string) => user?.role === role,
     hasPermission: (permission: string) => {
       const permissions = user?.permissions || [];

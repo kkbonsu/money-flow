@@ -3,12 +3,12 @@ import { z } from "zod";
 import { db } from "../db";
 import { organizations, users, organizationMembers } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { requireAuth, type AuthenticatedRequest } from "../auth/clerk";
+import { requireAuth, syncUser } from "../auth";
 
 const router = Router();
 
 // Get current user's organizations
-router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
+router.get("/", requireAuth, syncUser, async (req, res) => {
   try {
     const userId = req.auth?.userId;
     if (!userId) {

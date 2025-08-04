@@ -12,8 +12,9 @@ interface ClerkProviderProps {
 }
 
 export function ClerkProvider({ children }: ClerkProviderProps) {
-  if (!publishableKey) {
-    // Return children without Clerk if no key is available
+  // Temporarily bypass Clerk while we fix the domain configuration
+  if (!publishableKey || true) { // Always bypass for now
+    console.log("Clerk bypassed - using fallback authentication");
     return <>{children}</>;
   }
 

@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ClerkProvider } from "@/providers/ClerkProvider";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
@@ -35,7 +36,6 @@ import Reports from "@/pages/Reports";
 import Equity from "@/pages/Equity";
 import UserProfile from "@/pages/UserProfile";
 import OrganizationSettings from "@/pages/OrganizationSettings";
-import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 // Customer Portal Components
@@ -71,7 +71,6 @@ function Router() {
       <Route path="/sign-up" component={SignUp} />
       
       {/* Staff Portal Routes */}
-      <Route path="/login" component={Login} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
       <Route path="/liora" component={Liora} />
@@ -100,18 +99,20 @@ function Router() {
 
 function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <CustomerAuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <AppLayoutSelector />
-            </TooltipProvider>
-          </CustomerAuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+    <ClerkProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <CustomerAuthProvider>
+              <TooltipProvider>
+                <Toaster />
+                <AppLayoutSelector />
+              </TooltipProvider>
+            </CustomerAuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </ClerkProvider>
   );
 }
 

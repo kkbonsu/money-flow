@@ -7,11 +7,32 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Function to get Clerk token - will be set by ClerkProvider
+let getClerkToken: (() => Promise<string | null>) | null = null;
+
+export function setGetClerkToken(fn: () => Promise<string | null>) {
+  getClerkToken = fn;
+}
+
 async function getAuthHeaders(): Promise<HeadersInit> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
 
+  // Try Clerk token first
+  if (getClerkToken) {
+    try {
+      const token = await getClerkToken();
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+        return headers;
+      }
+    } catch (error) {
+      // Fallback to localStorage token
+    }
+  }
+
+  // Fallback to localStorage token
   const token = localStorage.getItem('auth_token');
   if (token) {
     headers.Authorization = `Bearer ${token}`;
