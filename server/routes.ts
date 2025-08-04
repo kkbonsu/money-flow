@@ -30,6 +30,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import organizationRoutes from "./routes/organizations";
+import { authenticateToken } from "./auth";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -63,8 +64,8 @@ const upload = multer({
   }
 });
 
-// Middleware to verify JWT token
-const authenticateToken = (req: any, res: any, next: any) => {
+// Old JWT middleware - now replaced by unified auth
+const oldAuthenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 

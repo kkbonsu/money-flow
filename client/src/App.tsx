@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ClerkProvider } from "@/providers/ClerkProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
@@ -101,16 +102,18 @@ function Router() {
 function App() {
   return (
     <ClerkProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <CustomerAuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <AppLayoutSelector />
-            </TooltipProvider>
-          </CustomerAuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <CustomerAuthProvider>
+              <TooltipProvider>
+                <Toaster />
+                <AppLayoutSelector />
+              </TooltipProvider>
+            </CustomerAuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </AuthProvider>
     </ClerkProvider>
   );
 }
