@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import { OrganizationSwitcher } from '@/components/organization/OrganizationSwitcher';
+// Temporarily disabled organization switcher
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -29,9 +29,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center space-x-4">
-          {/* Organization Switcher */}
-          <OrganizationSwitcher />
-          
           {/* Theme Toggle */}
           <Button
             variant="ghost"
