@@ -7,10 +7,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ClerkProvider } from "@/providers/ClerkProvider";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
-import { SignIn, SignUp, SignedIn, SignedOut, OrganizationSwitcher } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, OrganizationSwitcher } from "@clerk/clerk-react";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
+
+// Pages - Auth
+import SignIn from "@/pages/auth/SignIn";
+import SignUp from "@/pages/auth/SignUp";
+
 import Dashboard from "@/pages/Dashboard";
 import LoanSimulator from "@/pages/LoanSimulator";
 import Liora from "@/pages/Liora";
@@ -62,6 +67,10 @@ function Router() {
         <CustomerLogin />
       </Route>
 
+      {/* Auth Routes */}
+      <Route path="/sign-in" component={SignIn} />
+      <Route path="/sign-up" component={SignUp} />
+      
       {/* Staff Portal Routes */}
       <Route path="/login" component={Login} />
       <Route path="/" component={Dashboard} />
@@ -111,6 +120,7 @@ function App() {
 function AppLayoutSelector() {
   const isCustomerPortal = window.location.pathname.startsWith('/customer');
   
+  // Customer portal has its own auth system
   if (isCustomerPortal) {
     return (
       <QueryClientProvider client={customerQueryClient}>
@@ -121,6 +131,7 @@ function AppLayoutSelector() {
     );
   }
   
+  // Staff portal - all routes go through Router, auth handled inside
   return (
     <QueryClientProvider client={queryClient}>
       <AppLayout>
