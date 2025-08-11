@@ -5,16 +5,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ClerkProvider } from "@/providers/ClerkProvider";
+import { AuthProvider } from "@/hooks/useAuth";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
-
-// Pages - Auth
-import SignIn from "@/pages/auth/SignIn";
-import SignUp from "@/pages/auth/SignUp";
-
 import Dashboard from "@/pages/Dashboard";
 import LoanSimulator from "@/pages/LoanSimulator";
 import Liora from "@/pages/Liora";
@@ -35,7 +29,7 @@ import Liabilities from "@/pages/Liabilities";
 import Reports from "@/pages/Reports";
 import Equity from "@/pages/Equity";
 import UserProfile from "@/pages/UserProfile";
-import OrganizationSettings from "@/pages/OrganizationSettings";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 // Customer Portal Components
@@ -66,11 +60,8 @@ function Router() {
         <CustomerLogin />
       </Route>
 
-      {/* Auth Routes */}
-      <Route path="/sign-in" component={SignIn} />
-      <Route path="/sign-up" component={SignUp} />
-      
       {/* Staff Portal Routes */}
+      <Route path="/login" component={Login} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
       <Route path="/liora" component={Liora} />
@@ -91,7 +82,6 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/equity" component={Equity} />
       <Route path="/profile" component={UserProfile} />
-      <Route path="/organization" component={OrganizationSettings} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -99,27 +89,24 @@ function Router() {
 
 function App() {
   return (
-    <ClerkProvider>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <CustomerAuthProvider>
-              <TooltipProvider>
-                <Toaster />
-                <AppLayoutSelector />
-              </TooltipProvider>
-            </CustomerAuthProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </AuthProvider>
-    </ClerkProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <CustomerAuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <AppLayoutSelector />
+            </TooltipProvider>
+          </CustomerAuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
 function AppLayoutSelector() {
   const isCustomerPortal = window.location.pathname.startsWith('/customer');
   
-  // Customer portal has its own auth system
   if (isCustomerPortal) {
     return (
       <QueryClientProvider client={customerQueryClient}>
@@ -130,11 +117,12 @@ function AppLayoutSelector() {
     );
   }
   
-  // Staff portal - all routes go through Router, auth handled inside
   return (
-    <AppLayout>
-      <Router />
-    </AppLayout>
+    <QueryClientProvider client={queryClient}>
+      <AppLayout>
+        <Router />
+      </AppLayout>
+    </QueryClientProvider>
   );
 }
 

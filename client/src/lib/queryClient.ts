@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { authApi } from "./auth";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -7,38 +8,12 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Function to get Clerk token - will be set by ClerkProvider
-let getClerkToken: (() => Promise<string | null>) | null = null;
-
-export function setGetClerkToken(fn: () => Promise<string | null>) {
-  getClerkToken = fn;
-}
-
-async function getAuthHeaders(): Promise<HeadersInit> {
-  const headers: HeadersInit = {
+function getAuthHeaders(): HeadersInit {
+  const authData = authApi.getStoredAuth();
+  return {
     'Content-Type': 'application/json',
+    ...(authData ? { Authorization: `Bearer ${authData.token}` } : {}),
   };
-
-  // Try Clerk token first
-  if (getClerkToken) {
-    try {
-      const token = await getClerkToken();
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-        return headers;
-      }
-    } catch (error) {
-      // Fallback to localStorage token
-    }
-  }
-
-  // Fallback to localStorage token
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return headers;
 }
 
 export async function apiRequest(
@@ -48,7 +23,7 @@ export async function apiRequest(
 ): Promise<Response> {
   const res = await fetch(url, {
     method,
-    headers: await getAuthHeaders(),
+    headers: getAuthHeaders(),
     body: data ? JSON.stringify(data) : undefined,
   });
 
@@ -64,7 +39,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     try {
       const res = await fetch(queryKey.join("/") as string, {
-        headers: await getAuthHeaders(),
+        headers: getAuthHeaders(),
       });
 
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {

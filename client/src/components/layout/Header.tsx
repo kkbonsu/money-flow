@@ -1,4 +1,4 @@
-import { Sun, Moon, Menu, User, Settings, LogOut, ChevronDown, Building2 } from 'lucide-react';
+import { Sun, Moon, Menu, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,7 +6,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-// Temporarily disabled organization switcher
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -76,10 +75,6 @@ export default function Header() {
               <DropdownMenuItem onClick={() => setLocation('/profile')}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLocation('/organization')}>
-                <Building2 className="mr-2 h-4 w-4" />
-                <span>Organization Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>

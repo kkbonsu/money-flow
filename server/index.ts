@@ -6,11 +6,6 @@ import { setupVite, serveStatic, log } from "./vite";
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
 process.env.JWT_SECRET = process.env.JWT_SECRET || "financeflow-secret-key-2024";
 
-// Make Clerk key available to Vite
-if (process.env.CLERK_PUBLISHABLE_KEY) {
-  process.env.VITE_CLERK_PUBLISHABLE_KEY = process.env.CLERK_PUBLISHABLE_KEY;
-}
-
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

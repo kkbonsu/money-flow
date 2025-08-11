@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from './Sidebar';
@@ -9,8 +9,25 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [location] = useLocation();
-  const { isLoading } = useAuth();
+  const [location, setLocation] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Handle redirects in useEffect to avoid setState during render
+  useEffect(() => {
+    if (isLoading) return;
+    
+    // If not authenticated and not on login page, redirect to login
+    if (!isAuthenticated && location !== '/login') {
+      setLocation('/login');
+      return;
+    }
+
+    // If authenticated and on login page, redirect to dashboard
+    if (isAuthenticated && location === '/login') {
+      setLocation('/');
+      return;
+    }
+  }, [isAuthenticated, isLoading, location, setLocation]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -24,7 +41,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
-  // For now, show the app directly while Clerk is being configured
+  // Don't render anything while redirecting
+  if ((!isAuthenticated && location !== '/login') || (isAuthenticated && location === '/login')) {
+    return null;
+  }
+
+  if (location === '/login') {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden text-foreground">
       <Sidebar />

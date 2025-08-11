@@ -1,44 +1,14 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Organizations table for multi-tenancy
-export const organizations = pgTable("organizations", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(), // URL-friendly identifier
-  subscriptionPlan: text("subscription_plan").notNull().default("basic"), // basic, professional, enterprise
-  subscriptionStatus: text("subscription_status").notNull().default("active"), // active, suspended, cancelled
-  clerkOrganizationId: text("clerk_organization_id").unique(), // Clerk's organization ID
-  settings: jsonb("settings").default({}), // Organization-specific settings
-  features: jsonb("features").default({}), // Feature flags
-  branding: jsonb("branding").default({}), // Custom branding settings
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Organization members junction table for multi-organization support
-export const organizationMembers = pgTable("organization_members", {
-  id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  role: text("role").notNull().default("member"), // owner, admin, manager, member
-  permissions: jsonb("permissions").default([]), // Organization-specific permissions
-  joinedAt: timestamp("joined_at").defaultNow(),
-  invitedBy: integer("invited_by").references(() => users.id),
-  status: text("status").notNull().default("active"), // active, suspended, removed
-});
-
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
-  clerkUserId: text("clerk_user_id").unique().notNull(), // Clerk's user ID
-  username: text("username").notNull(),
-  password: text("password"), // Optional - managed by Clerk
-  email: text("email").notNull(),
-  role: text("role").notNull().default("user"), // super_admin, org_admin, manager, staff, viewer
-  permissions: jsonb("permissions").default([]), // Granular permissions
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull().default("user"),
   profilePicture: text("profile_picture"),
   firstName: text("first_name"),
   lastName: text("last_name"),
@@ -51,10 +21,9 @@ export const users = pgTable("users", {
 
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   phone: text("phone").notNull(),
   address: text("address").notNull(),
   nationalId: text("national_id"),
@@ -69,7 +38,6 @@ export const customers = pgTable("customers", {
 
 export const loanProducts = pgTable("loan_products", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   name: text("name").notNull(),
   fee: decimal("fee", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
@@ -80,7 +48,6 @@ export const loanProducts = pgTable("loan_products", {
 
 export const loanBooks = pgTable("loan_books", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   loanProductId: integer("loan_product_id").references(() => loanProducts.id),
   loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
@@ -106,7 +73,6 @@ export const loanBooks = pgTable("loan_books", {
 
 export const paymentSchedules = pgTable("payment_schedules", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   dueDate: timestamp("due_date").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
@@ -121,10 +87,9 @@ export const paymentSchedules = pgTable("payment_schedules", {
 
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   phone: text("phone").notNull(),
   position: text("position").notNull(),
   salary: decimal("salary", { precision: 15, scale: 2 }),
@@ -136,7 +101,6 @@ export const staff = pgTable("staff", {
 
 export const incomeManagement = pgTable("income_management", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   source: text("source").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -147,7 +111,6 @@ export const incomeManagement = pgTable("income_management", {
 
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -158,7 +121,6 @@ export const expenses = pgTable("expenses", {
 
 export const bankManagement = pgTable("bank_management", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   accountName: text("account_name").notNull(),
   bankName: text("bank_name").notNull(),
   accountNumber: text("account_number").notNull(),
@@ -170,7 +132,6 @@ export const bankManagement = pgTable("bank_management", {
 
 export const pettyCash = pgTable("petty_cash", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   type: text("type").notNull(),
@@ -181,7 +142,6 @@ export const pettyCash = pgTable("petty_cash", {
 
 export const inventory = pgTable("inventory", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   itemName: text("item_name").notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull(),
@@ -194,7 +154,6 @@ export const inventory = pgTable("inventory", {
 
 export const rentManagement = pgTable("rent_management", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   propertyName: text("property_name").notNull(),
   tenantName: text("tenant_name").notNull(),
   monthlyRent: decimal("monthly_rent", { precision: 15, scale: 2 }).notNull(),
@@ -206,7 +165,6 @@ export const rentManagement = pgTable("rent_management", {
 
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   assetName: text("asset_name").notNull(),
   category: text("category").notNull(),
   value: decimal("value", { precision: 15, scale: 2 }).notNull(),
@@ -219,7 +177,6 @@ export const assets = pgTable("assets", {
 
 export const liabilities = pgTable("liabilities", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   liabilityName: text("liability_name").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   dueDate: timestamp("due_date"),
@@ -232,7 +189,6 @@ export const liabilities = pgTable("liabilities", {
 
 export const equity = pgTable("equity", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   equityType: text("equity_type").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   date: timestamp("date").notNull(),
@@ -242,7 +198,6 @@ export const equity = pgTable("equity", {
 
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   reportType: text("report_type").notNull(),
   title: text("title").notNull(),
   content: text("content"),
@@ -252,7 +207,6 @@ export const reports = pgTable("reports", {
 
 export const userAuditLogs = pgTable("user_audit_logs", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   action: text("action").notNull(), // login, logout, password_change, profile_update, etc.
   description: text("description"),
@@ -264,9 +218,8 @@ export const userAuditLogs = pgTable("user_audit_logs", {
 // MFI Registration table for BoG compliance
 export const mfiRegistration = pgTable("mfi_registration", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   companyName: text("company_name").notNull(),
-  registrationNumber: text("registration_number").notNull(),
+  registrationNumber: text("registration_number").notNull().unique(),
   certificateOfIncorporation: text("certificate_of_incorporation"), // File path/URL
   taxClearanceCertificate: text("tax_clearance_certificate"), // File path/URL
   registeredAddress: text("registered_address").notNull(),
@@ -285,7 +238,6 @@ export const mfiRegistration = pgTable("mfi_registration", {
 // Shareholder Management table for GIPC compliance
 export const shareholders = pgTable("shareholders", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   shareholderType: text("shareholder_type").notNull(), // 'local', 'foreign'
   name: text("name").notNull(),
   nationality: text("nationality").notNull(),
@@ -307,7 +259,6 @@ export const shareholders = pgTable("shareholders", {
 // Collateral Management table for Security Interest Registration
 export const collateral = pgTable("collateral", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   collateralType: text("collateral_type").notNull(), // 'real_estate', 'vehicle', 'equipment', 'inventory', 'other'
   description: text("description").notNull(),
@@ -327,7 +278,6 @@ export const collateral = pgTable("collateral", {
 // Borrower Education Content table
 export const educationContent = pgTable("education_content", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   contentType: text("content_type").notNull(), // 'article', 'video', 'infographic', 'quiz'
@@ -343,7 +293,6 @@ export const educationContent = pgTable("education_content", {
 // Borrower Feedback table
 export const borrowerFeedback = pgTable("borrower_feedback", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   loanId: integer("loan_id").references(() => loanBooks.id),
   feedbackType: text("feedback_type").notNull(), // 'complaint', 'suggestion', 'clarification', 'compliment'
@@ -361,7 +310,6 @@ export const borrowerFeedback = pgTable("borrower_feedback", {
 // Debt Collection Activities table
 export const debtCollectionActivities = pgTable("debt_collection_activities", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   customerId: integer("customer_id").references(() => customers.id),
   activityType: text("activity_type").notNull(), // 'reminder_call', 'email_reminder', 'sms_reminder', 'field_visit', 'payment_plan', 'legal_notice'
@@ -376,38 +324,15 @@ export const debtCollectionActivities = pgTable("debt_collection_activities", {
 });
 
 // Relations
-export const organizationsRelations = relations(organizations, ({ many }) => ({
-  users: many(users),
-  customers: many(customers),
-  loanProducts: many(loanProducts),
-  loanBooks: many(loanBooks),
-  staff: many(staff),
-  mfiRegistration: many(mfiRegistration),
-  shareholders: many(shareholders),
-}));
-
-export const customersRelations = relations(customers, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [customers.organizationId],
-    references: [organizations.id],
-  }),
+export const customersRelations = relations(customers, ({ many }) => ({
   loans: many(loanBooks),
-  feedback: many(borrowerFeedback),
 }));
 
-export const loanProductsRelations = relations(loanProducts, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [loanProducts.organizationId],
-    references: [organizations.id],
-  }),
+export const loanProductsRelations = relations(loanProducts, ({ many }) => ({
   loans: many(loanBooks),
 }));
 
 export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [loanBooks.organizationId],
-    references: [organizations.id],
-  }),
   customer: one(customers, {
     fields: [loanBooks.customerId],
     references: [customers.id],
@@ -429,45 +354,26 @@ export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
     references: [users.id],
   }),
   paymentSchedules: many(paymentSchedules),
-  collateral: many(collateral),
-  debtCollectionActivities: many(debtCollectionActivities),
 }));
 
 export const paymentSchedulesRelations = relations(paymentSchedules, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [paymentSchedules.organizationId],
-    references: [organizations.id],
-  }),
   loan: one(loanBooks, {
     fields: [paymentSchedules.loanId],
     references: [loanBooks.id],
   }),
 }));
 
-export const staffRelations = relations(staff, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [staff.organizationId],
-    references: [organizations.id],
-  }),
+export const staffRelations = relations(staff, ({ many }) => ({
+  
 }));
 
-export const usersRelations = relations(users, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [users.organizationId],
-    references: [organizations.id],
-  }),
+export const usersRelations = relations(users, ({ many }) => ({
   approvedLoans: many(loanBooks),
   reports: many(reports),
   auditLogs: many(userAuditLogs),
-  assignedFeedback: many(borrowerFeedback),
-  debtCollectionActivities: many(debtCollectionActivities),
 }));
 
 export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [userAuditLogs.organizationId],
-    references: [organizations.id],
-  }),
   user: one(users, {
     fields: [userAuditLogs.userId],
     references: [users.id],
@@ -475,10 +381,6 @@ export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
 }));
 
 export const reportsRelations = relations(reports, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [reports.organizationId],
-    references: [organizations.id],
-  }),
   generator: one(users, {
     fields: [reports.generatedBy],
     references: [users.id],
@@ -486,17 +388,10 @@ export const reportsRelations = relations(reports, ({ one }) => ({
 }));
 
 // Insert schemas
-export const insertOrganizationSchema = createInsertSchema(organizations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  lastLogin: true,
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
@@ -671,9 +566,6 @@ export const insertLoanProductSchema = createInsertSchema(loanProducts).omit({
 });
 
 // Types
-export type Organization = typeof organizations.$inferSelect;
-export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
-
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
