@@ -5,6 +5,8 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  clerkId: text("clerk_id").unique(), // Clerk user ID for multi-tenant auth
+  organizationId: text("organization_id"), // Clerk organization ID
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),

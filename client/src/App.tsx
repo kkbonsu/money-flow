@@ -94,41 +94,74 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <CustomerAuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <AppLayoutSelector />
-            </TooltipProvider>
-          </CustomerAuthProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <ClerkProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <AppContent />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
+    </ThemeProvider>
   );
 }
 
-function AppLayoutSelector() {
+function AppContent() {
+  const { isSignedIn, isLoading, hasOrganization } = useMultiTenantAuth();
   const isCustomerPortal = window.location.pathname.startsWith('/customer');
-  
+  const isAuthRoute = window.location.pathname.startsWith('/sign-in') || 
+                      window.location.pathname.startsWith('/sign-up') ||
+                      window.location.pathname === '/organization-setup';
+
+  // Show loading state while checking auth
+  if (isLoading && !isAuthRoute && !isCustomerPortal) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Customer portal has its own auth
   if (isCustomerPortal) {
     return (
       <QueryClientProvider client={customerQueryClient}>
-        <CustomerLayout>
-          <Router />
-        </CustomerLayout>
+        <CustomerAuthProvider>
+          <CustomerLayout>
+            <Router />
+          </CustomerLayout>
+        </CustomerAuthProvider>
       </QueryClientProvider>
     );
   }
-  
+
+  // Auth routes (sign-in, sign-up, org setup) are always accessible
+  if (isAuthRoute) {
+    return <Router />;
+  }
+
+  // Not signed in - redirect to sign-in
+  if (!isSignedIn) {
+    window.location.href = '/sign-in';
+    return null;
+  }
+
+  // Signed in but no organization - redirect to org setup
+  if (!hasOrganization) {
+    window.location.href = '/organization-setup';
+    return null;
+  }
+
+  // Signed in with organization - show main app
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppLayout>
-        <Router />
-      </AppLayout>
-    </QueryClientProvider>
+    <AppLayout>
+      <Router />
+    </AppLayout>
   );
 }
+
+// Import the legacy providers for customer portal
+import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 
 export default App;
