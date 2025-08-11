@@ -5,8 +5,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { AuthProvider } from "@/hooks/useAuth";
-import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
+import { ClerkProvider, SignedIn, SignedOut } from "@/providers/ClerkProvider";
+import { useMultiTenantAuth } from "@/hooks/useMultiTenantAuth";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -29,7 +29,9 @@ import Liabilities from "@/pages/Liabilities";
 import Reports from "@/pages/Reports";
 import Equity from "@/pages/Equity";
 import UserProfile from "@/pages/UserProfile";
-import Login from "@/pages/Login";
+import OrganizationSetup from "@/pages/OrganizationSetup";
+import ClerkSignIn from "@/pages/ClerkSignIn";
+import ClerkSignUp from "@/pages/ClerkSignUp";
 import NotFound from "@/pages/not-found";
 
 // Customer Portal Components
@@ -46,6 +48,11 @@ import CustomerProfile from "@/pages/customer/CustomerProfile";
 function Router() {
   return (
     <Switch>
+      {/* Auth Routes */}
+      <Route path="/sign-in" component={ClerkSignIn} />
+      <Route path="/sign-up" component={ClerkSignUp} />
+      <Route path="/organization-setup" component={OrganizationSetup} />
+      
       {/* Customer Portal Routes */}
       <Route path="/customer/login" component={CustomerLogin} />
       <Route path="/customer/dashboard" component={CustomerDashboard} />
@@ -60,8 +67,7 @@ function Router() {
         <CustomerLogin />
       </Route>
 
-      {/* Staff Portal Routes */}
-      <Route path="/login" component={Login} />
+      {/* Staff Portal Routes - Protected by Clerk */}
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
       <Route path="/liora" component={Liora} />
@@ -75,7 +81,6 @@ function Router() {
       <Route path="/expenses" component={Expenses} />
       <Route path="/debt-management" component={DebtManagement} />
       <Route path="/bank-management" component={BankManagement} />
-
       <Route path="/inventory" component={Inventory} />
       <Route path="/assets" component={Assets} />
       <Route path="/liabilities" component={Liabilities} />
