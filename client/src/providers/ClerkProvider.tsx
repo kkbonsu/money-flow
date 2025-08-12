@@ -2,8 +2,12 @@ import { ClerkProvider as BaseClerkProvider, SignIn, SignUp, SignedIn, SignedOut
 import { dark } from '@clerk/themes';
 import { useTheme } from '@/hooks/useTheme';
 
-// Use environment variable or a test key for development
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_ZGVsaWdodGZ1bC1kb2UtODAuY2xlcmsuYWNjb3VudHMuZGV2JA';
+// Use environment variable for Clerk publishable key
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!CLERK_PUBLISHABLE_KEY) {
+  console.error('Missing VITE_CLERK_PUBLISHABLE_KEY environment variable');
+}
 
 interface ClerkProviderProps {
   children: React.ReactNode;

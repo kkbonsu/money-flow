@@ -13,9 +13,9 @@ export function useMultiTenantAuth() {
     if (userLoaded && orgLoaded && isSignedIn && !organization) {
       // User is signed in but has no organization
       // Redirect to organization setup
-      navigate('/organization-setup');
+      setLocation('/organization-setup');
     }
-  }, [userLoaded, orgLoaded, isSignedIn, organization, navigate]);
+  }, [userLoaded, orgLoaded, isSignedIn, organization, setLocation]);
 
   return {
     user: user ? {
