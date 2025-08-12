@@ -129,22 +129,25 @@ function AppContent() {
     );
   }
 
+  // For development: If on test page or auth routes, show without Clerk
+  if (isAuthRoute) {
+    return <Router />;
+  }
+
   // Use try-catch to handle Clerk initialization errors gracefully
   try {
     const { isSignedIn, isLoading, hasOrganization } = useMultiTenantAuth();
     
     // Show loading state while checking auth
-    if (isLoading && !isAuthRoute) {
+    if (isLoading) {
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Connecting to authentication...</p>
+          </div>
         </div>
       );
-    }
-
-    // Auth routes (sign-in, sign-up, org setup) are always accessible
-    if (isAuthRoute) {
-      return <Router />;
     }
 
     // Not signed in - redirect to sign-in
@@ -166,14 +169,26 @@ function AppContent() {
       </AppLayout>
     );
   } catch (error) {
-    // If Clerk is not ready, show auth routes by default
-    console.log('Clerk initialization in progress...');
-    if (isAuthRoute) {
-      return <Router />;
-    }
-    // Default to sign-in page
-    window.location.href = '/sign-in';
-    return null;
+    // If Clerk fails to initialize, show error message with domain info
+    console.error('Clerk initialization error:', error);
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+        <div className="bg-card rounded-lg shadow-lg p-8 max-w-md text-center">
+          <h2 className="text-xl font-bold mb-4">Authentication Setup Required</h2>
+          <p className="text-muted-foreground mb-4">
+            Clerk authentication needs to be configured for this domain:
+          </p>
+          <code className="bg-muted px-2 py-1 rounded text-sm">
+            {window.location.host}
+          </code>
+          <div className="mt-6 space-y-2">
+            <a href="/test-clerk" className="block w-full bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 transition-colors">
+              Test Configuration
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   }
 }
 

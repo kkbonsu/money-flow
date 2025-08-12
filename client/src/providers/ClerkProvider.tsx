@@ -19,6 +19,12 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
   return (
     <BaseClerkProvider 
       publishableKey={CLERK_PUBLISHABLE_KEY}
+      domain={window.location.host}
+      isSatellite={false}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/"
+      afterSignUpUrl="/organization-setup"
       appearance={{
         baseTheme: theme === 'dark' ? dark : undefined,
         elements: {
