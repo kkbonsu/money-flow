@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ClerkProvider, SignedIn, SignedOut } from "@/providers/ClerkProvider";
-import { useAuthWithFallback } from "@/hooks/useAuthWithFallback";
+import { useMultiTenantAuth } from "@/hooks/useMultiTenantAuth";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -34,7 +34,6 @@ import ClerkSignIn from "@/pages/ClerkSignIn";
 import ClerkSignUp from "@/pages/ClerkSignUp";
 import NotFound from "@/pages/not-found";
 import TestClerk from "@/pages/TestClerk";
-import SimpleAuth from "@/pages/SimpleAuth";
 
 // Customer Portal Components
 import CustomerLogin from "@/pages/customer/CustomerLogin";
@@ -52,7 +51,6 @@ function Router() {
     <Switch>
       {/* Auth Routes */}
       <Route path="/test-clerk" component={TestClerk} />
-      <Route path="/auth" component={SimpleAuth} />
       <Route path="/sign-in" component={ClerkSignIn} />
       <Route path="/sign-up" component={ClerkSignUp} />
       <Route path="/organization-setup" component={OrganizationSetup} />
@@ -116,8 +114,7 @@ function AppContent() {
   const isAuthRoute = window.location.pathname.startsWith('/sign-in') || 
                       window.location.pathname.startsWith('/sign-up') ||
                       window.location.pathname === '/organization-setup' ||
-                      window.location.pathname === '/test-clerk' ||
-                      window.location.pathname === '/auth';
+                      window.location.pathname === '/test-clerk';
 
   // Customer portal has its own auth
   if (isCustomerPortal) {
@@ -132,26 +129,12 @@ function AppContent() {
     );
   }
 
-  // Get auth state from both systems
-  const simpleAuth = useSimpleAuth();
-  
-  // Try to use Clerk auth if available
-  let clerkAuth = null;
+  // Use try-catch to handle Clerk initialization errors gracefully
   try {
-    clerkAuth = useMultiTenantAuth();
-  } catch (error) {
-    console.log('Clerk unavailable, using fallback authentication');
-  }
-  
-  // Auth routes are always accessible
-  if (isAuthRoute) {
-    return <Router />;
-  }
-  
-  // Use Clerk if available, otherwise fallback to simple auth
-  if (clerkAuth) {
-    // Show loading state while checking Clerk auth
-    if (clerkAuth.isLoading) {
+    const { isSignedIn, isLoading, hasOrganization } = useMultiTenantAuth();
+    
+    // Show loading state while checking auth
+    if (isLoading && !isAuthRoute) {
       return (
         <div className="min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -159,14 +142,19 @@ function AppContent() {
       );
     }
 
-    // Not signed in - redirect to Clerk sign-in
-    if (!clerkAuth.isSignedIn) {
+    // Auth routes (sign-in, sign-up, org setup) are always accessible
+    if (isAuthRoute) {
+      return <Router />;
+    }
+
+    // Not signed in - redirect to sign-in
+    if (!isSignedIn) {
       window.location.href = '/sign-in';
       return null;
     }
 
     // Signed in but no organization - redirect to org setup
-    if (!clerkAuth.hasOrganization) {
+    if (!hasOrganization) {
       window.location.href = '/organization-setup';
       return null;
     }
@@ -177,29 +165,15 @@ function AppContent() {
         <Router />
       </AppLayout>
     );
-  } else {
-    // Use simple auth fallback
-    // Show loading state while checking simple auth
-    if (simpleAuth.isLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      );
+  } catch (error) {
+    // If Clerk is not ready, show auth routes by default
+    console.log('Clerk initialization in progress...');
+    if (isAuthRoute) {
+      return <Router />;
     }
-
-    // Not authenticated - redirect to simple auth
-    if (!simpleAuth.isAuthenticated) {
-      window.location.href = '/auth';
-      return null;
-    }
-
-    // Authenticated - show main app
-    return (
-      <AppLayout>
-        <Router />
-      </AppLayout>
-    );
+    // Default to sign-in page
+    window.location.href = '/sign-in';
+    return null;
   }
 }
 
