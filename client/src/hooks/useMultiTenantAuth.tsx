@@ -1,12 +1,12 @@
 import { useUser, useOrganization, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useEffect } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 export function useMultiTenantAuth() {
   const { user, isLoaded: userLoaded, isSignedIn } = useUser();
   const { organization, isLoaded: orgLoaded } = useOrganization();
   const { signOut } = useClerkAuth();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Check if user has an organization
   useEffect(() => {

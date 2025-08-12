@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganization, useUser } from '@clerk/clerk-react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { Building, FileText, DollarSign, Phone, Mail, Shield, ArrowRight, Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -36,7 +36,7 @@ export default function OrganizationSetup() {
   const { toast } = useToast();
   const { createOrganization } = useOrganization();
   const { user } = useUser();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   const form = useForm<OrganizationSetupFormData>({
     resolver: zodResolver(organizationSetupSchema),
@@ -75,7 +75,7 @@ export default function OrganizationSetup() {
         title: "Success",
         description: "Your organization has been created successfully",
       });
-      navigate('/');
+      setLocation('/');
     },
     onError: (error: any) => {
       toast({
