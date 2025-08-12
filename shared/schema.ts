@@ -1,12 +1,10 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  clerkId: text("clerk_id").unique(), // Clerk user ID for multi-tenant auth
-  organizationId: text("organization_id"), // Clerk organization ID
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
@@ -23,10 +21,9 @@ export const users = pgTable("users", {
 
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   phone: text("phone").notNull(),
   address: text("address").notNull(),
   nationalId: text("national_id"),
@@ -37,13 +34,10 @@ export const customers = pgTable("customers", {
   lastPortalLogin: timestamp("last_portal_login"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  orgEmailIdx: index("customers_org_email_idx").on(table.organizationId, table.email),
-}));
+});
 
 export const loanProducts = pgTable("loan_products", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   name: text("name").notNull(),
   fee: decimal("fee", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
@@ -54,7 +48,6 @@ export const loanProducts = pgTable("loan_products", {
 
 export const loanBooks = pgTable("loan_books", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   customerId: integer("customer_id").references(() => customers.id),
   loanProductId: integer("loan_product_id").references(() => loanProducts.id),
   loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
@@ -94,10 +87,9 @@ export const paymentSchedules = pgTable("payment_schedules", {
 
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   phone: text("phone").notNull(),
   position: text("position").notNull(),
   salary: decimal("salary", { precision: 15, scale: 2 }),
@@ -105,13 +97,10 @@ export const staff = pgTable("staff", {
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  orgEmailIdx: index("staff_org_email_idx").on(table.organizationId, table.email),
-}));
+});
 
 export const incomeManagement = pgTable("income_management", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   source: text("source").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -122,7 +111,6 @@ export const incomeManagement = pgTable("income_management", {
 
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -133,7 +121,6 @@ export const expenses = pgTable("expenses", {
 
 export const bankManagement = pgTable("bank_management", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   accountName: text("account_name").notNull(),
   bankName: text("bank_name").notNull(),
   accountNumber: text("account_number").notNull(),
@@ -178,7 +165,6 @@ export const rentManagement = pgTable("rent_management", {
 
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull(), // Multi-tenant organization ID
   assetName: text("asset_name").notNull(),
   category: text("category").notNull(),
   value: decimal("value", { precision: 15, scale: 2 }).notNull(),
@@ -229,10 +215,9 @@ export const userAuditLogs = pgTable("user_audit_logs", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
-// MFI Registration table for BoG compliance - now with multi-tenancy
+// MFI Registration table for BoG compliance
 export const mfiRegistration = pgTable("mfi_registration", {
   id: serial("id").primaryKey(),
-  organizationId: text("organization_id").notNull().unique(), // Clerk organization ID - unique per MFI
   companyName: text("company_name").notNull(),
   registrationNumber: text("registration_number").notNull().unique(),
   certificateOfIncorporation: text("certificate_of_incorporation"), // File path/URL

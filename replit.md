@@ -28,10 +28,9 @@ Money Flow employs a modern full-stack monorepo architecture, ensuring clear sep
 - **API Design**: RESTful API with structured error handling for reliable client-server communication.
 
 ### Key Features & Implementations
-- **Multi-Tenant Architecture**: Complete B2B SaaS platform with Clerk authentication for organization-based tenant isolation.
-- **Database Layer**: Centralized Drizzle ORM schema (`shared/schema.ts`) with auto-generated migrations and multi-tenant support via organizationId.
-- **Authentication System**: Dual authentication - Clerk for staff portal (multi-tenant) and JWT for customer portal.
-- **Core Business Entities**: Comprehensive CRUD operations for Users, Customers, Loan Books, Payment Schedules, Staff, Income, Expenses, Bank Accounts, Petty Cash, Inventory, Rent, Assets, Liabilities, and Equity - all with multi-tenant isolation.
+- **Database Layer**: Centralized Drizzle ORM schema (`shared/schema.ts`) with auto-generated migrations.
+- **Authentication System**: Secure JWT-based authentication with session management and route protection.
+- **Core Business Entities**: Comprehensive CRUD operations for Users, Customers, Loan Books, Payment Schedules, Staff, Income, Expenses, Bank Accounts, Petty Cash, Inventory, Rent, Assets, Liabilities, and Equity.
 - **Payment Schedule System**: Automated payment schedule generation using amortization, tracking, and "Mark as Paid" functionality, with automatic income logging for interest payments.
 - **User & Admin Management**: Detailed user profile management, admin user management with role-based access control, and comprehensive audit logging.
 - **Financial Analytics & Reporting**: Dashboard metrics, monthly income tracking, loan portfolio overview, payment status analysis, and advanced analytics for compliance, risk assessment, and portfolio performance. Includes automated BoG regulatory reports.

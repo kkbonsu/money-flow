@@ -105,31 +105,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from uploads directory
   app.use('/uploads', express.static(uploadsDir));
   
-  // MFI Registration endpoint with multi-tenant support
-  app.post("/api/mfi-registration", async (req, res) => {
-    try {
-      const mfiData = insertMfiRegistrationSchema.parse(req.body);
-      const { organizationId } = req.body;
-      
-      if (!organizationId) {
-        return res.status(400).json({ message: "Organization ID is required" });
-      }
-      
-      const newMfi = await storage.createMfiRegistration({
-        ...mfiData,
-        organizationId,
-      });
-      
-      res.status(201).json(newMfi);
-    } catch (error: any) {
-      console.error('MFI registration error:', error);
-      res.status(400).json({ 
-        message: error.message || "Failed to register MFI",
-        errors: error.errors || []
-      });
-    }
-  });
-  
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {

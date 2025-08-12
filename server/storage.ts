@@ -26,8 +26,6 @@ export interface IStorage {
   updateUserPassword(id: number, hashedPassword: string): Promise<User>;
   updateUserLastLogin(id: number): Promise<User>;
   deleteUser(id: number): Promise<void>;
-  upsertUser(user: Partial<InsertUser> & { clerkId: string }): Promise<User>;
-  updateUserOrganization(clerkId: string, organizationId: string): Promise<void>;
   
   // User audit log methods
   getUserAuditLogs(userId: number): Promise<UserAuditLog[]>;
@@ -140,7 +138,6 @@ export interface IStorage {
   getMfiRegistration(): Promise<MfiRegistration | undefined>;
   createMfiRegistration(mfiRegistration: InsertMfiRegistration): Promise<MfiRegistration>;
   updateMfiRegistration(id: number, mfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration>;
-  getMfiRegistrationByOrgId(organizationId: string): Promise<MfiRegistration | undefined>;
 
   // Shareholder methods
   getShareholders(): Promise<Shareholder[]>;
@@ -228,46 +225,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
-  }
-  
-  async upsertUser(userData: Partial<InsertUser> & { clerkId: string }): Promise<User> {
-    const existingUser = await db.select().from(users).where(eq(users.clerkId, userData.clerkId)).limit(1);
-    
-    if (existingUser.length > 0) {
-      // Update existing user
-      const [updated] = await db
-        .update(users)
-        .set({
-          ...userData,
-          updatedAt: new Date()
-        })
-        .where(eq(users.clerkId, userData.clerkId))
-        .returning();
-      return updated;
-    } else {
-      // Create new user
-      const [created] = await db
-        .insert(users)
-        .values({
-          username: userData.username || userData.email || '',
-          email: userData.email || '',
-          password: userData.password || 'clerk-managed',
-          role: userData.role || 'user',
-          ...userData
-        } as InsertUser)
-        .returning();
-      return created;
-    }
-  }
-  
-  async updateUserOrganization(clerkId: string, organizationId: string): Promise<void> {
-    await db
-      .update(users)
-      .set({
-        organizationId,
-        updatedAt: new Date()
-      })
-      .where(eq(users.clerkId, clerkId));
   }
 
   // Customer methods
@@ -1262,14 +1219,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mfiRegistration.id, id))
       .returning();
     return mfi;
-  }
-  
-  async getMfiRegistrationByOrgId(organizationId: string): Promise<MfiRegistration | undefined> {
-    const [result] = await db
-      .select()
-      .from(mfiRegistration)
-      .where(eq(mfiRegistration.organizationId, organizationId));
-    return result;
   }
 
   // Shareholder methods
