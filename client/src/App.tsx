@@ -33,6 +33,7 @@ import OrganizationSetup from "@/pages/OrganizationSetup";
 import ClerkSignIn from "@/pages/ClerkSignIn";
 import ClerkSignUp from "@/pages/ClerkSignUp";
 import NotFound from "@/pages/not-found";
+import TestClerk from "@/pages/TestClerk";
 
 // Customer Portal Components
 import CustomerLogin from "@/pages/customer/CustomerLogin";
@@ -49,6 +50,7 @@ function Router() {
   return (
     <Switch>
       {/* Auth Routes */}
+      <Route path="/test-clerk" component={TestClerk} />
       <Route path="/sign-in" component={ClerkSignIn} />
       <Route path="/sign-up" component={ClerkSignUp} />
       <Route path="/organization-setup" component={OrganizationSetup} />
@@ -108,20 +110,11 @@ function App() {
 }
 
 function AppContent() {
-  const { isSignedIn, isLoading, hasOrganization } = useMultiTenantAuth();
   const isCustomerPortal = window.location.pathname.startsWith('/customer');
   const isAuthRoute = window.location.pathname.startsWith('/sign-in') || 
                       window.location.pathname.startsWith('/sign-up') ||
-                      window.location.pathname === '/organization-setup';
-
-  // Show loading state while checking auth
-  if (isLoading && !isAuthRoute && !isCustomerPortal) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+                      window.location.pathname === '/organization-setup' ||
+                      window.location.pathname === '/test-clerk';
 
   // Customer portal has its own auth
   if (isCustomerPortal) {
@@ -136,29 +129,52 @@ function AppContent() {
     );
   }
 
-  // Auth routes (sign-in, sign-up, org setup) are always accessible
-  if (isAuthRoute) {
-    return <Router />;
-  }
+  // Use try-catch to handle Clerk initialization errors gracefully
+  try {
+    const { isSignedIn, isLoading, hasOrganization } = useMultiTenantAuth();
+    
+    // Show loading state while checking auth
+    if (isLoading && !isAuthRoute) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
 
-  // Not signed in - redirect to sign-in
-  if (!isSignedIn) {
+    // Auth routes (sign-in, sign-up, org setup) are always accessible
+    if (isAuthRoute) {
+      return <Router />;
+    }
+
+    // Not signed in - redirect to sign-in
+    if (!isSignedIn) {
+      window.location.href = '/sign-in';
+      return null;
+    }
+
+    // Signed in but no organization - redirect to org setup
+    if (!hasOrganization) {
+      window.location.href = '/organization-setup';
+      return null;
+    }
+
+    // Signed in with organization - show main app
+    return (
+      <AppLayout>
+        <Router />
+      </AppLayout>
+    );
+  } catch (error) {
+    // If Clerk is not ready, show auth routes by default
+    console.log('Clerk initialization in progress...');
+    if (isAuthRoute) {
+      return <Router />;
+    }
+    // Default to sign-in page
     window.location.href = '/sign-in';
     return null;
   }
-
-  // Signed in but no organization - redirect to org setup
-  if (!hasOrganization) {
-    window.location.href = '/organization-setup';
-    return null;
-  }
-
-  // Signed in with organization - show main app
-  return (
-    <AppLayout>
-      <Router />
-    </AppLayout>
-  );
 }
 
 // Import the legacy providers for customer portal
