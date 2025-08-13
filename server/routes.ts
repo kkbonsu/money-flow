@@ -1,7 +1,10 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { BackwardCompatibilityStorage } from "./multiTenantStorage";
+
+// Use backward compatibility storage for existing routes
+const storage = new BackwardCompatibilityStorage();
 import multer from "multer";
 import path from "path";
 import fs from "fs";
