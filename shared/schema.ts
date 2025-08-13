@@ -3,11 +3,47 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Tenants collection - Core multi-tenant management
+export const tenants = pgTable("tenants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(), // "ABC Microfinance Ltd"
+  slug: text("slug").notNull().unique(), // "abc-microfinance"
+  domain: text("domain"), // "abc.moneyflow.app"
+  
+  // Subscription & Limits
+  plan: text("plan").notNull().default("basic"), // 'basic', 'professional', 'enterprise'
+  limits: jsonb("limits").notNull().default({
+    maxLoans: 100,
+    maxUsers: 5,
+    maxStorage: 1024 // MB
+  }),
+  
+  // Branding & Customization
+  branding: jsonb("branding").notNull().default({
+    logo: null,
+    primaryColor: "#2563eb",
+    secondaryColor: "#64748b",
+    companyName: ""
+  }),
+  
+  // Regional Settings
+  currency: text("currency").notNull().default("GHS"), // "GHS", "USD"
+  locale: text("locale").notNull().default("en-GH"), // "en-GH"
+  timezone: text("timezone").notNull().default("Africa/Accra"), // "Africa/Accra"
+  
+  // Status & Metadata
+  status: text("status").notNull().default("active"), // 'active', 'suspended', 'trial'
+  subscriptionEnds: timestamp("subscription_ends"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  username: text("username").notNull(),
   password: text("password").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   role: text("role").notNull().default("user"),
   profilePicture: text("profile_picture"),
   firstName: text("first_name"),
@@ -15,15 +51,28 @@ export const users = pgTable("users", {
   phone: text("phone"),
   lastLogin: timestamp("last_login"),
   isActive: boolean("is_active").default(true),
+  isSuperAdmin: boolean("is_super_admin").default(false), // Can access all tenants
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// User-Tenant access relationship (for multi-tenant users)
+export const userTenantAccess = pgTable("user_tenant_access", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  role: text("role").notNull().default("user"), // 'admin', 'manager', 'user', 'viewer'
+  permissions: jsonb("permissions").default([]), // granular permissions array
+  isDefault: boolean("is_default").default(false), // default tenant for this user
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   phone: text("phone").notNull(),
   address: text("address").notNull(),
   nationalId: text("national_id"),
@@ -38,6 +87,7 @@ export const customers = pgTable("customers", {
 
 export const loanProducts = pgTable("loan_products", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   name: text("name").notNull(),
   fee: decimal("fee", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
@@ -48,6 +98,7 @@ export const loanProducts = pgTable("loan_products", {
 
 export const loanBooks = pgTable("loan_books", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   loanProductId: integer("loan_product_id").references(() => loanProducts.id),
   loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
@@ -73,6 +124,7 @@ export const loanBooks = pgTable("loan_books", {
 
 export const paymentSchedules = pgTable("payment_schedules", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   dueDate: timestamp("due_date").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
@@ -87,9 +139,10 @@ export const paymentSchedules = pgTable("payment_schedules", {
 
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   phone: text("phone").notNull(),
   position: text("position").notNull(),
   salary: decimal("salary", { precision: 15, scale: 2 }),
@@ -101,6 +154,7 @@ export const staff = pgTable("staff", {
 
 export const incomeManagement = pgTable("income_management", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   source: text("source").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -111,6 +165,7 @@ export const incomeManagement = pgTable("income_management", {
 
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -121,6 +176,7 @@ export const expenses = pgTable("expenses", {
 
 export const bankManagement = pgTable("bank_management", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   accountName: text("account_name").notNull(),
   bankName: text("bank_name").notNull(),
   accountNumber: text("account_number").notNull(),
@@ -132,6 +188,7 @@ export const bankManagement = pgTable("bank_management", {
 
 export const pettyCash = pgTable("petty_cash", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   type: text("type").notNull(),
@@ -142,6 +199,7 @@ export const pettyCash = pgTable("petty_cash", {
 
 export const inventory = pgTable("inventory", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   itemName: text("item_name").notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull(),
@@ -154,6 +212,7 @@ export const inventory = pgTable("inventory", {
 
 export const rentManagement = pgTable("rent_management", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   propertyName: text("property_name").notNull(),
   tenantName: text("tenant_name").notNull(),
   monthlyRent: decimal("monthly_rent", { precision: 15, scale: 2 }).notNull(),
@@ -165,6 +224,7 @@ export const rentManagement = pgTable("rent_management", {
 
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   assetName: text("asset_name").notNull(),
   category: text("category").notNull(),
   value: decimal("value", { precision: 15, scale: 2 }).notNull(),
@@ -177,6 +237,7 @@ export const assets = pgTable("assets", {
 
 export const liabilities = pgTable("liabilities", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   liabilityName: text("liability_name").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   dueDate: timestamp("due_date"),
@@ -189,6 +250,7 @@ export const liabilities = pgTable("liabilities", {
 
 export const equity = pgTable("equity", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   equityType: text("equity_type").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   date: timestamp("date").notNull(),
@@ -198,6 +260,7 @@ export const equity = pgTable("equity", {
 
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   reportType: text("report_type").notNull(),
   title: text("title").notNull(),
   content: text("content"),
@@ -207,6 +270,7 @@ export const reports = pgTable("reports", {
 
 export const userAuditLogs = pgTable("user_audit_logs", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   action: text("action").notNull(), // login, logout, password_change, profile_update, etc.
   description: text("description"),
@@ -215,11 +279,12 @@ export const userAuditLogs = pgTable("user_audit_logs", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
-// MFI Registration table for BoG compliance
+// MFI Registration table for BoG compliance (Global-like collection - one per tenant)
 export const mfiRegistration = pgTable("mfi_registration", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull().unique(), // One per tenant
   companyName: text("company_name").notNull(),
-  registrationNumber: text("registration_number").notNull().unique(),
+  registrationNumber: text("registration_number").notNull(),
   certificateOfIncorporation: text("certificate_of_incorporation"), // File path/URL
   taxClearanceCertificate: text("tax_clearance_certificate"), // File path/URL
   registeredAddress: text("registered_address").notNull(),
@@ -238,6 +303,7 @@ export const mfiRegistration = pgTable("mfi_registration", {
 // Shareholder Management table for GIPC compliance
 export const shareholders = pgTable("shareholders", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   shareholderType: text("shareholder_type").notNull(), // 'local', 'foreign'
   name: text("name").notNull(),
   nationality: text("nationality").notNull(),
