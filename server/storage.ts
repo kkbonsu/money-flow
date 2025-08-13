@@ -1012,68 +1012,82 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Advanced analytics data
+  // Advanced analytics data - Optimized single query
   async getAdvancedAnalyticsData(): Promise<any> {
     try {
-      // Get loan statistics
-      const [loanStats] = await db
-        .select({
-          totalLoans: sql<number>`COUNT(*)`,
-          activeLoans: sql<number>`COUNT(CASE WHEN ${loanBooks.status} = 'disbursed' THEN 1 END)`,
-          avgLoanSize: sql<number>`AVG(CAST(${loanBooks.loanAmount} AS NUMERIC))`,
-          totalPortfolioValue: sql<number>`SUM(CAST(${loanBooks.loanAmount} AS NUMERIC))`,
-          approvalRate: sql<number>`
-            CASE 
-              WHEN COUNT(*) = 0 THEN 0
-              ELSE (COUNT(CASE WHEN ${loanBooks.status} IN ('approved', 'disbursed') THEN 1 END) * 100.0 / COUNT(*))
-            END
-          `
-        })
-        .from(loanBooks);
-
-      // Get payment statistics
-      const [paymentStats] = await db
-        .select({
-          totalPayments: sql<number>`COUNT(*)`,
-          paidPayments: sql<number>`COUNT(CASE WHEN ${paymentSchedules.status} = 'paid' THEN 1 END)`,
-          overduePayments: sql<number>`COUNT(CASE WHEN ${paymentSchedules.status} = 'overdue' THEN 1 END)`,
-          defaultRate: sql<number>`
-            CASE 
-              WHEN COUNT(*) = 0 THEN 0
-              ELSE (COUNT(CASE WHEN ${paymentSchedules.status} = 'overdue' THEN 1 END) * 100.0 / COUNT(*))
-            END
-          `
-        })
-        .from(paymentSchedules);
-
-      // Get today's transaction count
       const today = new Date();
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
-      const [todayTransactions] = await db
+      // Single optimized query for all analytics data
+      const [analyticsResult] = await db
         .select({
-          count: sql<number>`COUNT(*)`
+          // Loan statistics
+          totalLoans: sql<number>`
+            (SELECT COUNT(*) FROM ${loanBooks})
+          `,
+          activeLoans: sql<number>`
+            (SELECT COUNT(*) FROM ${loanBooks} WHERE status = 'disbursed')
+          `,
+          avgLoanSize: sql<number>`
+            COALESCE((SELECT AVG(loan_amount) FROM ${loanBooks}), 0)
+          `,
+          totalPortfolioValue: sql<number>`
+            COALESCE((SELECT SUM(loan_amount) FROM ${loanBooks}), 0)
+          `,
+          approvalRate: sql<number>`
+            CASE 
+              WHEN (SELECT COUNT(*) FROM ${loanBooks}) = 0 THEN 0
+              ELSE (
+                (SELECT COUNT(*) FROM ${loanBooks} WHERE status IN ('approved', 'disbursed')) * 100.0 
+                / (SELECT COUNT(*) FROM ${loanBooks})
+              )
+            END
+          `,
+          
+          // Payment statistics
+          totalPayments: sql<number>`
+            (SELECT COUNT(*) FROM ${paymentSchedules})
+          `,
+          paidPayments: sql<number>`
+            (SELECT COUNT(*) FROM ${paymentSchedules} WHERE status = 'paid')
+          `,
+          overduePayments: sql<number>`
+            (SELECT COUNT(*) FROM ${paymentSchedules} WHERE status = 'overdue')
+          `,
+          defaultRate: sql<number>`
+            CASE 
+              WHEN (SELECT COUNT(*) FROM ${paymentSchedules}) = 0 THEN 0
+              ELSE (
+                (SELECT COUNT(*) FROM ${paymentSchedules} WHERE status = 'overdue') * 100.0 
+                / (SELECT COUNT(*) FROM ${paymentSchedules})
+              )
+            END
+          `,
+          
+          // Today's transactions
+          todayTransactions: sql<number>`
+            (SELECT COUNT(*) FROM ${paymentSchedules} 
+             WHERE paid_date >= ${startOfDay.toISOString()} 
+             AND paid_date < ${endOfDay.toISOString()})
+          `
         })
-        .from(paymentSchedules)
-        .where(
-          sql`${paymentSchedules.paidDate} >= ${startOfDay.toISOString()} AND ${paymentSchedules.paidDate} < ${endOfDay.toISOString()}`
-        );
+        .from(sql`(SELECT 1) as dummy`);
 
       return {
         complianceScore: 98,
         riskLevel: 'Low',
-        defaultRate: Math.round((paymentStats?.defaultRate || 0) * 100) / 100,
-        atRiskLoans: paymentStats?.overduePayments || 0,
+        defaultRate: Math.round((analyticsResult?.defaultRate || 0) * 100) / 100,
+        atRiskLoans: analyticsResult?.overduePayments || 0,
         capitalAdequacy: 125,
         currentCapital: 2500000,
         requiredCapital: 2000000,
         portfolioReturn: 15.2,
-        activeLoans: loanStats?.activeLoans || 0,
-        avgLoanSize: Math.round(loanStats?.avgLoanSize || 0),
+        activeLoans: analyticsResult?.activeLoans || 0,
+        avgLoanSize: Math.round(analyticsResult?.avgLoanSize || 0),
         flaggedTransactions: 0,
-        todayTransactions: todayTransactions?.count || 0,
-        approvalRate: Math.round((loanStats?.approvalRate || 0) * 100) / 100,
+        todayTransactions: analyticsResult?.todayTransactions || 0,
+        approvalRate: Math.round((analyticsResult?.approvalRate || 0) * 100) / 100,
         approvedToday: 12,
         pendingReview: 3
       };
