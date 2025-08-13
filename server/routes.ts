@@ -30,7 +30,7 @@ import {
   insertShareholderSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { tenants } from "@shared/schema";
+import { simpleTenants } from "@shared/tenantSchema";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
     try {
-      const tenants = await db.select().from(tenants);
+      const tenants = await db.select().from(simpleTenants);
       res.json(tenants);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenants" });

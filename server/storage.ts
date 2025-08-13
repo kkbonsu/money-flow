@@ -1272,3 +1272,7 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// Import and export the multi-tenant storage for tenant-aware operations
+import { BackwardCompatibilityStorage } from "./multiTenantStorage";
+export const multiTenantStorage = new BackwardCompatibilityStorage();

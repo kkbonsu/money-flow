@@ -81,9 +81,14 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
     const payload = decoded as JwtPayload;
     
-    // Verify tenant context matches token
-    if (req.tenantContext && payload.tenantId !== req.tenantContext.tenantId) {
+    // Verify tenant context matches token (allow fallback for migration)
+    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId) {
       return res.status(403).json({ message: 'Token tenant mismatch' });
+    }
+    
+    // For tokens without tenantId, inject the current tenant context
+    if (!payload.tenantId && req.tenantContext) {
+      payload.tenantId = req.tenantContext.tenantId;
     }
 
     req.user = payload;
@@ -107,9 +112,14 @@ export const authenticateCustomerToken = (req: Request, res: Response, next: Nex
 
     const payload = decoded as any; // Customer token payload
     
-    // Verify tenant context matches token
-    if (req.tenantContext && payload.tenantId !== req.tenantContext.tenantId) {
+    // Verify tenant context matches token (allow fallback for migration)
+    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId) {
       return res.status(403).json({ message: 'Token tenant mismatch' });
+    }
+    
+    // For tokens without tenantId, inject the current tenant context
+    if (!payload.tenantId && req.tenantContext) {
+      payload.tenantId = req.tenantContext.tenantId;
     }
 
     req.customer = payload;
