@@ -78,6 +78,21 @@ export default function Sidebar() {
 
       {/* Navigation Menu */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        {/* Super Admin Link - Only show for super admins */}
+        {user?.isSuperAdmin && (
+          <Link href="/super-admin">
+            <div
+              className={cn(
+                'sidebar-nav-item bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-300/30',
+                location === '/super-admin' && 'active'
+              )}
+            >
+              <Shield className="w-5 h-5 mr-3 text-red-600" />
+              Super Admin
+            </div>
+          </Link>
+        )}
+        
         {navigationItems.map((section) => (
           <div key={section.name} className="space-y-1">
             {section.href ? (

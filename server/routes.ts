@@ -219,6 +219,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super admin stats endpoint
+  app.get("/api/admin/stats", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const [
+        totalTenantsResult,
+        activeTenantsResult,
+        totalUsersResult
+      ] = await Promise.all([
+        db.select({ count: sql<number>`count(*)` }).from(simpleTenants),
+        db.select({ count: sql<number>`count(*)` }).from(simpleTenants).where(eq(simpleTenants.isActive, true)),
+        db.select({ count: sql<number>`count(*)` }).from(users)
+      ]);
+
+      res.json({
+        totalTenants: totalTenantsResult[0]?.count || 0,
+        activeTenants: activeTenantsResult[0]?.count || 0,
+        totalUsers: totalUsersResult[0]?.count || 0,
+        systemRevenue: "$0" // Placeholder for future implementation
+      });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch system stats" });
+    }
+  });
+
+  // Delete tenant endpoint
+  app.delete("/api/admin/tenants/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      
+      // Note: In production, you might want to soft-delete or archive instead
+      await db.delete(simpleTenants).where(eq(simpleTenants.id, tenantId));
+      
+      res.json({ message: "Tenant deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete tenant" });
+    }
+  });
+
   app.get("/api/tenant/info", async (req, res) => {
     try {
       const tenantInfo = req.tenantContext?.tenant;

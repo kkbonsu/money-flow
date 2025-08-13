@@ -30,6 +30,7 @@ import Reports from "@/pages/Reports";
 import Equity from "@/pages/Equity";
 import UserProfile from "@/pages/UserProfile";
 import Login from "@/pages/Login";
+import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import NotFound from "@/pages/not-found";
 
 // Customer Portal Components
@@ -62,6 +63,7 @@ function Router() {
 
       {/* Staff Portal Routes */}
       <Route path="/login" component={Login} />
+      <Route path="/super-admin" component={SuperAdminDashboard} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
       <Route path="/liora" component={Liora} />
