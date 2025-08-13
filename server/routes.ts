@@ -30,6 +30,8 @@ import {
   insertShareholderSchema
 } from "@shared/schema";
 import { z } from "zod";
+import { tenants } from "@shared/schema";
+import { db } from "./db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
@@ -85,24 +87,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from uploads directory
   app.use('/uploads', express.static(uploadsDir));
   
-  // Auth routes
+  // Tenant-aware auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
       
       const user = await storage.createUser({
         ...userData,
         password: hashedPassword,
       });
       
-      const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      const token = generateUserToken(user, tenantId);
       
-      res.json({ user: { id: user.id, username: user.username, email: user.email, role: user.role }, token });
+      res.json({ 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          role: user.role,
+          tenantId 
+        }, 
+        token 
+      });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Registration failed" });
     }
@@ -111,17 +119,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
+      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
       const user = await storage.getUserByUsername(username);
       
       if (!user || !await bcrypt.compare(password, user.password)) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      const token = generateUserToken(user, tenantId);
       
       // Update last login and log the login
       await storage.updateUserLastLogin(user.id);
@@ -133,16 +138,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.headers['user-agent']
       });
       
-      res.json({ user: { id: user.id, username: user.username, email: user.email, role: user.role }, token });
+      res.json({ 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          role: user.role,
+          tenantId 
+        }, 
+        token 
+      });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Login failed" });
     }
   });
 
-  // Customer authentication routes
+  // Tenant-aware customer authentication routes
   app.post("/api/customer/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
+      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
       const customer = await storage.getCustomerByEmail(email);
       
       if (!customer || !customer.password || !await bcrypt.compare(password, customer.password)) {
@@ -153,11 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Portal access is not active for this account" });
       }
       
-      const token = jwt.sign(
-        { id: customer.id, email: customer.email, type: 'customer' },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      const token = generateCustomerToken(customer, tenantId);
       
       // Update last portal login
       await storage.updateCustomerLastLogin(customer.id);
@@ -171,12 +182,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: customer.phone,
           address: customer.address,
           creditScore: customer.creditScore,
-          isPortalActive: customer.isPortalActive
+          isPortalActive: customer.isPortalActive,
+          tenantId
         }, 
         token 
       });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Login failed" });
+    }
+  });
+
+  // Tenant management routes (Super Admin only)
+  app.post("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { name, slug, adminUser } = req.body;
+      
+      // Create tenant with admin user
+      const result = await createTenantWithAdmin({
+        name,
+        slug,
+        adminUser
+      });
+      
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create tenant" });
+    }
+  });
+
+  app.get("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const tenants = await db.select().from(tenants);
+      res.json(tenants);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenants" });
+    }
+  });
+
+  app.get("/api/tenant/info", async (req, res) => {
+    try {
+      const tenantInfo = req.tenantContext?.tenant;
+      if (!tenantInfo) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      res.json(tenantInfo);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenant info" });
     }
   });
 

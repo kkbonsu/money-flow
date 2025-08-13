@@ -832,20 +832,17 @@ export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
 
 // Tenant Context Types for Multi-tenant Operations
 export type TenantContext = {
+  tenant: Tenant;
   tenantId: string;
-  tenantSlug?: string;
-  userId: number;
-  userRole: string;
-  permissions?: string[];
+  slug: string;
 };
 
 // Extended JWT payload for multi-tenant authentication
 export type JwtPayload = {
   id: number;
   username: string;
+  email: string;
   role: string;
   tenantId: string;
-  tenantSlug?: string;
-  permissions?: string[];
   isSuperAdmin?: boolean;
 };

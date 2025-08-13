@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { multiTenantStorage } from "./multiTenantStorage";
-import type { JwtPayload, TenantContext } from "@shared/schema";
+import type { JwtPayload } from "@shared/schema";
+import type { SimpleTenantContext } from "@shared/tenantSchema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -11,7 +12,7 @@ declare global {
     interface Request {
       user?: any;
       customer?: any;
-      tenantContext?: TenantContext;
+      tenantContext?: SimpleTenantContext;
     }
   }
 }

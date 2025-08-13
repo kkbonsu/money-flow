@@ -65,6 +65,7 @@ import {
   type TenantContext,
   type JwtPayload
 } from "@shared/schema";
+import { simpleTenants } from "@shared/tenantSchema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -163,30 +164,30 @@ export interface IMultiTenantStorage {
 }
 
 export class MultiTenantStorage implements IMultiTenantStorage {
-  // Tenant management methods
-  async getTenant(tenantId: string): Promise<Tenant | undefined> {
-    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+  // Tenant management methods (updated for simple tenant structure)
+  async getTenant(tenantId: string): Promise<any | undefined> {
+    const [tenant] = await db.select().from(simpleTenants).where(eq(simpleTenants.id, tenantId));
     return tenant || undefined;
   }
 
-  async getTenantBySlug(slug: string): Promise<Tenant | undefined> {
-    const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, slug));
+  async getTenantBySlug(slug: string): Promise<any | undefined> {
+    const [tenant] = await db.select().from(simpleTenants).where(eq(simpleTenants.slug, slug));
     return tenant || undefined;
   }
 
-  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
+  async createTenant(insertTenant: any): Promise<any> {
     const [tenant] = await db
-      .insert(tenants)
+      .insert(simpleTenants)
       .values(insertTenant)
       .returning();
     return tenant;
   }
 
-  async updateTenant(tenantId: string, updateTenant: Partial<InsertTenant>): Promise<Tenant> {
+  async updateTenant(tenantId: string, updateTenant: any): Promise<any> {
     const [tenant] = await db
-      .update(tenants)
+      .update(simpleTenants)
       .set({ ...updateTenant, updatedAt: new Date() })
-      .where(eq(tenants.id, tenantId))
+      .where(eq(simpleTenants.id, tenantId))
       .returning();
     return tenant;
   }
