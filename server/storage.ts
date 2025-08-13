@@ -879,100 +879,104 @@ export class DatabaseStorage implements IStorage {
   // Get loan portfolio data by month
   async getLoanPortfolioData(): Promise<any> {
     const currentYear = new Date().getFullYear();
-    const months = [];
     
-    // Generate data for all 12 months of current year
+    // Single optimized query to get all monthly data at once
+    const monthlyData = await db
+      .select({
+        month: sql<number>`EXTRACT(MONTH FROM ${loanBooks.createdAt})`,
+        total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
+        count: sql<number>`COUNT(*)`
+      })
+      .from(loanBooks)
+      .where(sql`
+        ${loanBooks.status} IN ('approved', 'disbursed') 
+        AND EXTRACT(YEAR FROM ${loanBooks.createdAt}) = ${currentYear}
+      `)
+      .groupBy(sql`EXTRACT(MONTH FROM ${loanBooks.createdAt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${loanBooks.createdAt})`);
+    
+    // Create a map for quick lookup
+    const dataMap = new Map();
+    monthlyData.forEach(row => {
+      dataMap.set(row.month, { total: row.total, count: row.count });
+    });
+    
+    // Generate complete 12-month dataset
+    const months = [];
     for (let month = 1; month <= 12; month++) {
-      const startOfMonth = new Date(currentYear, month - 1, 1);
-      const endOfMonth = new Date(currentYear, month, 0);
-      
-      const [monthData] = await db
-        .select({ 
-          total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
-          count: sql<number>`COUNT(*)` 
-        })
-        .from(loanBooks)
-        .where(sql`
-          ${loanBooks.status} IN ('approved', 'disbursed') 
-          AND ${loanBooks.createdAt} <= ${endOfMonth}
-        `);
-      
+      const data = dataMap.get(month) || { total: 0, count: 0 };
       months.push({
         month: new Date(currentYear, month - 1, 1).toLocaleString('default', { month: 'short' }),
-        totalLoans: monthData?.total || 0,
-        loanCount: monthData?.count || 0
+        totalLoans: data.total,
+        loanCount: data.count
       });
     }
     
     return months;
   }
 
-  // Dashboard metrics
+  // Dashboard metrics - Optimized single query
   async getDashboardMetrics(): Promise<any> {
     const currentDate = new Date();
+    const thisMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const lastMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
     const lastMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
-    const thisMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
-    // Current month data
-    const [totalLoansResult] = await db
-      .select({ 
-        total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
-        count: sql<number>`COUNT(*)` 
+    // Single optimized query with CTEs for all metrics
+    const [metricsResult] = await db
+      .select({
+        // Current metrics
+        totalLoans: sql<number>`
+          COALESCE(
+            (SELECT SUM(loan_amount) FROM ${loanBooks} WHERE status IN ('approved', 'disbursed')), 
+            0
+          )
+        `,
+        activeCustomers: sql<number>`
+          (SELECT COUNT(*) FROM ${customers} WHERE status = 'active')
+        `,
+        pendingPayments: sql<number>`
+          COALESCE(
+            (SELECT SUM(amount) FROM ${paymentSchedules} WHERE status = 'pending'), 
+            0
+          )
+        `,
+        monthlyIncome: sql<number>`
+          COALESCE(
+            (SELECT SUM(amount) FROM ${incomeManagement} 
+             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)), 
+            0
+          )
+        `,
+        
+        // Previous month metrics for comparison
+        lastMonthLoans: sql<number>`
+          COALESCE(
+            (SELECT SUM(loan_amount) FROM ${loanBooks} 
+             WHERE status IN ('approved', 'disbursed') AND created_at < ${thisMonthStart.toISOString()}), 
+            0
+          )
+        `,
+        lastMonthCustomers: sql<number>`
+          (SELECT COUNT(*) FROM ${customers} 
+           WHERE status = 'active' AND created_at < ${thisMonthStart.toISOString()})
+        `,
+        lastMonthPayments: sql<number>`
+          COALESCE(
+            (SELECT SUM(amount) FROM ${paymentSchedules} 
+             WHERE status = 'pending' AND created_at < ${thisMonthStart.toISOString()}), 
+            0
+          )
+        `,
+        lastMonthIncome: sql<number>`
+          COALESCE(
+            (SELECT SUM(amount) FROM ${incomeManagement} 
+             WHERE date >= ${lastMonthStart.toISOString()} AND date <= ${lastMonthEnd.toISOString()}), 
+            0
+          )
+        `
       })
-      .from(loanBooks)
-      .where(sql`${loanBooks.status} IN ('approved', 'disbursed')`);
-
-    const [activeCustomersResult] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(customers)
-      .where(eq(customers.status, 'active'));
-
-    const [pendingPaymentsResult] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${paymentSchedules.amount}), 0)` })
-      .from(paymentSchedules)
-      .where(eq(paymentSchedules.status, 'pending'));
-
-    const [monthlyIncomeResult] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${incomeManagement.amount}), 0)` })
-      .from(incomeManagement)
-      .where(sql`DATE_TRUNC('month', ${incomeManagement.date}) = DATE_TRUNC('month', CURRENT_DATE)`);
-
-    // Previous month data for comparison
-    const [lastMonthLoansResult] = await db
-      .select({ 
-        total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
-        count: sql<number>`COUNT(*)` 
-      })
-      .from(loanBooks)
-      .where(sql`
-        ${loanBooks.status} IN ('approved', 'disbursed') 
-        AND ${loanBooks.createdAt} < ${thisMonthStart}
-      `);
-
-    const [lastMonthCustomersResult] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(customers)
-      .where(sql`
-        ${customers.status} = 'active' 
-        AND ${customers.createdAt} < ${thisMonthStart}
-      `);
-
-    const [lastMonthPaymentsResult] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${paymentSchedules.amount}), 0)` })
-      .from(paymentSchedules)
-      .where(sql`
-        ${paymentSchedules.status} = 'pending' 
-        AND ${paymentSchedules.createdAt} < ${thisMonthStart}
-      `);
-
-    const [lastMonthIncomeResult] = await db
-      .select({ total: sql<number>`COALESCE(SUM(${incomeManagement.amount}), 0)` })
-      .from(incomeManagement)
-      .where(sql`
-        ${incomeManagement.date} >= ${lastMonthStart} 
-        AND ${incomeManagement.date} <= ${lastMonthEnd}
-      `);
+      .from(sql`(SELECT 1) as dummy`);
 
     // Calculate percentage changes
     const calculateGrowth = (current: number, previous: number) => {
@@ -980,20 +984,20 @@ export class DatabaseStorage implements IStorage {
       return Math.round(((current - previous) / previous) * 100 * 100) / 100;
     };
 
-    const currentTotalLoans = totalLoansResult?.total || 0;
-    const previousTotalLoans = lastMonthLoansResult?.total || 0;
+    const currentTotalLoans = metricsResult?.totalLoans || 0;
+    const previousTotalLoans = metricsResult?.lastMonthLoans || 0;
     const loanGrowth = calculateGrowth(currentTotalLoans, previousTotalLoans);
 
-    const currentCustomers = activeCustomersResult?.count || 0;
-    const previousCustomers = lastMonthCustomersResult?.count || 0;
+    const currentCustomers = metricsResult?.activeCustomers || 0;
+    const previousCustomers = metricsResult?.lastMonthCustomers || 0;
     const customerGrowth = calculateGrowth(currentCustomers, previousCustomers);
 
-    const currentPayments = pendingPaymentsResult?.total || 0;
-    const previousPayments = lastMonthPaymentsResult?.total || 0;
+    const currentPayments = metricsResult?.pendingPayments || 0;
+    const previousPayments = metricsResult?.lastMonthPayments || 0;
     const paymentGrowth = calculateGrowth(currentPayments, previousPayments);
 
-    const currentIncome = monthlyIncomeResult?.total || 0;
-    const previousIncome = lastMonthIncomeResult?.total || 0;
+    const currentIncome = metricsResult?.monthlyIncome || 0;
+    const previousIncome = metricsResult?.lastMonthIncome || 0;
     const incomeGrowth = calculateGrowth(currentIncome, previousIncome);
 
     return {
