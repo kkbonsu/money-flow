@@ -325,6 +325,7 @@ export const shareholders = pgTable("shareholders", {
 // Collateral Management table for Security Interest Registration
 export const collateral = pgTable("collateral", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   collateralType: text("collateral_type").notNull(), // 'real_estate', 'vehicle', 'equipment', 'inventory', 'other'
   description: text("description").notNull(),
@@ -344,6 +345,7 @@ export const collateral = pgTable("collateral", {
 // Borrower Education Content table
 export const educationContent = pgTable("education_content", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   contentType: text("content_type").notNull(), // 'article', 'video', 'infographic', 'quiz'
@@ -359,6 +361,7 @@ export const educationContent = pgTable("education_content", {
 // Borrower Feedback table
 export const borrowerFeedback = pgTable("borrower_feedback", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   loanId: integer("loan_id").references(() => loanBooks.id),
   feedbackType: text("feedback_type").notNull(), // 'complaint', 'suggestion', 'clarification', 'compliment'
@@ -376,6 +379,7 @@ export const borrowerFeedback = pgTable("borrower_feedback", {
 // Debt Collection Activities table
 export const debtCollectionActivities = pgTable("debt_collection_activities", {
   id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   customerId: integer("customer_id").references(() => customers.id),
   activityType: text("activity_type").notNull(), // 'reminder_call', 'email_reminder', 'sms_reminder', 'field_visit', 'payment_plan', 'legal_notice'
@@ -389,8 +393,58 @@ export const debtCollectionActivities = pgTable("debt_collection_activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Relations
-export const customersRelations = relations(customers, ({ many }) => ({
+// Multi-tenant Relations
+export const tenantsRelations = relations(tenants, ({ many }) => ({
+  users: many(users),
+  customers: many(customers),
+  loanProducts: many(loanProducts),
+  loanBooks: many(loanBooks),
+  paymentSchedules: many(paymentSchedules),
+  staff: many(staff),
+  incomeManagement: many(incomeManagement),
+  expenses: many(expenses),
+  bankManagement: many(bankManagement),
+  pettyCash: many(pettyCash),
+  inventory: many(inventory),
+  rentManagement: many(rentManagement),
+  assets: many(assets),
+  liabilities: many(liabilities),
+  equity: many(equity),
+  reports: many(reports),
+  userAuditLogs: many(userAuditLogs),
+  mfiRegistration: many(mfiRegistration),
+  shareholders: many(shareholders),
+  userTenantAccess: many(userTenantAccess),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [users.tenantId],
+    references: [tenants.id],
+  }),
+  tenantAccess: many(userTenantAccess),
+  assignedLoans: many(loanBooks, { relationName: "assignedOfficer" }),
+  approvedLoans: many(loanBooks, { relationName: "approver" }),
+  disbursedLoans: many(loanBooks, { relationName: "disburser" }),
+  auditLogs: many(userAuditLogs),
+}));
+
+export const userTenantAccessRelations = relations(userTenantAccess, ({ one }) => ({
+  user: one(users, {
+    fields: [userTenantAccess.userId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [userTenantAccess.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const customersRelations = relations(customers, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [customers.tenantId],
+    references: [tenants.id],
+  }),
   loans: many(loanBooks),
 }));
 
@@ -433,11 +487,7 @@ export const staffRelations = relations(staff, ({ many }) => ({
   
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
-  approvedLoans: many(loanBooks),
-  reports: many(reports),
-  auditLogs: many(userAuditLogs),
-}));
+
 
 export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
   user: one(users, {
@@ -453,21 +503,35 @@ export const reportsRelations = relations(reports, ({ one }) => ({
   }),
 }));
 
-// Insert schemas
+// Insert schemas for multi-tenant support
+export const insertTenantSchema = createInsertSchema(tenants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserTenantAccessSchema = createInsertSchema(userTenantAccess).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -498,6 +562,7 @@ export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
 
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -516,6 +581,7 @@ export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).
 
 export const insertStaffSchema = createInsertSchema(staff).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -529,6 +595,7 @@ export const insertStaffSchema = createInsertSchema(staff).omit({
 
 export const insertIncomeManagementSchema = createInsertSchema(incomeManagement).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -536,6 +603,7 @@ export const insertIncomeManagementSchema = createInsertSchema(incomeManagement)
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -543,6 +611,7 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
 
 export const insertBankManagementSchema = createInsertSchema(bankManagement).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -551,6 +620,7 @@ export const insertBankManagementSchema = createInsertSchema(bankManagement).omi
 
 export const insertPettyCashSchema = createInsertSchema(pettyCash).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -558,6 +628,7 @@ export const insertPettyCashSchema = createInsertSchema(pettyCash).omit({
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   unitPrice: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -566,38 +637,45 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
 
 export const insertRentManagementSchema = createInsertSchema(rentManagement).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 });
 
 export const insertAssetSchema = createInsertSchema(assets).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertLiabilitySchema = createInsertSchema(liabilities).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertEquitySchema = createInsertSchema(equity).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 });
 
 export const insertReportSchema = createInsertSchema(reports).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
 });
 
 export const insertUserAuditLogSchema = createInsertSchema(userAuditLogs).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   timestamp: true,
 });
 
 export const insertMfiRegistrationSchema = createInsertSchema(mfiRegistration).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -619,12 +697,14 @@ export const insertShareholderSchema = createInsertSchema(shareholders, {
   investmentAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 }).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertLoanProductSchema = createInsertSchema(loanProducts).omit({
   id: true,
+  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -686,5 +766,86 @@ export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
 export type Shareholder = typeof shareholders.$inferSelect;
 export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
 
+// Multi-tenant Types
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+
+export type UserTenantAccess = typeof userTenantAccess.$inferSelect;
+export type InsertUserTenantAccess = z.infer<typeof insertUserTenantAccessSchema>;
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+
 export type LoanProduct = typeof loanProducts.$inferSelect;
 export type InsertLoanProduct = z.infer<typeof insertLoanProductSchema>;
+
+export type LoanBook = typeof loanBooks.$inferSelect;
+export type InsertLoanBook = z.infer<typeof insertLoanBookSchema>;
+
+export type PaymentSchedule = typeof paymentSchedules.$inferSelect;
+export type InsertPaymentSchedule = z.infer<typeof insertPaymentScheduleSchema>;
+
+export type Staff = typeof staff.$inferSelect;
+export type InsertStaff = z.infer<typeof insertStaffSchema>;
+
+export type IncomeManagement = typeof incomeManagement.$inferSelect;
+export type InsertIncomeManagement = z.infer<typeof insertIncomeManagementSchema>;
+
+export type Expense = typeof expenses.$inferSelect;
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+
+export type BankManagement = typeof bankManagement.$inferSelect;
+export type InsertBankManagement = z.infer<typeof insertBankManagementSchema>;
+
+export type PettyCash = typeof pettyCash.$inferSelect;
+export type InsertPettyCash = z.infer<typeof insertPettyCashSchema>;
+
+export type Inventory = typeof inventory.$inferSelect;
+export type InsertInventory = z.infer<typeof insertInventorySchema>;
+
+export type RentManagement = typeof rentManagement.$inferSelect;
+export type InsertRentManagement = z.infer<typeof insertRentManagementSchema>;
+
+export type Asset = typeof assets.$inferSelect;
+export type InsertAsset = z.infer<typeof insertAssetSchema>;
+
+export type Liability = typeof liabilities.$inferSelect;
+export type InsertLiability = z.infer<typeof insertLiabilitySchema>;
+
+export type Equity = typeof equity.$inferSelect;
+export type InsertEquity = z.infer<typeof insertEquitySchema>;
+
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = z.infer<typeof insertReportSchema>;
+
+export type UserAuditLog = typeof userAuditLogs.$inferSelect;
+export type InsertUserAuditLog = z.infer<typeof insertUserAuditLogSchema>;
+
+export type MfiRegistration = typeof mfiRegistration.$inferSelect;
+export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
+
+export type Shareholder = typeof shareholders.$inferSelect;
+export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
+
+// Tenant Context Types for Multi-tenant Operations
+export type TenantContext = {
+  tenantId: string;
+  tenantSlug?: string;
+  userId: number;
+  userRole: string;
+  permissions?: string[];
+};
+
+// Extended JWT payload for multi-tenant authentication
+export type JwtPayload = {
+  id: number;
+  username: string;
+  role: string;
+  tenantId: string;
+  tenantSlug?: string;
+  permissions?: string[];
+  isSuperAdmin?: boolean;
+};
