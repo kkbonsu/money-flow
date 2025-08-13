@@ -2,7 +2,7 @@
 
 ## Overview
 
-Money Flow is a comprehensive financial management system designed to streamline financial operations for businesses. It handles core functionalities such as loan management, customer relations, payment scheduling, staff management, and detailed financial tracking including income, expenses, assets, liabilities, and equity. The system aims to provide robust reporting and analytics capabilities to support informed decision-making.
+Money Flow is a comprehensive **multi-tenant SaaS B2B** financial management system designed to streamline financial operations for multiple microfinance institutions. It handles core functionalities such as loan management, customer relations, payment scheduling, staff management, and detailed financial tracking including income, expenses, assets, liabilities, and equity. The system features tenant isolation, PayloadCMS-inspired architecture, and provides robust reporting and analytics capabilities to support informed decision-making across multiple organizations.
 
 ## User Preferences
 
@@ -28,12 +28,14 @@ Money Flow employs a modern full-stack monorepo architecture, ensuring clear sep
 - **API Design**: RESTful API with structured error handling for reliable client-server communication.
 
 ### Key Features & Implementations
-- **Database Layer**: Centralized Drizzle ORM schema (`shared/schema.ts`) with auto-generated migrations.
-- **Authentication System**: Secure JWT-based authentication with session management and route protection.
-- **Core Business Entities**: Comprehensive CRUD operations for Users, Customers, Loan Books, Payment Schedules, Staff, Income, Expenses, Bank Accounts, Petty Cash, Inventory, Rent, Assets, Liabilities, and Equity.
+- **Multi-Tenant Architecture**: PayloadCMS-inspired tenant isolation with automatic field injection, tenant-aware queries, and flexible collection-based tenant behavior.
+- **Database Layer**: Centralized Drizzle ORM schema (`shared/schema.ts`) with auto-generated migrations and Row-Level Security (RLS) for tenant isolation.
+- **Authentication System**: Tenant-aware JWT-based authentication with multi-level access (tenant-level, user-level, role-based) and tenant context management.
+- **Core Business Entities**: Comprehensive tenant-scoped CRUD operations for Users, Customers, Loan Books, Payment Schedules, Staff, Income, Expenses, Bank Accounts, Petty Cash, Inventory, Rent, Assets, Liabilities, and Equity.
+- **Tenant Management**: Complete tenant administration with subscription plans, branding customization, domain-based resolution, and usage tracking.
 - **Payment Schedule System**: Automated payment schedule generation using amortization, tracking, and "Mark as Paid" functionality, with automatic income logging for interest payments.
-- **User & Admin Management**: Detailed user profile management, admin user management with role-based access control, and comprehensive audit logging.
-- **Financial Analytics & Reporting**: Dashboard metrics, monthly income tracking, loan portfolio overview, payment status analysis, and advanced analytics for compliance, risk assessment, and portfolio performance. Includes automated BoG regulatory reports.
+- **User & Admin Management**: Tenant-aware user profile management, multi-tenant user management with role-based access control, and comprehensive audit logging.
+- **Financial Analytics & Reporting**: Tenant-specific dashboard metrics, monthly income tracking, loan portfolio overview, payment status analysis, and advanced analytics for compliance, risk assessment, and portfolio performance. Includes automated BoG regulatory reports.
 - **Loan Products**: Management system for defining and tracking loan products, including integrated fee processing.
 - **Loan Simulator**: A tool for calculating loan amortizations and generating payment schedules.
 - **LIORA AI Assistant**: An integrated conversational AI for real-time financial analysis and loan management recommendations.
