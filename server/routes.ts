@@ -1483,7 +1483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add role management routes
-  app.use('/api/roles', roleRoutes);
+  app.use('/api/roles', extractTenantContext, roleRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

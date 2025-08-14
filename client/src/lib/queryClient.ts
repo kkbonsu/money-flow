@@ -67,8 +67,5 @@ export const queryClient = new QueryClient({
       retry: false,
     },
   },
-  errorHandler: (error) => {
-    // Handle global query errors to prevent unhandled promise rejections
-    console.error('Query error:', error);
-  },
+
 });

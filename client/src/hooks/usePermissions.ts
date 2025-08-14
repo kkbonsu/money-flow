@@ -170,7 +170,7 @@ export function useHasMinimumRole(hierarchyLevel: number) {
   const { data: userPermissions } = useMyPermissions();
   
   const permissions = userPermissions as UserPermissions | undefined;
-  return permissions?.hierarchyLevel <= hierarchyLevel || 
+  return (permissions?.hierarchyLevel || 99) <= hierarchyLevel || 
          permissions?.isSuperAdmin || 
          false;
 }
