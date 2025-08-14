@@ -16,6 +16,9 @@ import {
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 
+// Default tenant ID for backward compatibility
+const DEFAULT_TENANT_ID = "default-tenant-001";
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -175,7 +178,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({ ...insertUser, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return user;
   }
@@ -218,7 +221,7 @@ export class DatabaseStorage implements IStorage {
   async createUserAuditLog(insertLog: InsertUserAuditLog): Promise<UserAuditLog> {
     const [log] = await db
       .insert(userAuditLogs)
-      .values(insertLog)
+      .values({ ...insertLog, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return log;
   }
@@ -245,7 +248,7 @@ export class DatabaseStorage implements IStorage {
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const [customer] = await db
       .insert(customers)
-      .values(insertCustomer)
+      .values({ ...insertCustomer, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return customer;
   }
@@ -332,7 +335,7 @@ export class DatabaseStorage implements IStorage {
   async createLoanProduct(insertLoanProduct: InsertLoanProduct): Promise<LoanProduct> {
     const [loanProduct] = await db
       .insert(loanProducts)
-      .values(insertLoanProduct)
+      .values({ ...insertLoanProduct, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return loanProduct;
   }
@@ -363,7 +366,7 @@ export class DatabaseStorage implements IStorage {
   async createLoan(insertLoan: InsertLoanBook): Promise<LoanBook> {
     const [loan] = await db
       .insert(loanBooks)
-      .values(insertLoan)
+      .values({ ...insertLoan, tenantId: DEFAULT_TENANT_ID })
       .returning();
     
     // Automatically create payment schedules for the loan
@@ -397,6 +400,7 @@ export class DatabaseStorage implements IStorage {
       dueDate.setDate(1);
       
       schedules.push({
+        tenantId: DEFAULT_TENANT_ID,
         loanId: loan.id,
         dueDate,
         amount: monthlyPayment.toFixed(2),
@@ -465,7 +469,7 @@ export class DatabaseStorage implements IStorage {
   async createPaymentSchedule(insertSchedule: InsertPaymentSchedule): Promise<PaymentSchedule> {
     const [schedule] = await db
       .insert(paymentSchedules)
-      .values(insertSchedule)
+      .values({ ...insertSchedule, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return schedule;
   }
@@ -485,6 +489,7 @@ export class DatabaseStorage implements IStorage {
       const interestAmount = parseFloat(schedule.interestAmount);
       if (interestAmount > 0) {
         await db.insert(incomeManagement).values({
+          tenantId: DEFAULT_TENANT_ID,
           source: 'Interest Payment',
           amount: schedule.interestAmount,
           description: `Interest payment from loan payment schedule #${schedule.id}`,
@@ -522,6 +527,7 @@ export class DatabaseStorage implements IStorage {
         
         if (existingIncome.length === 0) {
           await db.insert(incomeManagement).values({
+            tenantId: DEFAULT_TENANT_ID,
             source: 'Interest Payment',
             amount: payment.interestAmount,
             description: `Interest payment from loan payment schedule #${payment.id}`,
@@ -541,7 +547,7 @@ export class DatabaseStorage implements IStorage {
   async createStaff(insertStaff: InsertStaff): Promise<Staff> {
     const [member] = await db
       .insert(staff)
-      .values(insertStaff)
+      .values({ ...insertStaff, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return member;
   }

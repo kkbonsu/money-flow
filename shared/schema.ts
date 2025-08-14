@@ -881,48 +881,15 @@ export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
 export type Shareholder = typeof shareholders.$inferSelect;
 export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
 
-// Multi-tenant Types
+// Multi-tenant Types  
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 
 export type UserTenantAccess = typeof userTenantAccess.$inferSelect;
 export type InsertUserTenantAccess = z.infer<typeof insertUserTenantAccessSchema>;
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-
-export type Customer = typeof customers.$inferSelect;
-export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
-
 export type LoanProduct = typeof loanProducts.$inferSelect;
 export type InsertLoanProduct = z.infer<typeof insertLoanProductSchema>;
-
-export type LoanBook = typeof loanBooks.$inferSelect;
-export type InsertLoanBook = z.infer<typeof insertLoanBookSchema>;
-
-export type PaymentSchedule = typeof paymentSchedules.$inferSelect;
-export type InsertPaymentSchedule = z.infer<typeof insertPaymentScheduleSchema>;
-
-export type Staff = typeof staff.$inferSelect;
-export type InsertStaff = z.infer<typeof insertStaffSchema>;
-
-export type IncomeManagement = typeof incomeManagement.$inferSelect;
-export type InsertIncomeManagement = z.infer<typeof insertIncomeManagementSchema>;
-
-export type Expense = typeof expenses.$inferSelect;
-export type InsertExpense = z.infer<typeof insertExpenseSchema>;
-
-export type BankManagement = typeof bankManagement.$inferSelect;
-export type InsertBankManagement = z.infer<typeof insertBankManagementSchema>;
-
-export type PettyCash = typeof pettyCash.$inferSelect;
-export type InsertPettyCash = z.infer<typeof insertPettyCashSchema>;
-
-export type Inventory = typeof inventory.$inferSelect;
-export type InsertInventory = z.infer<typeof insertInventorySchema>;
-
-export type RentManagement = typeof rentManagement.$inferSelect;
-export type InsertRentManagement = z.infer<typeof insertRentManagementSchema>;
 
 export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
