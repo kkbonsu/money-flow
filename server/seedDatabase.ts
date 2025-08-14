@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 
 const DEFAULT_TENANT_ID = "default-tenant-001";
 
-export async function seedDatabase() {
+async function seedDatabase() {
   console.log("🌱 Starting database seeding...");
 
   try {
@@ -59,7 +59,7 @@ export async function seedDatabase() {
       contactPhone: "+233-20-123-4567",
       contactEmail: "info@ghanams.com",
       boGLicenseNumber: "BOG-MFI-2024-015",
-      licenseExpiryDate: new Date("2025-12-31"),
+      licenseExpiryDate: "2025-12-31",
       isActive: true
     });
 
@@ -640,15 +640,5 @@ export async function seedDatabase() {
   }
 }
 
-// Run seeding if called directly
-if (require.main === module) {
-  seedDatabase()
-    .then(() => {
-      console.log("🎉 Seeding completed successfully!");
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error("💥 Seeding failed:", error);
-      process.exit(1);
-    });
-}
+// Export for use in other modules
+export { seedDatabase };
