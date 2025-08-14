@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date, uuid, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date, uuid, jsonb, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -37,6 +37,54 @@ export const tenants = pgTable("tenants", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Roles table for hierarchical permission system
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  hierarchyLevel: integer("hierarchy_level").notNull(), // 1=Super Admin, 2=Admin, 3=Manager, 4=Staff
+  isSystemRole: boolean("is_system_role").default(true), // Predefined roles
+  tenantId: uuid("tenant_id").references(() => tenants.id), // null for system-wide roles like Super Admin
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueRoleName: unique().on(table.name, table.tenantId),
+}));
+
+// Permissions table for granular access control
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // e.g., "loans:create"
+  category: text("category").notNull(), // data_access, financial_operations, etc.
+  description: text("description"),
+  resource: text("resource").notNull(), // loans, customers, reports, etc.
+  action: text("action").notNull(), // create, read, update, delete, approve, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Role-Permission mapping (many-to-many)
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueRolePermission: unique().on(table.roleId, table.permissionId),
+}));
+
+// User-Role assignments (one primary role per user per tenant)
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  assignedBy: integer("assigned_by").references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+}, (table) => ({
+  uniqueUserTenantRole: unique().on(table.userId, table.tenantId), // One role per user per tenant
+}));
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -415,6 +463,51 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   mfiRegistration: many(mfiRegistration),
   shareholders: many(shareholders),
   userTenantAccess: many(userTenantAccess),
+  roles: many(roles),
+  userRoles: many(userRoles),
+}));
+
+export const roleRelations = relations(roles, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [roles.tenantId],
+    references: [tenants.id],
+  }),
+  rolePermissions: many(rolePermissions),
+  userRoles: many(userRoles),
+}));
+
+export const permissionRelations = relations(permissions, ({ many }) => ({
+  rolePermissions: many(rolePermissions),
+}));
+
+export const rolePermissionRelations = relations(rolePermissions, ({ one }) => ({
+  role: one(roles, {
+    fields: [rolePermissions.roleId],
+    references: [roles.id],
+  }),
+  permission: one(permissions, {
+    fields: [rolePermissions.permissionId],
+    references: [permissions.id],
+  }),
+}));
+
+export const userRoleRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoles.userId],
+    references: [users.id],
+  }),
+  role: one(roles, {
+    fields: [userRoles.roleId],
+    references: [roles.id],
+  }),
+  tenant: one(tenants, {
+    fields: [userRoles.tenantId],
+    references: [tenants.id],
+  }),
+  assignedByUser: one(users, {
+    fields: [userRoles.assignedBy],
+    references: [users.id],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -830,6 +923,19 @@ export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
 export type Shareholder = typeof shareholders.$inferSelect;
 export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
 
+// Permission System Types
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = typeof roles.$inferInsert;
+
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = typeof permissions.$inferInsert;
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = typeof rolePermissions.$inferInsert;
+
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = typeof userRoles.$inferInsert;
+
 // Tenant Context Types for Multi-tenant Operations
 export type TenantContext = {
   tenant: Tenant;
@@ -845,4 +951,7 @@ export type JwtPayload = {
   role: string;
   tenantId: string;
   isSuperAdmin?: boolean;
+  roleId?: number;
+  hierarchyLevel?: number;
+  permissions?: string[];
 };
