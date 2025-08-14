@@ -22,6 +22,7 @@ import { Shield, Users, Settings, Eye } from "lucide-react";
 import { useRoles, useHasPermission } from "@/hooks/usePermissions";
 import { RoleDetailsDialog } from "../roles/RoleDetailsDialog";
 import { UserRoleManagement } from "./UserRoleManagement";
+import { apiRequest } from "@/lib/queryClient";
 
 export function RoleManagement() {
   const { data: roles, isLoading } = useRoles();
@@ -124,17 +125,10 @@ export function RoleManagement() {
                       size="sm"
                       onClick={async () => {
                         try {
-                          const response = await fetch(`/api/roles/roles/${role.id}`, {
-                            credentials: 'include',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            }
-                          });
-                          if (response.ok) {
-                            const roleDetails = await response.json();
-                            setSelectedRoleDetails(roleDetails);
-                            setIsRoleDetailsOpen(true);
-                          }
+                          const response = await apiRequest('GET', `/api/roles/roles/${role.id}`);
+                          const roleDetails = await response.json();
+                          setSelectedRoleDetails(roleDetails);
+                          setIsRoleDetailsOpen(true);
                         } catch (error) {
                           console.error('Failed to fetch role details:', error);
                         }
