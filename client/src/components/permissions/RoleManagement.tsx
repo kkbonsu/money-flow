@@ -20,12 +20,14 @@ import {
 } from "@/components/ui/dialog";
 import { Shield, Users, Settings, Eye } from "lucide-react";
 import { useRoles, useHasPermission } from "@/hooks/usePermissions";
-import { RoleDetailsDialog } from "./RoleDetailsDialog";
+import { RoleDetailsDialog } from "../roles/RoleDetailsDialog";
 import { UserRoleManagement } from "./UserRoleManagement";
 
 export function RoleManagement() {
   const { data: roles, isLoading } = useRoles();
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  const [isRoleDetailsOpen, setIsRoleDetailsOpen] = useState(false);
+  const [selectedRoleDetails, setSelectedRoleDetails] = useState<any>(null);
   const canViewRoles = useHasPermission('users:view');
   const canManageRoles = useHasPermission('users:assign_roles');
 
@@ -95,7 +97,7 @@ export function RoleManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {roles?.map((role) => (
+              {Array.isArray(roles) && roles.map((role) => (
                 <TableRow key={role.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
@@ -117,28 +119,29 @@ export function RoleManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedRoleId(role.id)}
-                        >
-                          View Details
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl">
-                        <DialogHeader>
-                          <DialogTitle>Role Details</DialogTitle>
-                          <DialogDescription>
-                            View role permissions and settings
-                          </DialogDescription>
-                        </DialogHeader>
-                        {selectedRoleId && (
-                          <RoleDetailsDialog roleId={selectedRoleId} />
-                        )}
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/roles/roles/${role.id}`, {
+                            credentials: 'include',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            }
+                          });
+                          if (response.ok) {
+                            const roleDetails = await response.json();
+                            setSelectedRoleDetails(roleDetails);
+                            setIsRoleDetailsOpen(true);
+                          }
+                        } catch (error) {
+                          console.error('Failed to fetch role details:', error);
+                        }
+                      }}
+                    >
+                      View Details
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -148,6 +151,12 @@ export function RoleManagement() {
       </Card>
 
       {canManageRoles && <UserRoleManagement />}
+      
+      <RoleDetailsDialog
+        role={selectedRoleDetails}
+        open={isRoleDetailsOpen}
+        onOpenChange={setIsRoleDetailsOpen}
+      />
     </div>
   );
 }

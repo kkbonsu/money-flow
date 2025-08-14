@@ -38,6 +38,7 @@ import {
   useCanManageUser,
   type UserWithRole 
 } from "@/hooks/usePermissions";
+import { RoleDetailsDialog } from "@/components/roles/RoleDetailsDialog";
 
 // Separate component for user row to properly use hooks
 const UserRow = ({ 
@@ -138,6 +139,8 @@ export function UserRoleManagement() {
 
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
+  const [selectedRoleDetails, setSelectedRoleDetails] = useState<any>(null);
+  const [isRoleDetailsOpen, setIsRoleDetailsOpen] = useState(false);
 
   if (usersLoading || rolesLoading) {
     return (
@@ -239,7 +242,7 @@ export function UserRoleManagement() {
                 <SelectValue placeholder="Choose a user" />
               </SelectTrigger>
               <SelectContent>
-                {usersWithRoles?.map((user) => (
+                {Array.isArray(usersWithRoles) && usersWithRoles.map((user) => (
                   <SelectItem key={user.id} value={user.id.toString()}>
                     <div className="flex items-center gap-2">
                       <span>{user.username}</span>
@@ -262,7 +265,7 @@ export function UserRoleManagement() {
                 <SelectValue placeholder="Choose a role" />
               </SelectTrigger>
               <SelectContent>
-                {roles?.map((role) => (
+                {Array.isArray(roles) && roles.map((role) => (
                   <SelectItem key={role.id} value={role.id.toString()}>
                     <div className="flex items-center gap-2">
                       {getRoleIcon(role.hierarchyLevel)}
@@ -301,7 +304,7 @@ export function UserRoleManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {usersWithRoles?.map((user) => (
+            {Array.isArray(usersWithRoles) && usersWithRoles.map((user) => (
               <UserRow 
                 key={user.id} 
                 user={user} 
@@ -312,6 +315,12 @@ export function UserRoleManagement() {
             ))}
           </TableBody>
         </Table>
+
+        <RoleDetailsDialog
+          role={selectedRoleDetails}
+          open={isRoleDetailsOpen}
+          onOpenChange={setIsRoleDetailsOpen}
+        />
       </CardContent>
     </Card>
   );

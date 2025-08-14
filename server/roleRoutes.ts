@@ -11,7 +11,6 @@ const router = Router();
 
 // Schema for role assignment
 const assignRoleSchema = z.object({
-  userId: z.number(),
   roleId: z.number(),
 });
 
@@ -158,6 +157,7 @@ router.post('/users/:userId/assign-role', authenticateToken, async (req: any, re
     const assignedBy = req.user?.id;
     
     const { roleId } = assignRoleSchema.parse(req.body);
+    console.log('Role assignment - userId:', userId, 'roleId:', roleId, 'tenantId:', tenantId);
 
     // Verify the role exists and is valid for this tenant
     const [role] = await db.select().from(roles).where(eq(roles.id, roleId));
