@@ -56,7 +56,7 @@ router.get('/roles', authenticateToken, async (req: any, res) => {
 });
 
 // Get role details with permissions
-router.get('/roles/:id', requirePermission('users:view'), async (req: any, res) => {
+router.get('/roles/:id', authenticateToken, async (req: any, res) => {
   try {
     const roleId = parseInt(req.params.id);
     
