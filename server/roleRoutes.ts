@@ -3,6 +3,7 @@ import { db } from "./db";
 import { roles, permissions, rolePermissions, userRoles, users } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { requirePermission, requireMinimumRole, permissionService } from "./permissions";
+import { authenticateToken } from "./tenantAuth";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -284,15 +285,28 @@ router.put('/roles/:roleId/permissions', requirePermission('users:assign_roles')
 });
 
 // Get current user's permissions
-router.get('/my-permissions', async (req: any, res) => {
+router.get('/my-permissions', authenticateToken, async (req: any, res) => {
   try {
-    const userId = req.user.id;
-    const tenantId = req.user.tenantId;
+    const userId = req.user?.id;
+    const tenantId = req.user?.tenantId || req.tenantContext?.tenantId;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID not found in request' });
+    }
 
     const userPermissions = await permissionService.getUserPermissions(userId, tenantId);
     
     if (!userPermissions) {
-      return res.status(404).json({ message: 'No permissions found for user' });
+      // If no permissions found, return default structure for regular users
+      return res.json({
+        userId,
+        tenantId,
+        roleId: null,
+        roleName: null,
+        hierarchyLevel: 99,
+        permissions: [],
+        isSuperAdmin: false
+      });
     }
 
     res.json(userPermissions);

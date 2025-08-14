@@ -82,7 +82,7 @@ export default function Sidebar() {
       {/* Navigation Menu */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         {/* Super Admin Link - Only show for super admins */}
-        {user?.isSuperAdmin && (
+        {(user as any)?.isSuperAdmin && (
           <Link href="/super-admin">
             <div
               className={cn(
