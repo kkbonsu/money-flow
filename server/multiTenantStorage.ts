@@ -20,6 +20,10 @@ import {
   loanProducts,
   tenants,
   userTenantAccess,
+  roles,
+  permissions,
+  rolePermissions,
+  userRoles,
   type User, 
   type InsertUser,
   type Customer,
@@ -63,7 +67,15 @@ import {
   type UserTenantAccess,
   type InsertUserTenantAccess,
   type TenantContext,
-  type JwtPayload
+  type JwtPayload,
+  type Role,
+  type InsertRole,
+  type Permission,
+  type InsertPermission,
+  type UserRole,
+  type InsertUserRole,
+  type RolePermission,
+  type InsertRolePermission
 } from "@shared/schema";
 import { simpleTenants } from "@shared/tenantSchema";
 import { db } from "./db";
@@ -161,6 +173,25 @@ export interface IMultiTenantStorage {
   getRecentPayments(tenantId: string): Promise<any>;
   getTodaysPayments(tenantId: string): Promise<any>;
   getMonthlyPayments(tenantId: string): Promise<any>;
+
+  // Role and Permission Management
+  getRoles(tenantId?: string): Promise<Role[]>;
+  getRole(id: number): Promise<Role | undefined>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, role: Partial<InsertRole>): Promise<Role>;
+  deleteRole(id: number): Promise<void>;
+
+  getPermissions(): Promise<Permission[]>;
+  getPermission(id: number): Promise<Permission | undefined>;
+  getRolePermissions(roleId: number): Promise<Permission[]>;
+  assignRolePermissions(roleId: number, permissionIds: number[]): Promise<void>;
+  removeRolePermissions(roleId: number, permissionIds: number[]): Promise<void>;
+
+  getUserRoles(tenantId: string): Promise<UserRole[]>;
+  getUserRole(userId: number, tenantId: string): Promise<UserRole | undefined>;
+  assignUserRole(userRole: InsertUserRole): Promise<UserRole>;
+  updateUserRole(userId: number, tenantId: string, roleId: number): Promise<UserRole>;
+  removeUserRole(userId: number, tenantId: string): Promise<void>;
 }
 
 export class MultiTenantStorage implements IMultiTenantStorage {
