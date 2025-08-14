@@ -58,14 +58,12 @@ export interface UserPermissions {
 export function useRoles() {
   return useQuery({
     queryKey: ['/api/roles/roles'],
-    queryFn: () => apiRequest<Role[]>('/api/roles/roles'),
   });
 }
 
 export function useRole(roleId: number) {
   return useQuery({
     queryKey: ['/api/roles/roles', roleId],
-    queryFn: () => apiRequest<Role>(`/api/roles/roles/${roleId}`),
     enabled: !!roleId,
   });
 }
@@ -74,7 +72,6 @@ export function useRole(roleId: number) {
 export function usePermissions() {
   return useQuery({
     queryKey: ['/api/roles/permissions'],
-    queryFn: () => apiRequest<Record<string, Permission[]>>('/api/roles/permissions'),
   });
 }
 
@@ -82,14 +79,12 @@ export function usePermissions() {
 export function useUsersWithRoles() {
   return useQuery({
     queryKey: ['/api/roles/users-roles'],
-    queryFn: () => apiRequest<UserWithRole[]>('/api/roles/users-roles'),
   });
 }
 
 export function useMyPermissions() {
   return useQuery({
     queryKey: ['/api/roles/my-permissions'],
-    queryFn: () => apiRequest<UserPermissions>('/api/roles/my-permissions'),
   });
 }
 
@@ -98,11 +93,18 @@ export function useAssignRole() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) =>
-      apiRequest(`/api/roles/users/${userId}/assign-role`, {
+    mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
+      const response = await fetch(`/api/roles/users/${userId}/assign-role`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({ userId, roleId }),
-      }),
+      });
+      if (!response.ok) throw new Error('Failed to assign role');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/roles/users-roles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/roles/roles'] });
@@ -114,10 +116,16 @@ export function useRemoveRole() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (userId: number) =>
-      apiRequest(`/api/roles/users/${userId}/role`, {
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/roles/users/${userId}/role`, {
         method: 'DELETE',
-      }),
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+      });
+      if (!response.ok) throw new Error('Failed to remove role');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/roles/users-roles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/roles/roles'] });
@@ -129,11 +137,18 @@ export function useUpdateRolePermissions() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ roleId, permissionIds }: { roleId: number; permissionIds: number[] }) =>
-      apiRequest(`/api/roles/roles/${roleId}/permissions`, {
+    mutationFn: async ({ roleId, permissionIds }: { roleId: number; permissionIds: number[] }) => {
+      const response = await fetch(`/api/roles/roles/${roleId}/permissions`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({ permissionIds }),
-      }),
+      });
+      if (!response.ok) throw new Error('Failed to update role permissions');
+      return response.json();
+    },
     onSuccess: (_, { roleId }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/roles/roles', roleId] });
       queryClient.invalidateQueries({ queryKey: ['/api/roles/my-permissions'] });
@@ -145,16 +160,18 @@ export function useUpdateRolePermissions() {
 export function useHasPermission(permission: string) {
   const { data: userPermissions } = useMyPermissions();
   
-  return userPermissions?.permissions.includes(permission) || 
-         userPermissions?.isSuperAdmin || 
+  const permissions = userPermissions as UserPermissions | undefined;
+  return permissions?.permissions.includes(permission) || 
+         permissions?.isSuperAdmin || 
          false;
 }
 
 export function useHasMinimumRole(hierarchyLevel: number) {
   const { data: userPermissions } = useMyPermissions();
   
-  return userPermissions?.hierarchyLevel <= hierarchyLevel || 
-         userPermissions?.isSuperAdmin || 
+  const permissions = userPermissions as UserPermissions | undefined;
+  return permissions?.hierarchyLevel <= hierarchyLevel || 
+         permissions?.isSuperAdmin || 
          false;
 }
 
@@ -162,20 +179,23 @@ export function useCanManageUser(targetUserId: number) {
   const { data: userPermissions } = useMyPermissions();
   const { data: usersWithRoles } = useUsersWithRoles();
   
-  if (!userPermissions || !usersWithRoles) return false;
+  const permissions = userPermissions as UserPermissions | undefined;
+  const users = usersWithRoles as UserWithRole[] | undefined;
+  
+  if (!permissions || !users) return false;
   
   // Super admin can manage anyone
-  if (userPermissions.isSuperAdmin) return true;
+  if (permissions.isSuperAdmin) return true;
   
   // Must have user management permissions
-  if (!userPermissions.permissions.includes('users:assign_roles')) return false;
+  if (!permissions.permissions.includes('users:assign_roles')) return false;
   
   // Find target user
-  const targetUser = usersWithRoles.find(u => u.id === targetUserId);
+  const targetUser = users.find(u => u.id === targetUserId);
   if (!targetUser) return false;
   
   // Can't manage users with higher or equal hierarchy level
-  if (targetUser.hierarchyLevel && targetUser.hierarchyLevel <= userPermissions.hierarchyLevel) {
+  if (targetUser.hierarchyLevel && targetUser.hierarchyLevel <= permissions.hierarchyLevel) {
     return false;
   }
   

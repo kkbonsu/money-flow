@@ -31,6 +31,7 @@ import Equity from "@/pages/Equity";
 import UserProfile from "@/pages/UserProfile";
 import Login from "@/pages/Login";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
+import RoleManagementPage from "@/pages/RoleManagementPage";
 import NotFound from "@/pages/not-found";
 
 // Customer Portal Components
@@ -83,6 +84,7 @@ function Router() {
       <Route path="/liabilities" component={Liabilities} />
       <Route path="/reports" component={Reports} />
       <Route path="/equity" component={Equity} />
+      <Route path="/role-management" component={RoleManagementPage} />
       <Route path="/profile" component={UserProfile} />
       <Route component={NotFound} />
     </Switch>

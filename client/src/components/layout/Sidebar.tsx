@@ -18,7 +18,9 @@ import {
   FileText, 
   Scale,
   Bot,
-  Banknote
+  Banknote,
+  Shield,
+  Settings
 } from 'lucide-react';
 
 const navigationItems = [
@@ -43,6 +45,7 @@ const navigationItems = [
     name: 'Assets & Operations', 
     items: [
       { name: 'Staff', href: '/staff', icon: UserCheck },
+      { name: 'Role Management', href: '/role-management', icon: Shield },
       { name: 'Inventory', href: '/inventory', icon: Package },
       { name: 'Assets', href: '/assets', icon: BarChart },
       { name: 'Liabilities', href: '/liabilities', icon: CreditCard },
