@@ -45,7 +45,7 @@ export const roles = pgTable("roles", {
   description: text("description"),
   hierarchyLevel: integer("hierarchy_level").notNull(), // 1=Super Admin, 2=Admin, 3=Manager, 4=Staff
   isSystemRole: boolean("is_system_role").default(true), // Predefined roles
-  tenantId: uuid("tenant_id").references(() => tenants.id), // null for system-wide roles like Super Admin
+  tenantId: text("tenant_id"), // Using text to match existing tenant structure, null for system-wide roles
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
@@ -78,7 +78,7 @@ export const userRoles = pgTable("user_roles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  tenantId: text("tenant_id").notNull(), // Using text to match existing tenant structure
   assignedBy: integer("assigned_by").references(() => users.id),
   assignedAt: timestamp("assigned_at").defaultNow(),
   isActive: boolean("is_active").default(true),
@@ -802,6 +802,28 @@ export const insertLoanProductSchema = createInsertSchema(loanProducts).omit({
   updatedAt: true,
 }).extend({
   fee: z.union([z.string(), z.number()]).transform((val) => val.toString()),
+});
+
+// Permission System Insert Schemas
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  id: true,
+  assignedAt: true,
 });
 
 // Types
