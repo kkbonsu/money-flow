@@ -573,7 +573,7 @@ export class DatabaseStorage implements IStorage {
   async createIncome(insertIncome: InsertIncomeManagement): Promise<IncomeManagement> {
     const [income] = await db
       .insert(incomeManagement)
-      .values(insertIncome)
+      .values({ ...insertIncome, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return income;
   }
@@ -599,7 +599,7 @@ export class DatabaseStorage implements IStorage {
   async createExpense(insertExpense: InsertExpense): Promise<Expense> {
     const [expense] = await db
       .insert(expenses)
-      .values(insertExpense)
+      .values({ ...insertExpense, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return expense;
   }
@@ -625,7 +625,7 @@ export class DatabaseStorage implements IStorage {
   async createBankAccount(insertAccount: InsertBankManagement): Promise<BankManagement> {
     const [account] = await db
       .insert(bankManagement)
-      .values(insertAccount)
+      .values({ ...insertAccount, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return account;
   }
@@ -651,7 +651,7 @@ export class DatabaseStorage implements IStorage {
   async createPettyCash(insertPettyCash: InsertPettyCash): Promise<PettyCash> {
     const [cash] = await db
       .insert(pettyCash)
-      .values(insertPettyCash)
+      .values({ ...insertPettyCash, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return cash;
   }
@@ -677,7 +677,7 @@ export class DatabaseStorage implements IStorage {
   async createInventory(insertInventory: InsertInventory): Promise<Inventory> {
     const [item] = await db
       .insert(inventory)
-      .values(insertInventory)
+      .values({ ...insertInventory, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return item;
   }
@@ -703,7 +703,7 @@ export class DatabaseStorage implements IStorage {
   async createRentManagement(insertRent: InsertRentManagement): Promise<RentManagement> {
     const [rent] = await db
       .insert(rentManagement)
-      .values(insertRent)
+      .values({ ...insertRent, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return rent;
   }
@@ -729,7 +729,7 @@ export class DatabaseStorage implements IStorage {
   async createAsset(insertAsset: InsertAsset): Promise<Asset> {
     const [asset] = await db
       .insert(assets)
-      .values(insertAsset)
+      .values({ ...insertAsset, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return asset;
   }
@@ -755,7 +755,7 @@ export class DatabaseStorage implements IStorage {
   async createLiability(insertLiability: InsertLiability): Promise<Liability> {
     const [liability] = await db
       .insert(liabilities)
-      .values(insertLiability)
+      .values({ ...insertLiability, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return liability;
   }
@@ -781,7 +781,7 @@ export class DatabaseStorage implements IStorage {
   async createEquity(insertEquity: InsertEquity): Promise<Equity> {
     const [equityItem] = await db
       .insert(equity)
-      .values(insertEquity)
+      .values({ ...insertEquity, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return equityItem;
   }
@@ -807,7 +807,7 @@ export class DatabaseStorage implements IStorage {
   async createReport(insertReport: InsertReport): Promise<Report> {
     const [report] = await db
       .insert(reports)
-      .values(insertReport)
+      .values({ ...insertReport, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return report;
   }

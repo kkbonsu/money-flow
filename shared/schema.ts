@@ -888,29 +888,7 @@ export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type UserTenantAccess = typeof userTenantAccess.$inferSelect;
 export type InsertUserTenantAccess = z.infer<typeof insertUserTenantAccessSchema>;
 
-export type LoanProduct = typeof loanProducts.$inferSelect;
-export type InsertLoanProduct = z.infer<typeof insertLoanProductSchema>;
-
-export type Asset = typeof assets.$inferSelect;
-export type InsertAsset = z.infer<typeof insertAssetSchema>;
-
-export type Liability = typeof liabilities.$inferSelect;
-export type InsertLiability = z.infer<typeof insertLiabilitySchema>;
-
-export type Equity = typeof equity.$inferSelect;
-export type InsertEquity = z.infer<typeof insertEquitySchema>;
-
-export type Report = typeof reports.$inferSelect;
-export type InsertReport = z.infer<typeof insertReportSchema>;
-
-export type UserAuditLog = typeof userAuditLogs.$inferSelect;
-export type InsertUserAuditLog = z.infer<typeof insertUserAuditLogSchema>;
-
-export type MfiRegistration = typeof mfiRegistration.$inferSelect;
-export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
-
-export type Shareholder = typeof shareholders.$inferSelect;
-export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
+// Removed duplicate type definitions - already defined above
 
 // Permission System Types
 export type Role = typeof roles.$inferSelect;
