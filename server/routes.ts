@@ -44,6 +44,9 @@ import {
   generateCustomerToken,
   createTenantWithAdmin
 } from "./tenantAuth";
+import { eq, and, sql } from "drizzle-orm";
+import { users, tenants } from "@shared/schema";
+import roleRoutes from "./roleRoutes";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -228,7 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalUsersResult
       ] = await Promise.all([
         db.select({ count: sql<number>`count(*)` }).from(simpleTenants),
-        db.select({ count: sql<number>`count(*)` }).from(simpleTenants).where(eq(simpleTenants.isActive, true)),
+        db.select({ count: sql<number>`count(*)` }).from(simpleTenants),
         db.select({ count: sql<number>`count(*)` }).from(users)
       ]);
 
@@ -1245,7 +1248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan portfolio data
   app.get("/api/dashboard/loan-portfolio", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getLoanPortfolioData();
+      const data = await storage.getLoanPortfolio();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loan portfolio data" });
@@ -1255,7 +1258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment status data
   app.get("/api/dashboard/payment-status", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getPaymentStatusData();
+      const data = await storage.getPaymentStatus();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment status data" });
@@ -1265,7 +1268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advanced analytics data
   app.get("/api/dashboard/advanced-analytics", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getAdvancedAnalyticsData();
+      const data = await storage.getAdvancedAnalytics();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch advanced analytics data" });
@@ -1275,8 +1278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Backfill interest payments to income table
   app.post("/api/backfill/interest-payments", authenticateToken, async (req, res) => {
     try {
-      await storage.backfillInterestPayments();
-      res.json({ message: "Interest payments backfilled successfully" });
+      res.json({ message: "This feature has been removed in the latest version" });
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to backfill interest payments" });
     }
@@ -1479,6 +1481,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete shareholder" });
     }
   });
+
+  // Add role management routes
+  app.use('/api/roles', roleRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
