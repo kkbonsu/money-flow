@@ -35,8 +35,99 @@ import {
   useRoles, 
   useAssignRole, 
   useRemoveRole,
-  useCanManageUser 
+  useCanManageUser,
+  type UserWithRole 
 } from "@/hooks/usePermissions";
+
+// Separate component for user row to properly use hooks
+const UserRow = ({ 
+  user, 
+  getRoleIcon, 
+  getRoleBadgeVariant, 
+  handleRemoveRole 
+}: { 
+  user: UserWithRole;
+  getRoleIcon: (hierarchyLevel?: number) => JSX.Element;
+  getRoleBadgeVariant: (hierarchyLevel?: number) => string;
+  handleRemoveRole: (userId: number) => void;
+}) => {
+  const canManage = useCanManageUser(user.id);
+
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="space-y-1">
+          <div className="font-medium">{user.username}</div>
+          <div className="text-sm text-muted-foreground">
+            {user.firstName} {user.lastName}
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {user.email}
+      </TableCell>
+      <TableCell>
+        {user.roleName ? (
+          <div className="flex items-center gap-2">
+            {getRoleIcon(user.hierarchyLevel)}
+            <span>{user.roleName}</span>
+          </div>
+        ) : (
+          <Badge variant="outline">No Role</Badge>
+        )}
+      </TableCell>
+      <TableCell>
+        {user.hierarchyLevel ? (
+          <Badge variant={getRoleBadgeVariant(user.hierarchyLevel) as any}>
+            Level {user.hierarchyLevel}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {user.assignedAt ? (
+          new Date(user.assignedAt).toLocaleDateString()
+        ) : (
+          "-"
+        )}
+      </TableCell>
+      <TableCell>
+        {user.roleName && canManage ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                Remove Role
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove Role</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to remove the {user.roleName} role from {user.username}? 
+                  This will revoke all associated permissions.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleRemoveRole(user.id)}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Remove Role
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <span className="text-muted-foreground text-sm">
+            {!canManage ? "No permission" : "No role"}
+          </span>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+};
 
 export function UserRoleManagement() {
   const { data: usersWithRoles, isLoading: usersLoading } = useUsersWithRoles();
@@ -210,87 +301,15 @@ export function UserRoleManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {usersWithRoles?.map((user) => {
-              const ManageButton = ({ userId }: { userId: number }) => {
-                const canManage = useCanManageUser(userId);
-                return canManage;
-              };
-              
-              return (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium">{user.username}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {user.firstName} {user.lastName}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {user.email}
-                  </TableCell>
-                  <TableCell>
-                    {user.roleName ? (
-                      <div className="flex items-center gap-2">
-                        {getRoleIcon(user.hierarchyLevel)}
-                        <span>{user.roleName}</span>
-                      </div>
-                    ) : (
-                      <Badge variant="outline">No Role</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {user.hierarchyLevel ? (
-                      <Badge variant={getRoleBadgeVariant(user.hierarchyLevel)}>
-                        Level {user.hierarchyLevel}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {user.assignedAt ? (
-                      new Date(user.assignedAt).toLocaleDateString()
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {user.roleName && ManageButton({ userId: user.id }) ? (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            Remove Role
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Role</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to remove the {user.roleName} role from {user.username}? 
-                              This will revoke all associated permissions.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleRemoveRole(user.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Remove Role
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        {!ManageButton({ userId: user.id }) ? "No permission" : "No role"}
-                      </span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {usersWithRoles?.map((user) => (
+              <UserRow 
+                key={user.id} 
+                user={user} 
+                getRoleIcon={getRoleIcon}
+                getRoleBadgeVariant={getRoleBadgeVariant}
+                handleRemoveRole={handleRemoveRole}
+              />
+            ))}
           </TableBody>
         </Table>
       </CardContent>
