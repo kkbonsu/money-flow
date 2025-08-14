@@ -77,7 +77,7 @@ export function RoleDetailsDialog({ role, open, onOpenChange }: RoleDetailsDialo
         </DialogHeader>
 
         <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full pr-4">
+          <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-6">
               {Object.entries(groupedPermissions).map(([category, permissions]) => (
                 <div key={category} className="space-y-3">

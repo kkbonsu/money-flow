@@ -98,9 +98,9 @@ export function useAssignRole() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: JSON.stringify({ userId, roleId }),
+        body: JSON.stringify({ roleId }),
       });
       if (!response.ok) throw new Error('Failed to assign role');
       return response.json();
@@ -120,7 +120,7 @@ export function useRemoveRole() {
       const response = await fetch(`/api/roles/users/${userId}/role`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
       });
       if (!response.ok) throw new Error('Failed to remove role');
@@ -142,7 +142,7 @@ export function useUpdateRolePermissions() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({ permissionIds }),
       });
