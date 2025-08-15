@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Eye, Edit, Trash2, Plus, Download, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
@@ -29,7 +30,7 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
     queryKey: ['/api/customers'],
   });
 
-  const filteredCustomers = customers.filter((customer: Customer) => {
+  const filteredCustomers = (customers as Customer[]).filter((customer: Customer) => {
     const matchesSearch = 
       customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,30 +142,30 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Customer</th>
-                <th>Phone</th>
-                <th>National ID</th>
-                <th>Credit Score</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>National ID</TableHead>
+                <TableHead>Credit Score</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredCustomers.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No customers found
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredCustomers.slice(0, pageSize).map((customer: Customer) => (
-                  <tr key={customer.id}>
-                    <td>
+                  <TableRow key={customer.id}>
+                    <TableCell>
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
                           <span className="text-sm font-medium">
@@ -180,29 +181,29 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <span className="text-sm">{customer.phone}</span>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <span className="text-sm">{customer.nationalId || 'N/A'}</span>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <span className="text-sm font-medium">
                         {customer.creditScore || 'N/A'}
                       </span>
-                    </td>
-                    <td>
-                      <Badge className={`status-badge ${getStatusColor(customer.status)}`}>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getStatusColor(customer.status)}`}>
                         {customer.status}
                       </Badge>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <span className="text-sm text-muted-foreground">
                         {new Date(customer.createdAt || '').toLocaleDateString()}
                       </span>
-                    </td>
-                    <td>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex space-x-2">
                         <Button 
                           variant="ghost" 
@@ -230,12 +231,12 @@ export default function CustomerTable({ onAddCustomer }: CustomerTableProps) {
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Pagination */}

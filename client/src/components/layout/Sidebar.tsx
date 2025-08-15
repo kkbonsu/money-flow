@@ -69,7 +69,7 @@ export default function Sidebar() {
       {/* Logo Section */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3 scale-in">
-          <div className="w-10 h-10 bg-sidebar-primary rounded-xl flex items-center justify-center floating-animation shadow-lg">
+          <div className="w-10 h-10 bg-sidebar-primary rounded-xl flex items-center justify-center shadow-lg">
             <BarChart className="w-6 h-6 text-sidebar-primary-foreground" />
           </div>
           <div>

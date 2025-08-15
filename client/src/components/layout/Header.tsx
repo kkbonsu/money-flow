@@ -13,7 +13,7 @@ export default function Header() {
   const [, setLocation] = useLocation();
   
   // Get fresh user data including profile picture
-  const { data: user } = useQuery({
+  const { data: user } = useQuery<any>({
     queryKey: ['/api/users/profile'],
     enabled: !!authUser, // Only run if user is authenticated
   });
@@ -33,7 +33,7 @@ export default function Header() {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="floating-animation hover:scale-110 transition-transform duration-300"
+            className="hover:scale-110 transition-transform duration-300"
           >
             {theme === 'light' ? (
               <Sun className="w-5 h-5" />
