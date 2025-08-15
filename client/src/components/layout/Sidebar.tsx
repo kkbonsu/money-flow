@@ -26,11 +26,12 @@ import {
 const navigationItems = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Loan Simulator', href: '/loan-simulator', icon: Calculator },
-  { name: 'LIORA (AI Assistant)', href: '/liora', icon: Bot },
-  { name: 'Loan Products', href: '/loan-products', icon: Package },
   { 
     name: 'Management', 
     items: [
+      { name: 'Loan Products', href: '/loan-products', icon: Package },
+      { name: 'LIORA (AI Assistant)', href: '/liora', icon: Bot },
+      { name: 'Role Management', href: '/role-management', icon: Shield },
       { name: 'Customers', href: '/customers', icon: Users },
       { name: 'Loan Book', href: '/loan-book', icon: BookOpen },
       { name: 'Payment Schedule', href: '/payment-schedule', icon: Calendar },
@@ -45,7 +46,6 @@ const navigationItems = [
     name: 'Assets & Operations', 
     items: [
       { name: 'Staff', href: '/staff', icon: UserCheck },
-      { name: 'Role Management', href: '/role-management', icon: Shield },
       { name: 'Inventory', href: '/inventory', icon: Package },
       { name: 'Assets', href: '/assets', icon: BarChart },
       { name: 'Liabilities', href: '/liabilities', icon: CreditCard },
