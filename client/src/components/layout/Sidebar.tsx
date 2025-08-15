@@ -36,19 +36,14 @@ const navigationItems = [
       { name: 'Loan Book', href: '/loan-book', icon: BookOpen },
       { name: 'Payment Schedule', href: '/payment-schedule', icon: Calendar },
       { name: 'Receive Loan Payments (auto)', href: '/receive-payments', icon: Banknote },
+      { name: 'Staff', href: '/staff', icon: UserCheck },
       { name: 'Income Management', href: '/income', icon: DollarSign },
       { name: 'Expense Management', href: '/expenses', icon: Receipt },
-      { name: 'Debt Management (coming soon)', href: '/debt-management', icon: CreditCard },
-      { name: 'Banking (coming soon)', href: '/bank-management', icon: Building },
-    ]
-  },
-  { 
-    name: 'Assets & Operations', 
-    items: [
-      { name: 'Staff', href: '/staff', icon: UserCheck },
       { name: 'Inventory', href: '/inventory', icon: Package },
       { name: 'Assets', href: '/assets', icon: BarChart },
       { name: 'Liabilities', href: '/liabilities', icon: CreditCard },
+      { name: 'Debt Management (coming soon)', href: '/debt-management', icon: CreditCard },
+      { name: 'Banking (coming soon)', href: '/bank-management', icon: Building },
     ]
   },
   { 
