@@ -42,8 +42,6 @@ const navigationItems = [
       { name: 'Inventory', href: '/inventory', icon: Package },
       { name: 'Assets', href: '/assets', icon: BarChart },
       { name: 'Liabilities', href: '/liabilities', icon: CreditCard },
-      { name: 'Debt Management (coming soon)', href: '/debt-management', icon: CreditCard },
-      { name: 'Banking (coming soon)', href: '/bank-management', icon: Building },
     ]
   },
   { 
