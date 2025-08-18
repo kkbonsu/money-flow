@@ -499,6 +499,7 @@ export const userRoleRelations = relations(userRoles, ({ one }) => ({
   user: one(users, {
     fields: [userRoles.userId],
     references: [users.id],
+    relationName: "userRoles"
   }),
   role: one(roles, {
     fields: [userRoles.roleId],
@@ -525,7 +526,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   approvedLoans: many(loanBooks, { relationName: "approver" }),
   disbursedLoans: many(loanBooks, { relationName: "disburser" }),
   auditLogs: many(userAuditLogs),
-  userRoles: many(userRoles),
+  userRoles: many(userRoles, { relationName: "userRoles" }),
   assignedUserRoles: many(userRoles, { relationName: "assignedByUser" }),
   generatedReports: many(reports, { relationName: "generatedBy" }),
   assignedFeedback: many(borrowerFeedback, { relationName: "assignedTo" }),
@@ -548,9 +549,9 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
     fields: [customers.tenantId],
     references: [tenants.id],
   }),
-  loans: many(loanBooks),
-  borrowerFeedback: many(borrowerFeedback),
-  debtCollectionActivities: many(debtCollectionActivities),
+  loans: many(loanBooks, { relationName: "customerLoans" }),
+  borrowerFeedback: many(borrowerFeedback, { relationName: "customerFeedback" }),
+  debtCollectionActivities: many(debtCollectionActivities, { relationName: "customerDebtCollection" }),
 }));
 
 export const loanProductsRelations = relations(loanProducts, ({ one, many }) => ({
@@ -558,7 +559,7 @@ export const loanProductsRelations = relations(loanProducts, ({ one, many }) => 
     fields: [loanProducts.tenantId],
     references: [tenants.id],
   }),
-  loans: many(loanBooks),
+  loans: many(loanBooks, { relationName: "productLoans" }),
 }));
 
 export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
@@ -569,10 +570,12 @@ export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
   customer: one(customers, {
     fields: [loanBooks.customerId],
     references: [customers.id],
+    relationName: "customerLoans"
   }),
   loanProduct: one(loanProducts, {
     fields: [loanBooks.loanProductId],
     references: [loanProducts.id],
+    relationName: "productLoans"
   }),
   assignedOfficer: one(users, {
     fields: [loanBooks.assignedOfficer],
@@ -591,8 +594,8 @@ export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
   }),
   paymentSchedules: many(paymentSchedules),
   collateral: many(collateral),
-  borrowerFeedback: many(borrowerFeedback),
-  debtCollectionActivities: many(debtCollectionActivities),
+  borrowerFeedback: many(borrowerFeedback, { relationName: "loanFeedback" }),
+  debtCollectionActivities: many(debtCollectionActivities, { relationName: "loanDebtCollection" }),
 }));
 
 export const paymentSchedulesRelations = relations(paymentSchedules, ({ one }) => ({
@@ -742,10 +745,12 @@ export const borrowerFeedbackRelations = relations(borrowerFeedback, ({ one }) =
   customer: one(customers, {
     fields: [borrowerFeedback.customerId],
     references: [customers.id],
+    relationName: "customerFeedback"
   }),
   loan: one(loanBooks, {
     fields: [borrowerFeedback.loanId],
     references: [loanBooks.id],
+    relationName: "loanFeedback"
   }),
   assignedTo: one(users, {
     fields: [borrowerFeedback.assignedTo],
@@ -762,10 +767,12 @@ export const debtCollectionActivitiesRelations = relations(debtCollectionActivit
   loan: one(loanBooks, {
     fields: [debtCollectionActivities.loanId],
     references: [loanBooks.id],
+    relationName: "loanDebtCollection"
   }),
   customer: one(customers, {
     fields: [debtCollectionActivities.customerId],
     references: [customers.id],
+    relationName: "customerDebtCollection"
   }),
   performedBy: one(users, {
     fields: [debtCollectionActivities.performedBy],
