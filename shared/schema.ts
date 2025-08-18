@@ -45,7 +45,7 @@ export const roles = pgTable("roles", {
   description: text("description"),
   hierarchyLevel: integer("hierarchy_level").notNull(), // 1=Super Admin, 2=Admin, 3=Manager, 4=Staff
   isSystemRole: boolean("is_system_role").default(true), // Predefined roles
-  tenantId: text("tenant_id"), // Using text to match existing tenant structure, null for system-wide roles
+  tenantId: uuid("tenant_id").references(() => tenants.id), // null for system-wide roles
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
@@ -78,7 +78,7 @@ export const userRoles = pgTable("user_roles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
-  tenantId: text("tenant_id").notNull(), // Using text to match existing tenant structure
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   assignedBy: integer("assigned_by").references(() => users.id),
   assignedAt: timestamp("assigned_at").defaultNow(),
   isActive: boolean("is_active").default(true),
@@ -527,9 +527,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   auditLogs: many(userAuditLogs),
   userRoles: many(userRoles),
   assignedUserRoles: many(userRoles, { relationName: "assignedByUser" }),
-  generatedReports: many(reports),
-  assignedFeedback: many(borrowerFeedback),
-  debtCollectionActivities: many(debtCollectionActivities),
+  generatedReports: many(reports, { relationName: "generatedBy" }),
+  assignedFeedback: many(borrowerFeedback, { relationName: "assignedTo" }),
+  performedDebtCollection: many(debtCollectionActivities, { relationName: "performedBy" }),
 }));
 
 export const userTenantAccessRelations = relations(userTenantAccess, ({ one }) => ({
@@ -694,9 +694,10 @@ export const reportsRelations = relations(reports, ({ one }) => ({
     fields: [reports.tenantId],
     references: [tenants.id],
   }),
-  generator: one(users, {
+  generatedBy: one(users, {
     fields: [reports.generatedBy],
     references: [users.id],
+    relationName: "generatedBy"
   }),
 }));
 
@@ -749,6 +750,7 @@ export const borrowerFeedbackRelations = relations(borrowerFeedback, ({ one }) =
   assignedTo: one(users, {
     fields: [borrowerFeedback.assignedTo],
     references: [users.id],
+    relationName: "assignedTo"
   }),
 }));
 
@@ -768,6 +770,7 @@ export const debtCollectionActivitiesRelations = relations(debtCollectionActivit
   performedBy: one(users, {
     fields: [debtCollectionActivities.performedBy],
     references: [users.id],
+    relationName: "performedBy"
   }),
 }));
 
