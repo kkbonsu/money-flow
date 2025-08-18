@@ -541,11 +541,19 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
   loans: many(loanBooks),
 }));
 
-export const loanProductsRelations = relations(loanProducts, ({ many }) => ({
+export const loanProductsRelations = relations(loanProducts, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [loanProducts.tenantId],
+    references: [tenants.id],
+  }),
   loans: many(loanBooks),
 }));
 
 export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [loanBooks.tenantId],
+    references: [tenants.id],
+  }),
   customer: one(customers, {
     fields: [loanBooks.customerId],
     references: [customers.id],
@@ -570,19 +578,93 @@ export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
 }));
 
 export const paymentSchedulesRelations = relations(paymentSchedules, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [paymentSchedules.tenantId],
+    references: [tenants.id],
+  }),
   loan: one(loanBooks, {
     fields: [paymentSchedules.loanId],
     references: [loanBooks.id],
   }),
 }));
 
-export const staffRelations = relations(staff, ({ many }) => ({
-  
+export const staffRelations = relations(staff, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [staff.tenantId],
+    references: [tenants.id],
+  }),
 }));
 
 
 
+export const incomeManagementRelations = relations(incomeManagement, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [incomeManagement.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [expenses.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const bankManagementRelations = relations(bankManagement, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [bankManagement.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const pettyCashRelations = relations(pettyCash, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [pettyCash.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const inventoryRelations = relations(inventory, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [inventory.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const rentManagementRelations = relations(rentManagement, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [rentManagement.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const assetsRelations = relations(assets, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [assets.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const liabilitiesRelations = relations(liabilities, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [liabilities.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const equityRelations = relations(equity, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [equity.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [userAuditLogs.tenantId],
+    references: [tenants.id],
+  }),
   user: one(users, {
     fields: [userAuditLogs.userId],
     references: [users.id],
@@ -590,9 +672,27 @@ export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
 }));
 
 export const reportsRelations = relations(reports, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [reports.tenantId],
+    references: [tenants.id],
+  }),
   generator: one(users, {
     fields: [reports.generatedBy],
     references: [users.id],
+  }),
+}));
+
+export const mfiRegistrationRelations = relations(mfiRegistration, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [mfiRegistration.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const shareholdersRelations = relations(shareholders, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [shareholders.tenantId],
+    references: [tenants.id],
   }),
 }));
 
