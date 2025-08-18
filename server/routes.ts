@@ -1435,6 +1435,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Asset metrics endpoint
+  app.get("/api/assets/metrics", authenticateToken, async (req, res) => {
+    try {
+      const assets = await storage.getAssets();
+      
+      if (!assets.length) {
+        return res.json({
+          totalValue: 0,
+          depreciationTotal: 0,
+          assetCount: 0,
+          categoryBreakdown: [],
+          statusSummary: { active: 0, maintenance: 0, disposed: 0 },
+          averageAge: 0
+        });
+      }
+
+      // Calculate total value
+      const totalValue = assets.reduce((sum, asset) => sum + parseFloat(asset.value), 0);
+
+      // Calculate depreciation total (estimated)
+      const depreciationTotal = assets.reduce((sum, asset) => {
+        const value = parseFloat(asset.value);
+        const rate = asset.depreciationRate ? parseFloat(asset.depreciationRate) : 0;
+        const yearsOld = new Date().getFullYear() - new Date(asset.purchaseDate).getFullYear();
+        return sum + (value * (rate / 100) * yearsOld);
+      }, 0);
+
+      // Calculate category breakdown
+      const categoryStats = assets.reduce((acc, asset) => {
+        const category = asset.category || 'Other';
+        if (!acc[category]) {
+          acc[category] = { value: 0, count: 0 };
+        }
+        acc[category].value += parseFloat(asset.value);
+        acc[category].count += 1;
+        return acc;
+      }, {} as Record<string, { value: number; count: number }>);
+
+      const categoryBreakdown = Object.entries(categoryStats)
+        .map(([category, stats]) => ({
+          category,
+          value: stats.value,
+          count: stats.count,
+          percentage: (stats.value / totalValue) * 100
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
+
+      // Calculate status summary
+      const statusSummary = assets.reduce((acc, asset) => {
+        const status = asset.status || 'active';
+        acc[status as keyof typeof acc] = (acc[status as keyof typeof acc] || 0) + 1;
+        return acc;
+      }, { active: 0, maintenance: 0, disposed: 0 });
+
+      // Calculate average age
+      const totalAge = assets.reduce((sum, asset) => {
+        const yearsOld = new Date().getFullYear() - new Date(asset.purchaseDate).getFullYear();
+        return sum + yearsOld;
+      }, 0);
+      const averageAge = assets.length > 0 ? totalAge / assets.length : 0;
+
+      res.json({
+        totalValue,
+        depreciationTotal,
+        assetCount: assets.length,
+        categoryBreakdown,
+        statusSummary,
+        averageAge
+      });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch asset metrics" });
+    }
+  });
+
   // Liabilities routes
   app.get("/api/liabilities", authenticateToken, async (req, res) => {
     try {
@@ -1473,6 +1548,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Liability deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete liability" });
+    }
+  });
+
+  // Liability metrics endpoint
+  app.get("/api/liabilities/metrics", authenticateToken, async (req, res) => {
+    try {
+      const liabilities = await storage.getLiabilities();
+      
+      if (!liabilities.length) {
+        return res.json({
+          totalAmount: 0,
+          totalInterest: 0,
+          liabilityCount: 0,
+          statusSummary: { pending: 0, paid: 0, overdue: 0 },
+          averageInterestRate: 0,
+          upcomingPayments: 0,
+          monthlyPaymentTotal: 0
+        });
+      }
+
+      // Calculate total amount
+      const totalAmount = liabilities.reduce((sum, liability) => sum + parseFloat(liability.amount), 0);
+
+      // Calculate total interest (estimated)
+      const totalInterest = liabilities.reduce((sum, liability) => {
+        const amount = parseFloat(liability.amount);
+        const rate = liability.interestRate ? parseFloat(liability.interestRate) : 0;
+        // Estimate interest for 1 year
+        return sum + (amount * (rate / 100));
+      }, 0);
+
+      // Calculate status summary
+      const statusSummary = liabilities.reduce((acc, liability) => {
+        const status = liability.status || 'pending';
+        acc[status as keyof typeof acc] = (acc[status as keyof typeof acc] || 0) + 1;
+        return acc;
+      }, { pending: 0, paid: 0, overdue: 0 });
+
+      // Calculate average interest rate (weighted by amount)
+      const totalWeightedRate = liabilities.reduce((sum, liability) => {
+        const amount = parseFloat(liability.amount);
+        const rate = liability.interestRate ? parseFloat(liability.interestRate) : 0;
+        return sum + (rate * amount);
+      }, 0);
+      const averageInterestRate = totalAmount > 0 ? totalWeightedRate / totalAmount : 0;
+
+      // Count upcoming payments (due within 30 days)
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      
+      const upcomingPayments = liabilities.filter(liability => {
+        if (!liability.dueDate || liability.status === 'paid') return false;
+        const dueDate = new Date(liability.dueDate);
+        return dueDate <= thirtyDaysFromNow && dueDate >= new Date();
+      }).length;
+
+      // Estimate monthly payment total (simple calculation)
+      const monthlyPaymentTotal = liabilities
+        .filter(liability => liability.status !== 'paid')
+        .reduce((sum, liability) => {
+          const amount = parseFloat(liability.amount);
+          const rate = liability.interestRate ? parseFloat(liability.interestRate) : 0;
+          // Simple estimate: (principal + annual interest) / 12
+          return sum + ((amount + (amount * rate / 100)) / 12);
+        }, 0);
+
+      res.json({
+        totalAmount,
+        totalInterest,
+        liabilityCount: liabilities.length,
+        statusSummary,
+        averageInterestRate,
+        upcomingPayments,
+        monthlyPaymentTotal
+      });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch liability metrics" });
     }
   });
 
