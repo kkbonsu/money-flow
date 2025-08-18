@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 
+import 'dotenv/config';
 import { seedDatabase } from "./seedDatabase";
 
 console.log("🚀 Starting Money Flow database seeding...");
