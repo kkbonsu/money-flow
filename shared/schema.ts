@@ -465,6 +465,10 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   userTenantAccess: many(userTenantAccess),
   roles: many(roles),
   userRoles: many(userRoles),
+  collateral: many(collateral),
+  educationContent: many(educationContent),
+  borrowerFeedback: many(borrowerFeedback),
+  debtCollectionActivities: many(debtCollectionActivities),
 }));
 
 export const roleRelations = relations(roles, ({ one, many }) => ({
@@ -507,6 +511,7 @@ export const userRoleRelations = relations(userRoles, ({ one }) => ({
   assignedByUser: one(users, {
     fields: [userRoles.assignedBy],
     references: [users.id],
+    relationName: "assignedByUser"
   }),
 }));
 
@@ -520,6 +525,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   approvedLoans: many(loanBooks, { relationName: "approver" }),
   disbursedLoans: many(loanBooks, { relationName: "disburser" }),
   auditLogs: many(userAuditLogs),
+  userRoles: many(userRoles),
+  assignedUserRoles: many(userRoles, { relationName: "assignedByUser" }),
+  generatedReports: many(reports),
+  assignedFeedback: many(borrowerFeedback),
+  debtCollectionActivities: many(debtCollectionActivities),
 }));
 
 export const userTenantAccessRelations = relations(userTenantAccess, ({ one }) => ({
@@ -539,6 +549,8 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
     references: [tenants.id],
   }),
   loans: many(loanBooks),
+  borrowerFeedback: many(borrowerFeedback),
+  debtCollectionActivities: many(debtCollectionActivities),
 }));
 
 export const loanProductsRelations = relations(loanProducts, ({ one, many }) => ({
@@ -565,16 +577,22 @@ export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
   assignedOfficer: one(users, {
     fields: [loanBooks.assignedOfficer],
     references: [users.id],
+    relationName: "assignedOfficer"
   }),
   approver: one(users, {
     fields: [loanBooks.approvedBy],
     references: [users.id],
+    relationName: "approver"
   }),
   disburser: one(users, {
     fields: [loanBooks.disbursedBy],
     references: [users.id],
+    relationName: "disburser"
   }),
   paymentSchedules: many(paymentSchedules),
+  collateral: many(collateral),
+  borrowerFeedback: many(borrowerFeedback),
+  debtCollectionActivities: many(debtCollectionActivities),
 }));
 
 export const paymentSchedulesRelations = relations(paymentSchedules, ({ one }) => ({
@@ -693,6 +711,63 @@ export const shareholdersRelations = relations(shareholders, ({ one }) => ({
   tenant: one(tenants, {
     fields: [shareholders.tenantId],
     references: [tenants.id],
+  }),
+}));
+
+// Add relations for remaining tables that have foreign keys
+export const collateralRelations = relations(collateral, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [collateral.tenantId],
+    references: [tenants.id],
+  }),
+  loan: one(loanBooks, {
+    fields: [collateral.loanId],
+    references: [loanBooks.id],
+  }),
+}));
+
+export const educationContentRelations = relations(educationContent, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [educationContent.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const borrowerFeedbackRelations = relations(borrowerFeedback, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [borrowerFeedback.tenantId],
+    references: [tenants.id],
+  }),
+  customer: one(customers, {
+    fields: [borrowerFeedback.customerId],
+    references: [customers.id],
+  }),
+  loan: one(loanBooks, {
+    fields: [borrowerFeedback.loanId],
+    references: [loanBooks.id],
+  }),
+  assignedTo: one(users, {
+    fields: [borrowerFeedback.assignedTo],
+    references: [users.id],
+  }),
+}));
+
+export const debtCollectionActivitiesRelations = relations(debtCollectionActivities, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [debtCollectionActivities.tenantId],
+    references: [tenants.id],
+  }),
+  loan: one(loanBooks, {
+    fields: [debtCollectionActivities.loanId],
+    references: [loanBooks.id],
+  }),
+  customer: one(customers, {
+    fields: [debtCollectionActivities.customerId],
+    references: [customers.id],
+  }),
+  performedBy: one(users, {
+    fields: [debtCollectionActivities.performedBy],
+    references: [users.id],
   }),
 }));
 
