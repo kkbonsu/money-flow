@@ -21,7 +21,6 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   // Update local customer when dialog opens with a customer
   useEffect(() => {
     if (isOpen && customer) {
-      console.log('Setting customer to delete:', customer);
       setCustomerToDelete(customer);
     } else if (!isOpen) {
       // Clear customer when dialog closes
@@ -32,10 +31,8 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   const deleteCustomerMutation = useMutation({
     mutationFn: () => {
       if (!customerToDelete?.id) {
-        console.error('Delete customer mutation: No customer ID available', { customer, customerToDelete });
         throw new Error('No customer selected');
       }
-      console.log('Delete customer mutation: Starting deletion for customer', customerToDelete.id);
       return apiRequest('DELETE', `/api/customers/${customerToDelete.id}`);
     },
     onSuccess: () => {
@@ -56,11 +53,9 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   });
 
   const handleDelete = () => {
-    console.log('Handle delete clicked', { customer, customerToDelete });
     if (customerToDelete?.id) {
       deleteCustomerMutation.mutate();
     } else {
-      console.error('Handle delete: No customer ID available', { customer, customerToDelete });
       toast({
         title: "Error",
         description: "No customer selected for deletion",
