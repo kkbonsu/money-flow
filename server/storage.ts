@@ -488,6 +488,7 @@ export class DatabaseStorage implements IStorage {
   async updatePaymentSchedule(id: number, updateSchedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule> {
     // Get the current schedule before updating
     const currentSchedule = await this.getPaymentSchedule(id);
+    console.log(`Updating payment schedule ${id}. Current status: ${currentSchedule?.status}, New status: ${updateSchedule.status}`);
     
     const [schedule] = await db
       .update(paymentSchedules)
@@ -498,15 +499,24 @@ export class DatabaseStorage implements IStorage {
     // If payment is being marked as paid, add interest to income table
     if (updateSchedule.status === 'paid' && currentSchedule?.status !== 'paid' && schedule.interestAmount) {
       const interestAmount = parseFloat(schedule.interestAmount);
+      console.log(`Processing interest payment: ${interestAmount} for schedule ${schedule.id}`);
       if (interestAmount > 0) {
-        await db.insert(incomeManagement).values({
-          tenantId: DEFAULT_TENANT_ID,
-          source: 'Interest Payment',
-          amount: schedule.interestAmount,
-          description: `Interest payment from loan payment schedule #${schedule.id}`,
-          date: schedule.paidDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-          category: 'Loan Interest'
-        });
+        const paidDate = schedule.paidDate ? new Date(schedule.paidDate) : new Date();
+        console.log(`Creating income record with date: ${paidDate.toISOString().split('T')[0]}`);
+        
+        try {
+          await db.insert(incomeManagement).values({
+            tenantId: DEFAULT_TENANT_ID,
+            source: 'Interest Payment',
+            amount: schedule.interestAmount,
+            description: `Interest payment from loan payment schedule #${schedule.id}`,
+            date: paidDate.toISOString().split('T')[0],
+            category: 'Loan Interest'
+          });
+          console.log(`✅ Created income record for interest payment: ${schedule.interestAmount}`);
+        } catch (error) {
+          console.error(`❌ Failed to create income record:`, error);
+        }
       }
     }
     
