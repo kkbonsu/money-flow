@@ -20,8 +20,10 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   const deleteCustomerMutation = useMutation({
     mutationFn: () => {
       if (!customerIdToDelete) {
+        console.error('Delete customer mutation: No customer ID available', { customer, customerIdToDelete });
         throw new Error('No customer selected');
       }
+      console.log('Delete customer mutation: Starting deletion for customer', customerIdToDelete);
       return apiRequest('DELETE', `/api/customers/${customerIdToDelete}`);
     },
     onSuccess: () => {
@@ -42,9 +44,11 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   });
 
   const handleDelete = () => {
+    console.log('Handle delete clicked', { customer, customerIdToDelete });
     if (customerIdToDelete) {
       deleteCustomerMutation.mutate();
     } else {
+      console.error('Handle delete: No customer ID available', { customer, customerIdToDelete });
       toast({
         title: "Error",
         description: "No customer selected for deletion",
