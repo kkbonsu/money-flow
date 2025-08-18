@@ -773,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.errors.push({
             row: i + 1,
             error: error instanceof Error ? error.message : 'Invalid data format',
-            data: values
+            data: loanData
           });
         }
       }

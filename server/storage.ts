@@ -2,6 +2,7 @@ import {
   users, customers, loanBooks, loanProducts, paymentSchedules, staff, incomeManagement, 
   expenses, bankManagement, pettyCash, inventory, rentManagement, assets, 
   liabilities, equity, reports, userAuditLogs, mfiRegistration, shareholders,
+  borrowerFeedback, debtCollectionActivities,
   type User, type InsertUser, type Customer, type InsertCustomer,
   type LoanBook, type InsertLoanBook, type LoanProduct, type InsertLoanProduct,
   type PaymentSchedule, type InsertPaymentSchedule,
@@ -281,18 +282,55 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCustomer(id: number): Promise<void> {
-    // Delete related payment schedules first
-    await db.delete(paymentSchedules).where(
-      sql`${paymentSchedules.loanId} IN (
-        SELECT id FROM loan_books WHERE customer_id = ${id}
-      )`
-    );
-    
-    // Delete related loans
-    await db.delete(loanBooks).where(eq(loanBooks.customerId, id));
-    
-    // Finally delete the customer
-    await db.delete(customers).where(eq(customers.id, id));
+    try {
+      console.log(`Starting deletion process for customer ID: ${id}`);
+      
+      // First get all loans for this customer
+      const customerLoans = await db.select().from(loanBooks).where(eq(loanBooks.customerId, id));
+      console.log(`Found ${customerLoans.length} loans for customer ${id}:`, customerLoans.map(l => l.id));
+      
+      // Delete payment schedules for each loan
+      if (customerLoans.length > 0) {
+        for (const loan of customerLoans) {
+          // Delete payment schedules for this loan
+          const schedules = await db.select().from(paymentSchedules).where(eq(paymentSchedules.loanId, loan.id));
+          console.log(`Found ${schedules.length} payment schedules for loan ${loan.id}`);
+          
+          if (schedules.length > 0) {
+            await db.delete(paymentSchedules).where(eq(paymentSchedules.loanId, loan.id));
+            console.log(`Deleted ${schedules.length} payment schedules for loan ${loan.id}`);
+          }
+        }
+      }
+      
+      // Delete related borrower feedback
+      const feedback = await db.select().from(borrowerFeedback).where(eq(borrowerFeedback.customerId, id));
+      if (feedback.length > 0) {
+        await db.delete(borrowerFeedback).where(eq(borrowerFeedback.customerId, id));
+        console.log(`Deleted ${feedback.length} borrower feedback records for customer ${id}`);
+      }
+      
+      // Delete related debt collection activities
+      const debtActivities = await db.select().from(debtCollectionActivities).where(eq(debtCollectionActivities.customerId, id));
+      if (debtActivities.length > 0) {
+        await db.delete(debtCollectionActivities).where(eq(debtCollectionActivities.customerId, id));
+        console.log(`Deleted ${debtActivities.length} debt collection activities for customer ${id}`);
+      }
+      
+      // Delete all loans for this customer
+      if (customerLoans.length > 0) {
+        await db.delete(loanBooks).where(eq(loanBooks.customerId, id));
+        console.log(`Deleted ${customerLoans.length} loans for customer ${id}`);
+      }
+      
+      // Finally delete the customer
+      await db.delete(customers).where(eq(customers.id, id));
+      console.log(`Successfully deleted customer ${id}`);
+      
+    } catch (error) {
+      console.error(`Error deleting customer ${id}:`, error);
+      throw error;
+    }
   }
 
   // Customer portal methods

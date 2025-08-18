@@ -1,6 +1,6 @@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@shared/schema';
 
@@ -22,7 +22,7 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
       if (!customerIdToDelete) {
         throw new Error('No customer selected');
       }
-      return apiClient.delete(`/customers/${customerIdToDelete}`);
+      return apiRequest('DELETE', `/api/customers/${customerIdToDelete}`);
     },
     onSuccess: () => {
       toast({
