@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@shared/schema';
+import { useState, useEffect } from 'react';
 
 interface DeleteCustomerDialogProps {
   isOpen: boolean;
@@ -14,17 +15,28 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Store customer ID locally to prevent race conditions
-  const customerIdToDelete = customer?.id;
+  // Store customer data locally to prevent race conditions
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+
+  // Update local customer when dialog opens with a customer
+  useEffect(() => {
+    if (isOpen && customer) {
+      console.log('Setting customer to delete:', customer);
+      setCustomerToDelete(customer);
+    } else if (!isOpen) {
+      // Clear customer when dialog closes
+      setCustomerToDelete(null);
+    }
+  }, [isOpen, customer]);
 
   const deleteCustomerMutation = useMutation({
     mutationFn: () => {
-      if (!customerIdToDelete) {
-        console.error('Delete customer mutation: No customer ID available', { customer, customerIdToDelete });
+      if (!customerToDelete?.id) {
+        console.error('Delete customer mutation: No customer ID available', { customer, customerToDelete });
         throw new Error('No customer selected');
       }
-      console.log('Delete customer mutation: Starting deletion for customer', customerIdToDelete);
-      return apiRequest('DELETE', `/api/customers/${customerIdToDelete}`);
+      console.log('Delete customer mutation: Starting deletion for customer', customerToDelete.id);
+      return apiRequest('DELETE', `/api/customers/${customerToDelete.id}`);
     },
     onSuccess: () => {
       toast({
@@ -44,11 +56,11 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
   });
 
   const handleDelete = () => {
-    console.log('Handle delete clicked', { customer, customerIdToDelete });
-    if (customerIdToDelete) {
+    console.log('Handle delete clicked', { customer, customerToDelete });
+    if (customerToDelete?.id) {
       deleteCustomerMutation.mutate();
     } else {
-      console.error('Handle delete: No customer ID available', { customer, customerIdToDelete });
+      console.error('Handle delete: No customer ID available', { customer, customerToDelete });
       toast({
         title: "Error",
         description: "No customer selected for deletion",
@@ -57,7 +69,7 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
     }
   };
 
-  if (!customer) return null;
+  if (!customerToDelete) return null;
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -66,7 +78,7 @@ export default function DeleteCustomerDialog({ isOpen, onClose, customer }: Dele
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the customer{' '}
-            <strong>{customer.firstName} {customer.lastName}</strong> and all associated data.
+            <strong>{customerToDelete.firstName} {customerToDelete.lastName}</strong> and all associated data.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
