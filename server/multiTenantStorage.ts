@@ -353,7 +353,41 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   }
 
   async deleteCustomer(tenantId: string, id: number): Promise<void> {
-    await db.delete(customers).where(and(eq(customers.tenantId, tenantId), eq(customers.id, id)));
+    console.log(`[MULTI_TENANT_DELETE] Starting deletion for customer ${id} in tenant ${tenantId}`);
+    
+    try {
+      // Get all loans for this customer
+      const customerLoans = await db.select().from(loanBooks)
+        .where(and(eq(loanBooks.tenantId, tenantId), eq(loanBooks.customerId, id)));
+      console.log(`[MULTI_TENANT_DELETE] Found ${customerLoans.length} loans for customer ${id}:`, customerLoans.map(l => l.id));
+      
+      // Delete payment schedules for each loan first
+      for (const loan of customerLoans) {
+        console.log(`[MULTI_TENANT_DELETE] Deleting payment schedules for loan ${loan.id}...`);
+        const deletedSchedules = await db.delete(paymentSchedules)
+          .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.loanId, loan.id)));
+        console.log(`[MULTI_TENANT_DELETE] Deleted payment schedules for loan ${loan.id}:`, deletedSchedules);
+      }
+      
+      // Delete all loans for this customer
+      if (customerLoans.length > 0) {
+        console.log(`[MULTI_TENANT_DELETE] Deleting ${customerLoans.length} loans for customer ${id}...`);
+        const deletedLoans = await db.delete(loanBooks)
+          .where(and(eq(loanBooks.tenantId, tenantId), eq(loanBooks.customerId, id)));
+        console.log(`[MULTI_TENANT_DELETE] Deleted loans result:`, deletedLoans);
+      }
+      
+      // Finally delete the customer
+      console.log(`[MULTI_TENANT_DELETE] Deleting customer ${id}...`);
+      const deletedCustomer = await db.delete(customers)
+        .where(and(eq(customers.tenantId, tenantId), eq(customers.id, id)));
+      console.log(`[MULTI_TENANT_DELETE] Deleted customer result:`, deletedCustomer);
+      console.log(`[MULTI_TENANT_DELETE] Successfully deleted customer ${id}`);
+      
+    } catch (error) {
+      console.error(`[MULTI_TENANT_DELETE] Error deleting customer ${id}:`, error);
+      throw error;
+    }
   }
 
   // Customer portal methods (tenant-aware)

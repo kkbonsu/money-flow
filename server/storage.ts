@@ -282,53 +282,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCustomer(id: number): Promise<void> {
+    console.log(`[DELETE_CUSTOMER] Starting deletion process for customer ID: ${id}`);
+    
     try {
-      console.log(`Starting deletion process for customer ID: ${id}`);
+      // Check if customer exists
+      const existingCustomer = await db.select().from(customers).where(eq(customers.id, id));
+      if (existingCustomer.length === 0) {
+        console.log(`[DELETE_CUSTOMER] Customer ${id} not found`);
+        throw new Error(`Customer ${id} not found`);
+      }
       
-      // First get all loans for this customer
+      // Get all loans for this customer
       const customerLoans = await db.select().from(loanBooks).where(eq(loanBooks.customerId, id));
-      console.log(`Found ${customerLoans.length} loans for customer ${id}:`, customerLoans.map(l => l.id));
+      console.log(`[DELETE_CUSTOMER] Found ${customerLoans.length} loans for customer ${id}:`, customerLoans.map(l => l.id));
       
       // Delete payment schedules for each loan
-      if (customerLoans.length > 0) {
-        for (const loan of customerLoans) {
-          // Delete payment schedules for this loan
-          const schedules = await db.select().from(paymentSchedules).where(eq(paymentSchedules.loanId, loan.id));
-          console.log(`Found ${schedules.length} payment schedules for loan ${loan.id}`);
-          
-          if (schedules.length > 0) {
-            await db.delete(paymentSchedules).where(eq(paymentSchedules.loanId, loan.id));
-            console.log(`Deleted ${schedules.length} payment schedules for loan ${loan.id}`);
-          }
-        }
+      for (const loan of customerLoans) {
+        console.log(`[DELETE_CUSTOMER] Processing loan ${loan.id}...`);
+        
+        // Delete payment schedules for this loan
+        const schedulesResult = await db.delete(paymentSchedules).where(eq(paymentSchedules.loanId, loan.id));
+        console.log(`[DELETE_CUSTOMER] Deleted payment schedules for loan ${loan.id}`);
       }
       
       // Delete related borrower feedback
-      const feedback = await db.select().from(borrowerFeedback).where(eq(borrowerFeedback.customerId, id));
-      if (feedback.length > 0) {
-        await db.delete(borrowerFeedback).where(eq(borrowerFeedback.customerId, id));
-        console.log(`Deleted ${feedback.length} borrower feedback records for customer ${id}`);
-      }
+      const feedbackResult = await db.delete(borrowerFeedback).where(eq(borrowerFeedback.customerId, id));
+      console.log(`[DELETE_CUSTOMER] Deleted borrower feedback for customer ${id}`);
       
       // Delete related debt collection activities
-      const debtActivities = await db.select().from(debtCollectionActivities).where(eq(debtCollectionActivities.customerId, id));
-      if (debtActivities.length > 0) {
-        await db.delete(debtCollectionActivities).where(eq(debtCollectionActivities.customerId, id));
-        console.log(`Deleted ${debtActivities.length} debt collection activities for customer ${id}`);
-      }
+      const debtResult = await db.delete(debtCollectionActivities).where(eq(debtCollectionActivities.customerId, id));
+      console.log(`[DELETE_CUSTOMER] Deleted debt collection activities for customer ${id}`);
       
       // Delete all loans for this customer
       if (customerLoans.length > 0) {
-        await db.delete(loanBooks).where(eq(loanBooks.customerId, id));
-        console.log(`Deleted ${customerLoans.length} loans for customer ${id}`);
+        const loansResult = await db.delete(loanBooks).where(eq(loanBooks.customerId, id));
+        console.log(`[DELETE_CUSTOMER] Deleted ${customerLoans.length} loans for customer ${id}`);
       }
       
       // Finally delete the customer
-      await db.delete(customers).where(eq(customers.id, id));
-      console.log(`Successfully deleted customer ${id}`);
+      const customerResult = await db.delete(customers).where(eq(customers.id, id));
+      console.log(`[DELETE_CUSTOMER] Successfully deleted customer ${id}`);
       
     } catch (error) {
-      console.error(`Error deleting customer ${id}:`, error);
+      console.error(`[DELETE_CUSTOMER] Error deleting customer ${id}:`, error);
       throw error;
     }
   }

@@ -8,6 +8,8 @@ Money Flow is a comprehensive **multi-tenant SaaS B2B** financial management sys
 
 **Performance Optimization Phase: COMPLETE** - Comprehensive performance improvements implemented including database indexing, query optimization, smart caching, and monitoring systems.
 
+**Customer Deletion Issue: RESOLVED** - Fixed cascading deletion functionality for customers with related loans and payment schedules in multi-tenant storage layer.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
