@@ -524,11 +524,55 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   }
 
   async updatePaymentSchedule(tenantId: string, id: number, updateSchedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule> {
+    // Get the current schedule before updating
+    const currentSchedule = await this.getPaymentSchedule(tenantId, id);
+    console.log(`🔍 [MultiTenant] Updating payment schedule ${id}. Current status: ${currentSchedule?.status}, New status: ${updateSchedule.status}`);
+    
     const [schedule] = await db
       .update(paymentSchedules)
-      .set(updateSchedule)
+      .set({ ...updateSchedule, updatedAt: new Date() })
       .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.id, id)))
       .returning();
+    
+    console.log(`🔍 [MultiTenant] Updated schedule result:`, schedule);
+    
+    // If payment is being marked as paid, add interest to income table
+    if (updateSchedule.status === 'paid' && currentSchedule?.status !== 'paid') {
+      console.log(`🎯 [MultiTenant] Payment being marked as paid! Interest amount: ${schedule.interestAmount}`);
+      
+      if (schedule.interestAmount) {
+        const interestAmount = parseFloat(schedule.interestAmount);
+        console.log(`💰 [MultiTenant] Processing interest payment: ${interestAmount} for schedule ${schedule.id}`);
+        
+        if (interestAmount > 0) {
+          const paidDate = schedule.paidDate ? new Date(schedule.paidDate) : new Date();
+          console.log(`📅 [MultiTenant] Creating income record with date: ${paidDate.toISOString().split('T')[0]}`);
+          
+          try {
+            const incomeRecord = await db.insert(incomeManagement).values({
+              tenantId,
+              source: 'Interest Payment',
+              amount: schedule.interestAmount,
+              description: `Interest payment from loan payment schedule #${schedule.id}`,
+              date: paidDate.toISOString().split('T')[0],
+              category: 'Loan Interest'
+            }).returning();
+            
+            console.log(`✅ [MultiTenant] Successfully created income record:`, incomeRecord[0]);
+          } catch (error) {
+            console.error(`❌ [MultiTenant] Failed to create income record:`, error);
+            throw error;
+          }
+        } else {
+          console.log(`⚠️ [MultiTenant] Interest amount is 0, skipping income record`);
+        }
+      } else {
+        console.log(`⚠️ [MultiTenant] No interest amount found on schedule`);
+      }
+    } else {
+      console.log(`ℹ️ [MultiTenant] Not creating income record. Status change: ${currentSchedule?.status} -> ${updateSchedule.status}`);
+    }
+    
     return schedule;
   }
 

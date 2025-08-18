@@ -768,8 +768,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);
       console.log('Parsed schedule data:', JSON.stringify(scheduleData, null, 2));
       console.log(`🔄 About to update payment schedule ${id} with status: ${scheduleData.status}`);
+      console.log(`🔄 Calling storage.updatePaymentSchedule with data:`, scheduleData);
       const schedule = await storage.updatePaymentSchedule(id, scheduleData);
       console.log(`✅ Updated payment schedule ${id}, result:`, schedule);
+      console.log(`🔍 Method completed, returning to client`);
       res.json(schedule);
     } catch (error) {
       console.error('Payment schedule update error:', error);
