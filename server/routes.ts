@@ -649,6 +649,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer import route
+  app.post("/api/customers/import", authenticateToken, async (req, res) => {
+    try {
+      const { csvData } = req.body;
+      
+      if (!csvData || typeof csvData !== 'string') {
+        return res.status(400).json({ message: "CSV data is required" });
+      }
+
+      const lines = csvData.trim().split('\n');
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      
+      const results = {
+        success: 0,
+        errors: [] as Array<{ row: number; error: string; data: any }>,
+        total: lines.length - 1
+      };
+
+      // Process each row (skip header)
+      for (let i = 1; i < lines.length; i++) {
+        try {
+          const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+          
+          if (values.length !== headers.length || values.every(v => !v)) {
+            continue; // Skip empty or malformed rows
+          }
+
+          // Map CSV data to customer object
+          const customerData: any = {};
+          headers.forEach((header, index) => {
+            const value = values[index];
+            switch (header.toLowerCase()) {
+              case 'firstname':
+              case 'first_name':
+                customerData.firstName = value;
+                break;
+              case 'lastname':
+              case 'last_name':
+                customerData.lastName = value;
+                break;
+              case 'email':
+                customerData.email = value;
+                break;
+              case 'phone':
+                customerData.phone = value;
+                break;
+              case 'address':
+                customerData.address = value;
+                break;
+              case 'nationalid':
+              case 'national_id':
+                customerData.nationalId = value;
+                break;
+              case 'creditscore':
+              case 'credit_score':
+                customerData.creditScore = value ? parseInt(value) : null;
+                break;
+              case 'status':
+                customerData.status = value || 'active';
+                break;
+            }
+          });
+
+          // Validate required fields
+          if (!customerData.firstName || !customerData.lastName || !customerData.email) {
+            results.errors.push({
+              row: i + 1,
+              error: "Missing required fields: firstName, lastName, or email",
+              data: customerData
+            });
+            continue;
+          }
+
+          // Generate portal credentials
+          const defaultPassword = Math.random().toString(36).slice(-8);
+          const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+          
+          const customerWithPortal = {
+            ...customerData,
+            password: hashedPassword,
+            isPortalActive: true
+          };
+
+          // Validate schema
+          const validatedData = insertCustomerSchema.parse(customerWithPortal);
+          
+          // Create customer
+          await storage.createCustomer(validatedData);
+          results.success++;
+
+        } catch (error) {
+          results.errors.push({
+            row: i + 1,
+            error: error instanceof Error ? error.message : "Unknown error",
+            data: values
+          });
+        }
+      }
+
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to import customers",
+        success: 0,
+        errors: [{ row: 0, error: "Import process failed", data: null }],
+        total: 0
+      });
+    }
+  });
+
   // Loan Book routes
   app.get("/api/loans", authenticateToken, async (req, res) => {
     try {

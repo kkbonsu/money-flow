@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import CustomerTable from '@/components/customers/CustomerTable';
+import CustomerPortfolioMetrics from '@/components/customers/CustomerPortfolioMetrics';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
 
 export default function Customers() {
@@ -23,6 +24,8 @@ export default function Customers() {
           <p className="text-muted-foreground">Manage your customer database</p>
         </div>
       </div>
+
+      <CustomerPortfolioMetrics />
 
       <CustomerTable onAddCustomer={() => setIsAddModalOpen(true)} />
 
