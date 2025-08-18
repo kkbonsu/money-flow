@@ -130,38 +130,13 @@ export function registerOptimizedRoutes(app: Express) {
         pagination: {
           page,
           limit,
-          total: totalCount,
-          totalPages: Math.ceil(totalCount / limit)
+          total: Number(totalCount),
+          totalPages: Math.ceil(Number(totalCount) / limit)
         }
       });
     } catch (error) {
       console.error("Error fetching customers:", error);
       res.status(500).json({ error: "Failed to fetch customers" });
-    }
-  });
-  
-  // Performance monitoring endpoint
-  app.get("/api/performance/stats", authenticateToken, async (req: Request, res: Response) => {
-    try {
-      const statsResult = await db.execute(sql`
-        SELECT 
-          schemaname,
-          tablename,
-          n_tup_ins as inserts,
-          n_tup_upd as updates,
-          n_tup_del as deletes,
-          n_live_tup as live_tuples,
-          n_dead_tup as dead_tuples
-        FROM pg_stat_user_tables 
-        WHERE schemaname = 'public'
-        ORDER BY n_live_tup DESC
-        LIMIT 10
-      `);
-      
-      res.json(statsResult.rows || []);
-    } catch (error) {
-      console.error("Error fetching performance stats:", error);
-      res.status(500).json({ error: "Failed to fetch performance stats" });
     }
   });
 }

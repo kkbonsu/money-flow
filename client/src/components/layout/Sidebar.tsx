@@ -20,8 +20,7 @@ import {
   Bot,
   Banknote,
   Shield,
-  Settings,
-  Activity
+  Settings
 } from 'lucide-react';
 
 const navigationItems = [
@@ -52,7 +51,6 @@ const navigationItems = [
     items: [
       { name: 'Financial Reports', href: '/reports', icon: FileText },
       { name: 'Equity Management', href: '/equity', icon: Scale },
-      { name: 'Performance Monitor', href: '/performance', icon: Activity },
     ]
   },
 ];
