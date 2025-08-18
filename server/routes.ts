@@ -767,7 +767,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('PUT payment schedule request body:', JSON.stringify(req.body, null, 2));
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);
       console.log('Parsed schedule data:', JSON.stringify(scheduleData, null, 2));
+      console.log(`🔄 About to update payment schedule ${id} with status: ${scheduleData.status}`);
       const schedule = await storage.updatePaymentSchedule(id, scheduleData);
+      console.log(`✅ Updated payment schedule ${id}, result:`, schedule);
       res.json(schedule);
     } catch (error) {
       console.error('Payment schedule update error:', error);
@@ -864,6 +866,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Income deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete income" });
+    }
+  });
+
+  // Backfill interest payments route
+  app.post("/api/income/backfill-interest", authenticateToken, async (req, res) => {
+    try {
+      await storage.backfillInterestPayments();
+      res.json({ message: "Interest payments backfilled successfully" });
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to backfill interest payments" });
     }
   });
 
