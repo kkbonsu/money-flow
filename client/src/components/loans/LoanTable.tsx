@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Eye, Edit, Trash2, Search, CheckCircle2 } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Search, CheckCircle2, Download, Filter, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -18,11 +19,16 @@ import LoanApprovalModal from './LoanApprovalModal';
 export default function LoanTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
+  const [dateFilter, setDateFilter] = useState({ from: '', to: '' });
+  const [sortBy, setSortBy] = useState('dateApplied');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanBook | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -36,9 +42,56 @@ export default function LoanTable() {
   });
 
   const filteredLoans = loans.filter((loan: LoanBook) => {
-    const matchesSearch = loan.id.toString().includes(searchTerm);
+    // Search filter - check ID, customer name, purpose
+    const customer = customers.find((c: any) => c.id === loan.customerId);
+    const customerName = customer ? `${customer.firstName} ${customer.lastName}`.toLowerCase() : '';
+    const matchesSearch = searchTerm === '' || 
+      loan.id.toString().includes(searchTerm) ||
+      customerName.includes(searchTerm.toLowerCase()) ||
+      (loan.purpose && loan.purpose.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Status filter
     const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Amount filter
+    const loanAmount = parseFloat(loan.loanAmount);
+    const matchesAmount = (!amountFilter.min || loanAmount >= parseFloat(amountFilter.min)) &&
+                         (!amountFilter.max || loanAmount <= parseFloat(amountFilter.max));
+    
+    // Date filter
+    const loanDate = loan.dateApplied ? new Date(loan.dateApplied) : null;
+    const matchesDate = (!dateFilter.from || !loanDate || loanDate >= new Date(dateFilter.from)) &&
+                       (!dateFilter.to || !loanDate || loanDate <= new Date(dateFilter.to));
+    
+    return matchesSearch && matchesStatus && matchesAmount && matchesDate;
+  }).sort((a: LoanBook, b: LoanBook) => {
+    let aValue: any, bValue: any;
+    
+    switch (sortBy) {
+      case 'loanAmount':
+        aValue = parseFloat(a.loanAmount);
+        bValue = parseFloat(b.loanAmount);
+        break;
+      case 'customerName':
+        const customerA = customers.find((c: any) => c.id === a.customerId);
+        const customerB = customers.find((c: any) => c.id === b.customerId);
+        aValue = customerA ? `${customerA.firstName} ${customerA.lastName}` : '';
+        bValue = customerB ? `${customerB.firstName} ${customerB.lastName}` : '';
+        break;
+      case 'dateApplied':
+        aValue = a.dateApplied ? new Date(a.dateApplied).getTime() : 0;
+        bValue = b.dateApplied ? new Date(b.dateApplied).getTime() : 0;
+        break;
+      default:
+        aValue = a.id;
+        bValue = b.id;
+    }
+    
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
   });
 
   const getStatusColor = (status: string) => {
@@ -116,6 +169,47 @@ export default function LoanTable() {
     setSelectedLoan(null);
   };
 
+  const exportToCSV = () => {
+    const headers = ['ID', 'Customer', 'Loan Amount', 'Interest Rate', 'Term (months)', 'Status', 'Purpose', 'Date Applied', 'Outstanding Balance'];
+    const csvData = filteredLoans.map((loan: LoanBook) => [
+      loan.id,
+      getCustomerName(loan.customerId),
+      loan.loanAmount,
+      loan.interestRate,
+      loan.term,
+      loan.status,
+      loan.purpose || '',
+      loan.dateApplied ? new Date(loan.dateApplied).toLocaleDateString() : '',
+      loan.outstandingBalance || ''
+    ]);
+    
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `loan-book-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export Successful",
+      description: `Exported ${filteredLoans.length} loans to CSV`,
+    });
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setAmountFilter({ min: '', max: '' });
+    setDateFilter({ from: '', to: '' });
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -132,36 +226,119 @@ export default function LoanTable() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Loan Applications</CardTitle>
-          <Button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Loan
-          </Button>
+          <CardTitle>Loan Applications ({filteredLoans.length})</CardTitle>
+          <div className="flex gap-2">
+            <Button onClick={exportToCSV} variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Loan
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search loans..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64 pl-10"
-            />
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by ID, customer name, or purpose..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="disbursed">Disbursed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dateApplied">Date Applied</SelectItem>
+                <SelectItem value="loanAmount">Loan Amount</SelectItem>
+                <SelectItem value="customerName">Customer Name</SelectItem>
+                <SelectItem value="id">Loan ID</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+            </Button>
+            {(searchTerm || statusFilter !== 'all' || amountFilter.min || amountFilter.max || dateFilter.from || dateFilter.to) && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+            )}
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="disbursed">Disbursed</SelectItem>
-            </SelectContent>
-          </Select>
+          
+          {showAdvancedFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+              <div>
+                <Label className="text-sm font-medium">Min Amount</Label>
+                <Input
+                  placeholder="0"
+                  type="number"
+                  value={amountFilter.min}
+                  onChange={(e) => setAmountFilter({ ...amountFilter, min: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Max Amount</Label>
+                <Input
+                  placeholder="1000000"
+                  type="number"
+                  value={amountFilter.max}
+                  onChange={(e) => setAmountFilter({ ...amountFilter, max: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">From Date</Label>
+                <Input
+                  type="date"
+                  value={dateFilter.from}
+                  onChange={(e) => setDateFilter({ ...dateFilter, from: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">To Date</Label>
+                <Input
+                  type="date"
+                  value={dateFilter.to}
+                  onChange={(e) => setDateFilter({ ...dateFilter, to: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md border">
