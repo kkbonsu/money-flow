@@ -47,6 +47,7 @@ import {
 import { eq, and, sql } from "drizzle-orm";
 import { users, tenants } from "@shared/schema";
 import roleRoutes from "./roleRoutes";
+import { registerOptimizedRoutes } from "./optimizedRoutes";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -1484,6 +1485,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add role management routes
   app.use('/api/roles', extractTenantContext, roleRoutes);
+
+  // Register optimized performance routes
+  registerOptimizedRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;
