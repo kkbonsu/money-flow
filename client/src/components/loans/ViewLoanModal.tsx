@@ -341,33 +341,35 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
               </CardHeader>
               <CardContent>
                 {upcomingPayments.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Principal</TableHead>
-                        <TableHead>Interest</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {upcomingPayments.slice(0, 6).map((payment: PaymentSchedule) => (
-                        <TableRow key={payment.id}>
-                          <TableCell>{format(new Date(payment.dueDate), 'MMM dd, yyyy')}</TableCell>
-                          <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
-                          <TableCell className="text-green-600">{formatCurrency(payment.principalAmount)}</TableCell>
-                          <TableCell className="text-orange-600">{formatCurrency(payment.interestAmount)}</TableCell>
-                          <TableCell>
-                            <Badge className="bg-yellow-100 text-yellow-800">
-                              <Clock className="w-3 h-3 mr-1" />
-                              Pending
-                            </Badge>
-                          </TableCell>
+                  <div className="max-h-96 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Principal</TableHead>
+                          <TableHead>Interest</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {upcomingPayments.map((payment: PaymentSchedule) => (
+                          <TableRow key={payment.id}>
+                            <TableCell>{format(new Date(payment.dueDate), 'MMM dd, yyyy')}</TableCell>
+                            <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
+                            <TableCell className="text-green-600">{formatCurrency(payment.principalAmount)}</TableCell>
+                            <TableCell className="text-orange-600">{formatCurrency(payment.interestAmount)}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-yellow-100 text-yellow-800">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">All payments completed.</p>
                 )}

@@ -281,6 +281,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCustomer(id: number): Promise<void> {
+    // Delete related payment schedules first
+    await db.delete(paymentSchedules).where(
+      sql`${paymentSchedules.loanId} IN (
+        SELECT id FROM loan_books WHERE customer_id = ${id}
+      )`
+    );
+    
+    // Delete related loans
+    await db.delete(loanBooks).where(eq(loanBooks.customerId, id));
+    
+    // Finally delete the customer
     await db.delete(customers).where(eq(customers.id, id));
   }
 

@@ -186,11 +186,10 @@ async function seedDatabase() {
         email: "e.boateng@email.com",
         phone: "+233-24-777-8888",
         address: "Tema Community 1",
-        occupation: "Retail Trader",
-        monthlyIncome: "8500.00",
         creditScore: 750,
         status: "active",
-        password: await bcrypt.hash("customer123", 10)
+        password: await bcrypt.hash("customer123", 10),
+        isPortalActive: true
       },
       {
         tenantId: DEFAULT_TENANT_ID,
@@ -199,11 +198,10 @@ async function seedDatabase() {
         email: "a.frimpong@email.com",
         phone: "+233-50-999-0000",
         address: "Kumasi Adum",
-        occupation: "Restaurant Owner",
-        monthlyIncome: "12000.00",
         creditScore: 680,
         status: "active",
-        password: await bcrypt.hash("customer123", 10)
+        password: await bcrypt.hash("customer123", 10),
+        isPortalActive: true
       },
       {
         tenantId: DEFAULT_TENANT_ID,
@@ -212,11 +210,10 @@ async function seedDatabase() {
         email: "k.asiedu@email.com",
         phone: "+233-26-111-2222",
         address: "Tamale Central",
-        occupation: "Farmer",
-        monthlyIncome: "5500.00",
         creditScore: 620,
         status: "active",
-        password: await bcrypt.hash("customer123", 10)
+        password: await bcrypt.hash("customer123", 10),
+        isPortalActive: true
       },
       {
         tenantId: DEFAULT_TENANT_ID,
@@ -225,11 +222,10 @@ async function seedDatabase() {
         email: "e.gyasi@email.com",
         phone: "+233-55-333-4444",
         address: "Cape Coast",
-        occupation: "Fish Trader",
-        monthlyIncome: "7200.00",
         creditScore: 710,
         status: "active",
-        password: await bcrypt.hash("customer123", 10)
+        password: await bcrypt.hash("customer123", 10),
+        isPortalActive: true
       },
       {
         tenantId: DEFAULT_TENANT_ID,
@@ -238,11 +234,10 @@ async function seedDatabase() {
         email: "y.opoku@email.com",
         phone: "+233-20-555-6666",
         address: "Ho Township",
-        occupation: "Transport Business",
-        monthlyIncome: "15000.00",
         creditScore: 780,
         status: "active",
-        password: await bcrypt.hash("customer123", 10)
+        password: await bcrypt.hash("customer123", 10),
+        isPortalActive: true
       }
     ]).returning();
 
