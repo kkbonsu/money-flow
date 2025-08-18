@@ -54,7 +54,7 @@ export function PerformanceDashboard() {
             Optimized
           </div>
           <p className="text-xs text-muted-foreground">
-            {performanceStats?.length || 0} active tables monitored
+            {Array.isArray(performanceStats) ? performanceStats.length : 0} active tables monitored
           </p>
         </CardContent>
       </Card>
@@ -89,7 +89,7 @@ export function PerformanceDashboard() {
         </CardContent>
       </Card>
 
-      {performanceStats && performanceStats.length > 0 && (
+      {Array.isArray(performanceStats) && performanceStats.length > 0 && (
         <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader>
             <CardTitle>Database Table Statistics</CardTitle>
@@ -99,7 +99,7 @@ export function PerformanceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {performanceStats.slice(0, 5).map((table: any, index: number) => (
+              {performanceStats.slice(0, 5).map((table, index) => (
                 <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{table.tablename}</Badge>
