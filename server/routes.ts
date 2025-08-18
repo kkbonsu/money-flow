@@ -1075,6 +1075,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Income metrics endpoint
+  app.get("/api/income/metrics", authenticateToken, async (req, res) => {
+    try {
+      const incomeRecords = await storage.getIncome();
+      
+      if (!incomeRecords.length) {
+        return res.json({
+          totalIncome: 0,
+          monthlyGrowth: 0,
+          topCategories: [],
+          recentTrends: [],
+          sourceSummary: {
+            loanInterest: 0,
+            processingFees: 0,
+            otherSources: 0
+          }
+        });
+      }
+
+      // Calculate total income
+      const totalIncome = incomeRecords.reduce((sum, record) => sum + parseFloat(record.amount), 0);
+
+      // Calculate categories with totals and counts
+      const categoryStats = incomeRecords.reduce((acc, record) => {
+        const category = record.category || 'Other';
+        if (!acc[category]) {
+          acc[category] = { amount: 0, count: 0 };
+        }
+        acc[category].amount += parseFloat(record.amount);
+        acc[category].count += 1;
+        return acc;
+      }, {} as Record<string, { amount: number; count: number }>);
+
+      const topCategories = Object.entries(categoryStats)
+        .map(([category, stats]) => ({
+          category,
+          amount: stats.amount,
+          count: stats.count,
+          percentage: (stats.amount / totalIncome) * 100
+        }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5);
+
+      // Calculate source summary
+      const sourceSummary = incomeRecords.reduce((acc, record) => {
+        const amount = parseFloat(record.amount);
+        const source = record.source.toLowerCase();
+        
+        if (source.includes('interest') || record.category === 'Loan Interest') {
+          acc.loanInterest += amount;
+        } else if (source.includes('fee') || record.category === 'Loan Fees' || record.category === 'Processing Fee') {
+          acc.processingFees += amount;
+        } else {
+          acc.otherSources += amount;
+        }
+        
+        return acc;
+      }, { loanInterest: 0, processingFees: 0, otherSources: 0 });
+
+      // Calculate monthly trends (last 6 months)
+      const monthlyData = incomeRecords.reduce((acc, record) => {
+        const date = new Date(record.date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (!acc[monthKey]) {
+          acc[monthKey] = 0;
+        }
+        acc[monthKey] += parseFloat(record.amount);
+        return acc;
+      }, {} as Record<string, number>);
+
+      const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
+      const recentTrends = sortedMonths.map((month, index) => {
+        const [year, monthNum] = month.split('-');
+        const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const amount = monthlyData[month];
+        const previousMonth = index > 0 ? monthlyData[sortedMonths[index - 1]] : amount;
+        
+        return {
+          month: monthName,
+          amount,
+          previousMonth
+        };
+      });
+
+      // Calculate monthly growth (comparing current to previous month)
+      const currentMonth = recentTrends[recentTrends.length - 1];
+      const previousMonth = recentTrends[recentTrends.length - 2];
+      const monthlyGrowth = currentMonth && previousMonth && previousMonth.amount > 0
+        ? ((currentMonth.amount - previousMonth.amount) / previousMonth.amount) * 100
+        : 0;
+
+      res.json({
+        totalIncome,
+        monthlyGrowth,
+        topCategories,
+        recentTrends,
+        sourceSummary
+      });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch income metrics" });
+    }
+  });
+
   // Backfill interest payments route
   app.post("/api/income/backfill-interest", authenticateToken, async (req, res) => {
     try {
