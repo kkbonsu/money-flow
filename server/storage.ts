@@ -488,36 +488,53 @@ export class DatabaseStorage implements IStorage {
   async updatePaymentSchedule(id: number, updateSchedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule> {
     // Get the current schedule before updating
     const currentSchedule = await this.getPaymentSchedule(id);
-    console.log(`Updating payment schedule ${id}. Current status: ${currentSchedule?.status}, New status: ${updateSchedule.status}`);
+    console.log(`🔍 Updating payment schedule ${id}. Current status: ${currentSchedule?.status}, New status: ${updateSchedule.status}`);
+    console.log(`🔍 Current schedule:`, currentSchedule);
+    console.log(`🔍 Update data:`, updateSchedule);
     
     const [schedule] = await db
       .update(paymentSchedules)
-      .set(updateSchedule)
+      .set({ ...updateSchedule, updatedAt: new Date() })
       .where(eq(paymentSchedules.id, id))
       .returning();
     
+    console.log(`🔍 Updated schedule result:`, schedule);
+    
     // If payment is being marked as paid, add interest to income table
-    if (updateSchedule.status === 'paid' && currentSchedule?.status !== 'paid' && schedule.interestAmount) {
-      const interestAmount = parseFloat(schedule.interestAmount);
-      console.log(`Processing interest payment: ${interestAmount} for schedule ${schedule.id}`);
-      if (interestAmount > 0) {
-        const paidDate = schedule.paidDate ? new Date(schedule.paidDate) : new Date();
-        console.log(`Creating income record with date: ${paidDate.toISOString().split('T')[0]}`);
+    if (updateSchedule.status === 'paid' && currentSchedule?.status !== 'paid') {
+      console.log(`🎯 Payment being marked as paid! Interest amount: ${schedule.interestAmount}`);
+      
+      if (schedule.interestAmount) {
+        const interestAmount = parseFloat(schedule.interestAmount);
+        console.log(`💰 Processing interest payment: ${interestAmount} for schedule ${schedule.id}`);
         
-        try {
-          await db.insert(incomeManagement).values({
-            tenantId: DEFAULT_TENANT_ID,
-            source: 'Interest Payment',
-            amount: schedule.interestAmount,
-            description: `Interest payment from loan payment schedule #${schedule.id}`,
-            date: paidDate.toISOString().split('T')[0],
-            category: 'Loan Interest'
-          });
-          console.log(`✅ Created income record for interest payment: ${schedule.interestAmount}`);
-        } catch (error) {
-          console.error(`❌ Failed to create income record:`, error);
+        if (interestAmount > 0) {
+          const paidDate = schedule.paidDate ? new Date(schedule.paidDate) : new Date();
+          console.log(`📅 Creating income record with date: ${paidDate.toISOString().split('T')[0]}`);
+          
+          try {
+            const incomeRecord = await db.insert(incomeManagement).values({
+              tenantId: DEFAULT_TENANT_ID,
+              source: 'Interest Payment',
+              amount: schedule.interestAmount,
+              description: `Interest payment from loan payment schedule #${schedule.id}`,
+              date: paidDate.toISOString().split('T')[0],
+              category: 'Loan Interest'
+            }).returning();
+            
+            console.log(`✅ Successfully created income record:`, incomeRecord[0]);
+          } catch (error) {
+            console.error(`❌ Failed to create income record:`, error);
+            throw error;
+          }
+        } else {
+          console.log(`⚠️ Interest amount is 0, skipping income record`);
         }
+      } else {
+        console.log(`⚠️ No interest amount found on schedule`);
       }
+    } else {
+      console.log(`ℹ️ Not creating income record. Status change: ${currentSchedule?.status} -> ${updateSchedule.status}`);
     }
     
     // If payment is being marked as unpaid, remove corresponding income record
