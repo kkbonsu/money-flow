@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Eye, Edit, Trash2, Search, CheckCircle2, Download, Filter, X } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Search, CheckCircle2, Download, Filter, X, Upload } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ import AddLoanModal from './AddLoanModal';
 import ViewLoanModal from './ViewLoanModal';
 import EditLoanModal from './EditLoanModal';
 import LoanApprovalModal from './LoanApprovalModal';
+import ImportLoanModal from './ImportLoanModal';
 
 export default function LoanTable() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +30,7 @@ export default function LoanTable() {
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanBook | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -231,6 +233,10 @@ export default function LoanTable() {
             <Button onClick={exportToCSV} variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
               Export CSV
+            </Button>
+            <Button onClick={() => setIsImportModalOpen(true)} variant="outline" size="sm">
+              <Upload className="w-4 h-4 mr-2" />
+              Import CSV
             </Button>
             <Button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
               <Plus className="w-4 h-4 mr-2" />
@@ -436,6 +442,7 @@ export default function LoanTable() {
       <ViewLoanModal isOpen={isViewModalOpen} onClose={closeModals} loan={selectedLoan} />
       <EditLoanModal isOpen={isEditModalOpen} onClose={closeModals} loan={selectedLoan} />
       <LoanApprovalModal isOpen={isApprovalModalOpen} onClose={closeModals} loan={selectedLoan} />
+      <ImportLoanModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />
     </Card>
   );
 }

@@ -690,6 +690,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Loan import route
+  app.post("/api/loans/import", authenticateToken, async (req, res) => {
+    try {
+      const { csvData } = req.body;
+      
+      if (!csvData || typeof csvData !== 'string') {
+        return res.status(400).json({ message: "CSV data is required" });
+      }
+
+      const lines = csvData.trim().split('\n');
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      
+      const results = {
+        success: 0,
+        errors: [] as Array<{ row: number; error: string; data: any }>,
+        total: lines.length - 1
+      };
+
+      // Process each row (skip header)
+      for (let i = 1; i < lines.length; i++) {
+        try {
+          const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+          
+          if (values.length !== headers.length || values.every(v => !v)) {
+            continue; // Skip empty or malformed rows
+          }
+
+          // Map CSV data to loan object
+          const loanData: any = {};
+          headers.forEach((header, index) => {
+            const value = values[index];
+            switch (header.toLowerCase()) {
+              case 'customer id':
+                loanData.customerId = parseInt(value);
+                break;
+              case 'loan product id':
+                loanData.loanProductId = parseInt(value);
+                break;
+              case 'loan amount':
+                loanData.loanAmount = value;
+                break;
+              case 'interest rate':
+                loanData.interestRate = value;
+                break;
+              case 'term (months)':
+              case 'term':
+                loanData.term = parseInt(value);
+                break;
+              case 'purpose':
+                loanData.purpose = value;
+                break;
+              case 'date applied':
+                if (value) {
+                  loanData.dateApplied = new Date(value);
+                }
+                break;
+            }
+          });
+
+          // Set default values
+          loanData.status = 'pending';
+          
+          // Validate required fields
+          if (!loanData.customerId || !loanData.loanAmount || !loanData.interestRate || !loanData.term) {
+            results.errors.push({
+              row: i + 1,
+              error: 'Missing required fields (Customer ID, Loan Amount, Interest Rate, Term)',
+              data: loanData
+            });
+            continue;
+          }
+
+          // Validate and parse the loan data
+          const validatedLoanData = insertLoanBookSchema.parse(loanData);
+          
+          // Create the loan
+          await storage.createLoan(validatedLoanData);
+          results.success++;
+          
+        } catch (error) {
+          results.errors.push({
+            row: i + 1,
+            error: error instanceof Error ? error.message : 'Invalid data format',
+            data: values
+          });
+        }
+      }
+
+      res.json(results);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to import loans" });
+    }
+  });
+
   // Loan Products routes
   app.get("/api/loan-products", authenticateToken, async (req, res) => {
     try {
