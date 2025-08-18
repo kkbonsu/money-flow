@@ -49,6 +49,8 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/payment-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/income'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
       toast({
         title: "Payment Updated",
         description: "Payment has been marked as paid successfully.",
