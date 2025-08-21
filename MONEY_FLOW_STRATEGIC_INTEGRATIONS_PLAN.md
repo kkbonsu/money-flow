@@ -1,8 +1,8 @@
-# Money Flow - Strategic Integrations & Enhancements Plan
+# Money Flow - Ghana-First Strategic Integrations & Enhancements Plan
 
 ## Document Overview
 
-This document outlines a comprehensive strategic plan for enhancing Money Flow with cutting-edge integrations and features to establish it as Ghana's premier multi-tenant financial management platform. The plan encompasses KYC/KYB/AML compliance, AI-powered insights, advanced payment systems, regulatory compliance, and competitive leaderboards.
+This document outlines a comprehensive strategic plan for enhancing Money Flow with cutting-edge integrations and features to establish it as Ghana's premier multi-tenant financial management platform in Year 1, followed by strategic expansion across Africa in Year 2+. The plan encompasses KYC/KYB/AML compliance, AI-powered insights, advanced payment systems, regulatory compliance, tenant financing, and competitive leaderboards. All financial projections are presented in Ghanaian Cedis (GHS) with US Dollar equivalents in parentheses.
 
 **Document Version**: 1.0
 **Creation Date**: January 2025
@@ -75,9 +75,9 @@ const verifyCustomerIdentity = async (customerId: string, kycData: KYCVerificati
 
 ### 1.3 Cost Structure & ROI
 **Investment Breakdown**
-- Initial Setup: $5,000-$10,000 (API integration, testing, compliance setup)
-- Monthly Base Cost: $500-$1,500 (depending on verification volume)
-- Per-Transaction: $1-$5 per verification (varies by verification type and region)
+- Initial Setup: GHS 60,000-120,000 ($5,000-$10,000) (API integration, testing, compliance setup)
+- Monthly Base Cost: GHS 6,000-18,000 ($500-$1,500) (depending on verification volume)
+- Per-Transaction: GHS 12-60 ($1-$5) per verification (varies by verification type and region)
 - Implementation Timeline: 4 months
 
 **Revenue Impact**
@@ -803,8 +803,8 @@ The Tenant Financing Platform transforms Money Flow from a loan management syste
 ### 8.2 Business Model Architecture
 
 #### 8.2.1 Revenue Streams
-**Primary Revenue Sources**
-- **Interest Spread**: 8-15% annual interest on tenant loans ($2.5M-$11.5M projected revenue by Year 5)
+**Primary Revenue Sources (Ghana Focus)**
+- **Interest Spread**: 8-15% annual interest on tenant loans (GHS 30M-138M [$2.5M-$11.5M] projected revenue by Year 5)
 - **Origination Fees**: 1-3% of funded amount (immediate revenue on loan issuance)
 - **Servicing Fees**: 0.5-1% monthly on outstanding balances (recurring revenue)
 - **Performance Bonuses**: Premium pricing for top-performing tenants
@@ -834,7 +834,7 @@ The Tenant Financing Platform transforms Money Flow from a loan management syste
 ```typescript
 interface WorkingCapitalLine {
   tenantId: string;
-  creditLimit: number; // $10K-$1M based on tenant performance
+  creditLimit: number; // GHS 120K-12M ($10K-$1M) based on tenant performance
   interestRate: number; // 8-15% annual, risk-adjusted
   drawdownPeriod: number; // 12-24 months
   repaymentTerm: number; // 12-36 months
