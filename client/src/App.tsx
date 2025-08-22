@@ -92,8 +92,11 @@ function Router() {
 }
 
 function App() {
+  const isCustomerPortal = window.location.pathname.startsWith('/customer');
+  const client = isCustomerPortal ? customerQueryClient : queryClient;
+  
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={client}>
       <ThemeProvider>
         <AuthProvider>
           <CustomerAuthProvider>
@@ -113,20 +116,16 @@ function AppLayoutSelector() {
   
   if (isCustomerPortal) {
     return (
-      <QueryClientProvider client={customerQueryClient}>
-        <CustomerLayout>
-          <Router />
-        </CustomerLayout>
-      </QueryClientProvider>
+      <CustomerLayout>
+        <Router />
+      </CustomerLayout>
     );
   }
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppLayout>
-        <Router />
-      </AppLayout>
-    </QueryClientProvider>
+    <AppLayout>
+      <Router />
+    </AppLayout>
   );
 }
 

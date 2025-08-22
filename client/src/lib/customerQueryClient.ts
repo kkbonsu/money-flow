@@ -66,7 +66,4 @@ export const customerQueryClient = new QueryClient({
       retry: false,
     },
   },
-  errorHandler: (error) => {
-    console.error('Customer query error:', error);
-  },
 });
