@@ -1066,6 +1066,9 @@ export type InsertMfiRegistration = z.infer<typeof insertMfiRegistrationSchema>;
 export type Shareholder = typeof shareholders.$inferSelect;
 export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
 
+export type LoanProduct = typeof loanProducts.$inferSelect;
+export type InsertLoanProduct = z.infer<typeof insertLoanProductSchema>;
+
 // Multi-tenant Types  
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;

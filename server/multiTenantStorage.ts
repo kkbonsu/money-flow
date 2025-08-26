@@ -1386,9 +1386,15 @@ export class BackwardCompatibilityStorage {
   }
 
   async updateMfiRegistration(id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
+    // Handle Date conversion for licenseExpiryDate if present
+    const updateData: any = { ...updateMfiRegistration, updatedAt: new Date() };
+    if (updateData.licenseExpiryDate instanceof Date) {
+      updateData.licenseExpiryDate = updateData.licenseExpiryDate.toISOString().split('T')[0];
+    }
+    
     const [registration] = await db
       .update(mfiRegistration)
-      .set(updateMfiRegistration)
+      .set(updateData)
       .where(and(eq(mfiRegistration.tenantId, this.defaultTenantId), eq(mfiRegistration.id, id)))
       .returning();
     return registration;
@@ -1425,126 +1431,102 @@ export class BackwardCompatibilityStorage {
     await db.delete(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
   }
 
-  // Missing dashboard analytics methods
-  async getAdvancedAnalytics(): Promise<any> {
-    // Compliance score calculation
-    const totalLoansResult = await db
-      .select({ count: sql`count(*)` })
-      .from(loanBooks)
-      .where(eq(loanBooks.tenantId, this.defaultTenantId));
-    const totalLoans = parseInt(totalLoansResult[0]?.count?.toString() || '0');
-
-    const compliantLoansResult = await db
-      .select({ count: sql`count(*)` })
-      .from(loanBooks)
-      .where(and(
-        eq(loanBooks.tenantId, this.defaultTenantId),
-        sql`${loanBooks.status} IN ('active', 'paid')`
-      ));
-    const compliantLoans = parseInt(compliantLoansResult[0]?.count?.toString() || '0');
-    
-    const complianceScore = totalLoans > 0 ? Math.round((compliantLoans / totalLoans) * 100) : 100;
-
-    // Risk assessment
-    const overdueResult = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < CURRENT_DATE`
-      ));
-    const overdueCount = parseInt(overdueResult[0]?.count?.toString() || '0');
-    const riskLevel = overdueCount > 10 ? 'High' : overdueCount > 5 ? 'Medium' : 'Low';
-
-    // Portfolio performance
-    const totalPortfolioResult = await db
-      .select({ total: sql`sum(${loanBooks.loanAmount}::numeric)` })
-      .from(loanBooks)
-      .where(eq(loanBooks.tenantId, this.defaultTenantId));
-    const totalPortfolio = parseFloat(totalPortfolioResult[0]?.total?.toString() || '0');
-    
-    const performanceScore = Math.round(75 + Math.random() * 20); // Simulated performance
-
-    return {
-      complianceScore,
-      riskLevel,
-      performanceScore,
-      totalPortfolio: `$${totalPortfolio.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-    };
+  // Role and Permission methods to complete interface
+  async getRoles(tenantId?: string): Promise<Role[]> {
+    if (tenantId) {
+      return await db.select().from(roles).where(eq(roles.tenantId, tenantId));
+    } else {
+      return await db.select().from(roles).where(eq(roles.tenantId, this.defaultTenantId));
+    }
   }
 
-  async getLoanPortfolio(): Promise<any> {
-    const portfolioData = await db
+  async getRole(id: number): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles).where(eq(roles.id, id));
+    return role || undefined;
+  }
+
+  async createRole(role: InsertRole): Promise<Role> {
+    const [newRole] = await db.insert(roles).values(role).returning();
+    return newRole;
+  }
+
+  async updateRole(id: number, role: Partial<InsertRole>): Promise<Role> {
+    const [updatedRole] = await db.update(roles).set({ ...role, updatedAt: new Date() }).where(eq(roles.id, id)).returning();
+    return updatedRole;
+  }
+
+  async deleteRole(id: number): Promise<void> {
+    await db.delete(roles).where(eq(roles.id, id));
+  }
+
+  async getPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions);
+  }
+
+  async getPermission(id: number): Promise<Permission | undefined> {
+    const [permission] = await db.select().from(permissions).where(eq(permissions.id, id));
+    return permission || undefined;
+  }
+
+  async getRolePermissions(roleId: number): Promise<Permission[]> {
+    const rolePermissionsList = await db
       .select({
-        month: sql`TO_CHAR(${loanBooks.createdAt}, 'Mon')`,
-        totalLoans: sql`count(*)`,
-        totalAmount: sql`sum(${loanBooks.loanAmount}::numeric)`
+        id: permissions.id,
+        name: permissions.name,
+        category: permissions.category,
+        description: permissions.description,
+        resource: permissions.resource,
+        action: permissions.action,
+        createdAt: permissions.createdAt,
       })
-      .from(loanBooks)
-      .where(and(
-        eq(loanBooks.tenantId, this.defaultTenantId),
-        sql`${loanBooks.createdAt} >= (CURRENT_DATE - INTERVAL '12 months')`
-      ))
-      .groupBy(sql`TO_CHAR(${loanBooks.createdAt}, 'Mon')`);
-
-    return portfolioData.map(item => ({
-      month: item.month,
-      totalLoans: parseInt(item.totalLoans?.toString() || '0'),
-      totalAmount: parseFloat(item.totalAmount?.toString() || '0')
-    }));
+      .from(rolePermissions)
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, roleId));
+    return rolePermissionsList;
   }
 
-  async getPaymentStatus(): Promise<any> {
-    // On-time payments (paid on or before due date)
-    const onTimeResult = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'paid'),
-        sql`${paymentSchedules.paidDate} <= ${paymentSchedules.dueDate}`
-      ));
-    const onTime = parseInt(onTimeResult[0]?.count?.toString() || '0');
-
-    // Overdue 7 days
-    const overdue7Result = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '7 days')`
-      ));
-    const overdue7Days = parseInt(overdue7Result[0]?.count?.toString() || '0');
-
-    // Overdue 30 days
-    const overdue30Result = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '30 days')`
-      ));
-    const overdue30Days = parseInt(overdue30Result[0]?.count?.toString() || '0');
-
-    // Default (overdue 90+ days)
-    const defaultResult = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '90 days')`
-      ));
-    const defaultCount = parseInt(defaultResult[0]?.count?.toString() || '0');
-
-    return {
-      onTime,
-      overdue7Days,
-      overdue30Days,
-      default: defaultCount
-    };
+  async assignRolePermissions(roleId: number, permissionIds: number[]): Promise<void> {
+    const values = permissionIds.map(permissionId => ({ roleId, permissionId }));
+    await db.insert(rolePermissions).values(values);
   }
+
+  async removeRolePermissions(roleId: number, permissionIds: number[]): Promise<void> {
+    await db.delete(rolePermissions).where(
+      and(
+        eq(rolePermissions.roleId, roleId),
+        sql`${rolePermissions.permissionId} = ANY(${permissionIds})`
+      )
+    );
+  }
+
+  async getUserRoles(tenantId: string): Promise<UserRole[]> {
+    return await db.select().from(userRoles).where(eq(userRoles.tenantId, tenantId));
+  }
+
+  async getUserRole(userId: number, tenantId: string): Promise<UserRole | undefined> {
+    const [userRole] = await db.select().from(userRoles).where(
+      and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId))
+    );
+    return userRole || undefined;
+  }
+
+  async assignUserRole(userRole: InsertUserRole): Promise<UserRole> {
+    const [newUserRole] = await db.insert(userRoles).values(userRole).returning();
+    return newUserRole;
+  }
+
+  async updateUserRole(userId: number, tenantId: string, roleId: number): Promise<UserRole> {
+    const [updatedUserRole] = await db.update(userRoles)
+      .set({ roleId })
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId)))
+      .returning();
+    return updatedUserRole;
+  }
+
+  async removeUserRole(userId: number, tenantId: string): Promise<void> {
+    await db.delete(userRoles).where(
+      and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId))
+    );
+  }
+
 }
