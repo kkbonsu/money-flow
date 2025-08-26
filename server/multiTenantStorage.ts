@@ -541,7 +541,8 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   }
 
   async getPaymentSchedule(tenantId: string, id: number): Promise<PaymentSchedule | undefined> {
-    const [schedule] = await db.select().from(paymentSchedules).where(and(eq(paymentSchedules.id, id), eq(paymentSchedules.tenantId, tenantId)));
+    console.log(`🔍 [DEBUG] getPaymentSchedule called with tenantId: ${tenantId} (type: ${typeof tenantId}), id: ${id} (type: ${typeof id})`);
+    const [schedule] = await db.select().from(paymentSchedules).where(and(eq(paymentSchedules.id, Number(id)), eq(paymentSchedules.tenantId, String(tenantId))));
     return schedule || undefined;
   }
 
@@ -565,7 +566,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     const [schedule] = await db
       .update(paymentSchedules)
       .set({ ...updateSchedule, updatedAt: new Date() })
-      .where(and(eq(paymentSchedules.id, id), eq(paymentSchedules.tenantId, tenantId)))
+      .where(and(eq(paymentSchedules.id, Number(id)), eq(paymentSchedules.tenantId, String(tenantId))))
       .returning();
     
     console.log(`🔍 [MultiTenant] Updated schedule result:`, schedule);
