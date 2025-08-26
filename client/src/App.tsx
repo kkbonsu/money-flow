@@ -11,6 +11,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
 import LoanSimulator from "@/pages/LoanSimulator";
+import LoanSheet from "@/pages/LoanSheet";
 import Liora from "@/pages/Liora";
 import LoanProducts from "@/pages/LoanProducts";
 import Customers from "@/pages/Customers";
@@ -67,6 +68,7 @@ function Router() {
       <Route path="/super-admin" component={SuperAdminDashboard} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
+      <Route path="/loan-sheet" component={LoanSheet} />
       <Route path="/liora" component={Liora} />
       <Route path="/loan-products" component={LoanProducts} />
       <Route path="/customers" component={Customers} />

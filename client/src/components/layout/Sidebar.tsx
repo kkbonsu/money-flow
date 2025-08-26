@@ -20,12 +20,14 @@ import {
   Bot,
   Banknote,
   Shield,
-  Settings
+  Settings,
+  FileSpreadsheet
 } from 'lucide-react';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Loan Simulator', href: '/loan-simulator', icon: Calculator },
+  { name: 'Loan Sheet', href: '/loan-sheet', icon: FileSpreadsheet },
   { 
     name: 'Management', 
     items: [
