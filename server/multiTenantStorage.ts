@@ -973,8 +973,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createPaymentSchedule(this.defaultTenantId, schedule);
   }
 
-  async updatePaymentSchedule(id: number, schedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule> {
-    return multiTenantStorage.updatePaymentSchedule(this.defaultTenantId, id, schedule);
+  async updatePaymentSchedule(tenantId: string, id: number, schedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule> {
+    return multiTenantStorage.updatePaymentSchedule(tenantId, id, schedule);
   }
 
   async deletePaymentSchedule(id: number): Promise<void> {
