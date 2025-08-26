@@ -163,7 +163,7 @@ export const generateUserToken = (user: any, tenantId: string): string => {
     email: user.email,
     role: user.role,
     tenantId: tenantId,
-    isSuperAdmin: user.isSuperAdmin || false
+    isSuperAdmin: user.isSuperAdmin || user.is_super_admin || false
   };
   
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });

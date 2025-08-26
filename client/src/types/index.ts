@@ -14,6 +14,7 @@ export interface AuthUser {
   username: string;
   email: string;
   role: string;
+  isSuperAdmin?: boolean;
 }
 
 export interface AuthResponse {

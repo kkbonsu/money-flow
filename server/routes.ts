@@ -111,7 +111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           email: user.email, 
           role: user.role,
-          tenantId 
+          tenantId,
+          isSuperAdmin: user.isSuperAdmin || user.is_super_admin || false
         }, 
         token 
       });
@@ -148,7 +149,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           email: user.email, 
           role: user.role,
-          tenantId 
+          tenantId,
+          isSuperAdmin: user.isSuperAdmin || user.is_super_admin || false
         }, 
         token 
       });
