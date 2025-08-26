@@ -885,8 +885,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createCustomer(this.defaultTenantId, customer);
   }
 
-  async updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer> {
-    return multiTenantStorage.updateCustomer(this.defaultTenantId, id, customer);
+  async updateCustomer(tenantId: string, id: number, customer: Partial<InsertCustomer>): Promise<Customer> {
+    return multiTenantStorage.updateCustomer(tenantId, id, customer);
   }
 
   async updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer> {
@@ -927,8 +927,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createLoanProduct(this.defaultTenantId, loanProduct);
   }
 
-  async updateLoanProduct(id: number, loanProduct: Partial<InsertLoanProduct>): Promise<LoanProduct> {
-    return multiTenantStorage.updateLoanProduct(this.defaultTenantId, id, loanProduct);
+  async updateLoanProduct(tenantId: string, id: number, loanProduct: Partial<InsertLoanProduct>): Promise<LoanProduct> {
+    return multiTenantStorage.updateLoanProduct(tenantId, id, loanProduct);
   }
 
   async deleteLoanProduct(id: number): Promise<void> {
@@ -948,8 +948,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createLoan(this.defaultTenantId, loan);
   }
 
-  async updateLoan(id: number, loan: Partial<InsertLoanBook>): Promise<LoanBook> {
-    return multiTenantStorage.updateLoan(this.defaultTenantId, id, loan);
+  async updateLoan(tenantId: string, id: number, loan: Partial<InsertLoanBook>): Promise<LoanBook> {
+    return multiTenantStorage.updateLoan(tenantId, id, loan);
   }
 
   async deleteLoan(id: number): Promise<void> {
@@ -990,8 +990,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createStaff(this.defaultTenantId, staff);
   }
 
-  async updateStaff(id: number, staff: Partial<InsertStaff>): Promise<Staff> {
-    return multiTenantStorage.updateStaff(this.defaultTenantId, id, staff);
+  async updateStaff(tenantId: string, id: number, staff: Partial<InsertStaff>): Promise<Staff> {
+    return multiTenantStorage.updateStaff(tenantId, id, staff);
   }
 
   async deleteStaff(id: number): Promise<void> {

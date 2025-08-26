@@ -632,7 +632,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const customerData = insertCustomerSchema.parse(req.body);
-      const customer = await storage.updateCustomer(id, customerData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const customer = await storage.updateCustomer(tenantId, id, customerData);
       res.json(customer);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update customer" });
@@ -783,7 +784,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanData = insertLoanBookSchema.parse(req.body);
-      const loan = await storage.updateLoan(id, loanData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const loan = await storage.updateLoan(tenantId, id, loanData);
       res.json(loan);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update loan" });
@@ -918,7 +920,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanProductData = insertLoanProductSchema.parse(req.body);
-      const loanProduct = await storage.updateLoanProduct(id, loanProductData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const loanProduct = await storage.updateLoanProduct(tenantId, id, loanProductData);
       res.json(loanProduct);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update loan product" });
@@ -1022,7 +1025,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const staffData = insertStaffSchema.parse(req.body);
-      const staff = await storage.updateStaff(id, staffData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const staff = await storage.updateStaff(tenantId, id, staffData);
       res.json(staff);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update staff" });
