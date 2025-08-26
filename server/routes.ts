@@ -938,7 +938,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment Schedule routes
   app.get("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
-      const schedules = await storage.getPaymentSchedules();
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const schedules = await storage.getPaymentSchedules(tenantId);
       res.json(schedules);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment schedules" });
@@ -948,7 +949,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payment-schedules/loan/:loanId", authenticateToken, async (req, res) => {
     try {
       const loanId = parseInt(req.params.loanId);
-      const schedules = await storage.getPaymentSchedulesByLoan(loanId);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const schedules = await storage.getPaymentSchedulesByLoan(tenantId, loanId);
       res.json(schedules);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment schedules for loan" });
@@ -958,7 +960,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);
-      const schedule = await storage.createPaymentSchedule(scheduleData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const schedule = await storage.createPaymentSchedule(tenantId, scheduleData);
       res.json(schedule);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create payment schedule" });
@@ -973,7 +976,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Parsed schedule data:', JSON.stringify(scheduleData, null, 2));
       console.log(`🔄 About to update payment schedule ${id} with status: ${scheduleData.status}`);
       console.log(`🔄 Calling storage.updatePaymentSchedule with data:`, scheduleData);
-      const schedule = await storage.updatePaymentSchedule(id, scheduleData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const schedule = await storage.updatePaymentSchedule(tenantId, id, scheduleData);
       console.log(`✅ Updated payment schedule ${id}, result:`, schedule);
       console.log(`🔍 Method completed, returning to client`);
       res.json(schedule);
@@ -986,7 +990,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/payment-schedules/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deletePaymentSchedule(id);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      await storage.deletePaymentSchedule(tenantId, id);
       res.json({ message: "Payment schedule deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete payment schedule" });

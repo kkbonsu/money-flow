@@ -16,15 +16,15 @@ export default function PaymentTable() {
   const [viewPayment, setViewPayment] = useState<PaymentSchedule | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const { data: payments = [], isLoading } = useQuery({
+  const { data: payments = [], isLoading } = useQuery<PaymentSchedule[]>({
     queryKey: ['/api/payment-schedules'],
   });
 
-  const { data: loans = [] } = useQuery({
+  const { data: loans = [] } = useQuery<LoanBook[]>({
     queryKey: ['/api/loans'],
   });
 
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
   });
 
@@ -39,11 +39,11 @@ export default function PaymentTable() {
     // Find next payment due (earliest unpaid payment)
     const nextPayment = loanPayments
       .filter((p: PaymentSchedule) => p.status === 'pending')
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+      .sort((a: PaymentSchedule, b: PaymentSchedule) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
 
     // Calculate totals
-    const totalPrincipal = loanPayments.reduce((sum, p) => sum + parseFloat(p.principalAmount), 0);
-    const totalInterest = loanPayments.reduce((sum, p) => sum + parseFloat(p.interestAmount), 0);
+    const totalPrincipal = loanPayments.reduce((sum: number, p: PaymentSchedule) => sum + parseFloat(p.principalAmount), 0);
+    const totalInterest = loanPayments.reduce((sum: number, p: PaymentSchedule) => sum + parseFloat(p.interestAmount), 0);
 
     return {
       loan,
@@ -211,7 +211,7 @@ export default function PaymentTable() {
             setViewPayment(null);
           }}
           payment={viewPayment}
-          loan={viewPayment ? loans.find((l: LoanBook) => l.id === viewPayment.loanId) : null}
+          loan={viewPayment ? loans.find((l) => l.id === viewPayment.loanId) || null : null}
         />
       </CardContent>
     </Card>
