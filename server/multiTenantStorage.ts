@@ -541,7 +541,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   }
 
   async getPaymentSchedule(tenantId: string, id: number): Promise<PaymentSchedule | undefined> {
-    const [schedule] = await db.select().from(paymentSchedules).where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.id, id)));
+    const [schedule] = await db.select().from(paymentSchedules).where(and(eq(paymentSchedules.id, id), eq(paymentSchedules.tenantId, tenantId)));
     return schedule || undefined;
   }
 
@@ -565,7 +565,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     const [schedule] = await db
       .update(paymentSchedules)
       .set({ ...updateSchedule, updatedAt: new Date() })
-      .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.id, id)))
+      .where(and(eq(paymentSchedules.id, id), eq(paymentSchedules.tenantId, tenantId)))
       .returning();
     
     console.log(`🔍 [MultiTenant] Updated schedule result:`, schedule);
@@ -611,7 +611,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   }
 
   async deletePaymentSchedule(tenantId: string, id: number): Promise<void> {
-    await db.delete(paymentSchedules).where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.id, id)));
+    await db.delete(paymentSchedules).where(and(eq(paymentSchedules.id, id), eq(paymentSchedules.tenantId, tenantId)));
   }
 
   // Tenant-aware staff methods
