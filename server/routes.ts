@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = generateUserToken(user, tenantId);
       
       // Update last login and log the login
-      await storage.updateUserLastLogin(user.id);
+      await storage.updateUserLastLogin(tenantId, user.id);
       await storage.createUserAuditLog({
         userId: user.id,
         action: 'login',
@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = generateCustomerToken(customer, tenantId);
       
       // Update last portal login
-      await storage.updateCustomerLastLogin(customer.id);
+      await storage.updateCustomerLastLogin(tenantId, customer.id);
       
       res.json({ 
         customer: { 
@@ -293,7 +293,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
       const updateData = req.body;
-      const customer = await storage.updateCustomer(req.customer.id, updateData);
+      const tenantId = req.customer?.tenantId || 'default-tenant-001';
+      const customer = await storage.updateCustomer(tenantId, req.customer.id, updateData);
       const { password, ...customerProfile } = customer;
       res.json(customerProfile);
     } catch (error) {
@@ -311,7 +312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await storage.updateCustomerPassword(req.customer.id, hashedPassword);
+      const tenantId = req.customer?.tenantId || 'default-tenant-001';
+      await storage.updateCustomerPassword(tenantId, req.customer.id, hashedPassword);
       
       res.json({ message: "Password updated successfully" });
     } catch (error) {
@@ -375,7 +377,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove password from update data - password should be updated separately
       const { password, ...safeUpdateData } = updateData;
       
-      const user = await storage.updateUser(req.user.id, safeUpdateData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const user = await storage.updateUser(tenantId, req.user.id, safeUpdateData);
       
       // Log profile update
       await storage.createUserAuditLog({
@@ -408,7 +411,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       
       // Update password
-      await storage.updateUserPassword(req.user.id, hashedPassword);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      await storage.updateUserPassword(tenantId, req.user.id, hashedPassword);
       
       // Log password change
       await storage.createUserAuditLog({
@@ -443,7 +447,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profilePictureUrl = `/uploads/${req.file.filename}`;
       
       // Update user profile picture
-      await storage.updateUser(req.user.id, { profilePicture: profilePictureUrl });
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      await storage.updateUser(tenantId, req.user.id, { profilePicture: profilePictureUrl });
       
       // Log profile picture update
       await storage.createUserAuditLog({
@@ -532,7 +537,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot change your own account status" });
       }
 
-      await storage.updateUser(userId, { isActive });
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      await storage.updateUser(tenantId, userId, { isActive });
       
       // Log user status change
       await storage.createUserAuditLog({
@@ -570,7 +576,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid role. Must be 'user', 'manager', or 'admin'" });
       }
 
-      await storage.updateUser(userId, { role });
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      await storage.updateUser(tenantId, userId, { role });
       
       // Log user role change
       await storage.createUserAuditLog({
@@ -1067,7 +1074,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const incomeData = insertIncomeManagementSchema.parse(req.body);
-      const income = await storage.updateIncome(id, incomeData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const income = await storage.updateIncome(tenantId, id, incomeData);
       res.json(income);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update income" });
@@ -1222,7 +1230,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const expenseData = insertExpenseSchema.parse(req.body);
-      const expense = await storage.updateExpense(id, expenseData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const expense = await storage.updateExpense(tenantId, id, expenseData);
       res.json(expense);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update expense" });
@@ -1263,7 +1272,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const accountData = insertBankManagementSchema.parse(req.body);
-      const account = await storage.updateBankAccount(id, accountData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const account = await storage.updateBankAccount(tenantId, id, accountData);
       res.json(account);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update bank account" });
@@ -1304,7 +1314,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const pettyCashData = insertPettyCashSchema.parse(req.body);
-      const pettyCash = await storage.updatePettyCash(id, pettyCashData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const pettyCash = await storage.updatePettyCash(tenantId, id, pettyCashData);
       res.json(pettyCash);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update petty cash" });
@@ -1345,7 +1356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const inventoryData = insertInventorySchema.parse(req.body);
-      const inventory = await storage.updateInventory(id, inventoryData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const inventory = await storage.updateInventory(tenantId, id, inventoryData);
       res.json(inventory);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update inventory" });
@@ -1386,7 +1398,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const rentData = insertRentManagementSchema.parse(req.body);
-      const rent = await storage.updateRentManagement(id, rentData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const rent = await storage.updateRentManagement(tenantId, id, rentData);
       res.json(rent);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update rent management" });
@@ -1427,7 +1440,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const assetData = insertAssetSchema.parse(req.body);
-      const asset = await storage.updateAsset(id, assetData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const asset = await storage.updateAsset(tenantId, id, assetData);
       res.json(asset);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update asset" });
@@ -1543,7 +1557,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const liabilityData = insertLiabilitySchema.parse(req.body);
-      const liability = await storage.updateLiability(id, liabilityData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const liability = await storage.updateLiability(tenantId, id, liabilityData);
       res.json(liability);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update liability" });
@@ -1661,7 +1676,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const equityData = insertEquitySchema.parse(req.body);
-      const equity = await storage.updateEquity(id, equityData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const equity = await storage.updateEquity(tenantId, id, equityData);
       res.json(equity);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update equity" });
@@ -1702,7 +1718,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const reportData = insertReportSchema.parse(req.body);
-      const report = await storage.updateReport(id, reportData);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const report = await storage.updateReport(tenantId, id, reportData);
       res.json(report);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update report" });

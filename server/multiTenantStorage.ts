@@ -835,16 +835,16 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createUser(this.defaultTenantId, user);
   }
 
-  async updateUser(id: number, user: Partial<InsertUser>): Promise<User> {
-    return multiTenantStorage.updateUser(this.defaultTenantId, id, user);
+  async updateUser(tenantId: string, id: number, user: Partial<InsertUser>): Promise<User> {
+    return multiTenantStorage.updateUser(tenantId, id, user);
   }
 
-  async updateUserPassword(id: number, hashedPassword: string): Promise<User> {
-    return multiTenantStorage.updateUserPassword(this.defaultTenantId, id, hashedPassword);
+  async updateUserPassword(tenantId: string, id: number, hashedPassword: string): Promise<User> {
+    return multiTenantStorage.updateUserPassword(tenantId, id, hashedPassword);
   }
 
-  async updateUserLastLogin(id: number): Promise<User> {
-    return multiTenantStorage.updateUserLastLogin(this.defaultTenantId, id);
+  async updateUserLastLogin(tenantId: string, id: number): Promise<User> {
+    return multiTenantStorage.updateUserLastLogin(tenantId, id);
   }
 
   async deleteUser(id: number): Promise<void> {
@@ -889,12 +889,12 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.updateCustomer(tenantId, id, customer);
   }
 
-  async updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer> {
-    return multiTenantStorage.updateCustomerPassword(this.defaultTenantId, id, hashedPassword);
+  async updateCustomerPassword(tenantId: string, id: number, hashedPassword: string): Promise<Customer> {
+    return multiTenantStorage.updateCustomerPassword(tenantId, id, hashedPassword);
   }
 
-  async updateCustomerLastLogin(id: number): Promise<Customer> {
-    return multiTenantStorage.updateCustomerLastLogin(this.defaultTenantId, id);
+  async updateCustomerLastLogin(tenantId: string, id: number): Promise<Customer> {
+    return multiTenantStorage.updateCustomerLastLogin(tenantId, id);
   }
 
   async deleteCustomer(id: number): Promise<void> {
@@ -1007,8 +1007,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createIncome(this.defaultTenantId, income);
   }
 
-  async updateIncome(id: number, income: Partial<InsertIncomeManagement>): Promise<IncomeManagement> {
-    return multiTenantStorage.updateIncome(this.defaultTenantId, id, income);
+  async updateIncome(tenantId: string, id: number, income: Partial<InsertIncomeManagement>): Promise<IncomeManagement> {
+    return multiTenantStorage.updateIncome(tenantId, id, income);
   }
 
   async deleteIncome(id: number): Promise<void> {
@@ -1024,8 +1024,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createExpense(this.defaultTenantId, expense);
   }
 
-  async updateExpense(id: number, expense: Partial<InsertExpense>): Promise<Expense> {
-    return multiTenantStorage.updateExpense(this.defaultTenantId, id, expense);
+  async updateExpense(tenantId: string, id: number, expense: Partial<InsertExpense>): Promise<Expense> {
+    return multiTenantStorage.updateExpense(tenantId, id, expense);
   }
 
   async deleteExpense(id: number): Promise<void> {
@@ -1041,8 +1041,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.createBankAccount(this.defaultTenantId, account);
   }
 
-  async updateBankAccount(id: number, account: Partial<InsertBankManagement>): Promise<BankManagement> {
-    return multiTenantStorage.updateBankAccount(this.defaultTenantId, id, account);
+  async updateBankAccount(tenantId: string, id: number, account: Partial<InsertBankManagement>): Promise<BankManagement> {
+    return multiTenantStorage.updateBankAccount(tenantId, id, account);
   }
 
   async deleteBankAccount(id: number): Promise<void> {
@@ -1203,11 +1203,11 @@ export class BackwardCompatibilityStorage {
     return cash;
   }
 
-  async updatePettyCash(id: number, updatePettyCash: Partial<InsertPettyCash>): Promise<PettyCash> {
+  async updatePettyCash(tenantId: string, id: number, updatePettyCash: Partial<InsertPettyCash>): Promise<PettyCash> {
     const [cash] = await db
       .update(pettyCash)
       .set(updatePettyCash)
-      .where(and(eq(pettyCash.tenantId, this.defaultTenantId), eq(pettyCash.id, id)))
+      .where(and(eq(pettyCash.tenantId, tenantId), eq(pettyCash.id, id)))
       .returning();
     return cash;
   }
@@ -1229,11 +1229,11 @@ export class BackwardCompatibilityStorage {
     return item;
   }
 
-  async updateInventory(id: number, updateInventory: Partial<InsertInventory>): Promise<Inventory> {
+  async updateInventory(tenantId: string, id: number, updateInventory: Partial<InsertInventory>): Promise<Inventory> {
     const [item] = await db
       .update(inventory)
       .set(updateInventory)
-      .where(and(eq(inventory.tenantId, this.defaultTenantId), eq(inventory.id, id)))
+      .where(and(eq(inventory.tenantId, tenantId), eq(inventory.id, id)))
       .returning();
     return item;
   }
@@ -1255,11 +1255,11 @@ export class BackwardCompatibilityStorage {
     return rent;
   }
 
-  async updateRentManagement(id: number, updateRent: Partial<InsertRentManagement>): Promise<RentManagement> {
+  async updateRentManagement(tenantId: string, id: number, updateRent: Partial<InsertRentManagement>): Promise<RentManagement> {
     const [rent] = await db
       .update(rentManagement)
       .set(updateRent)
-      .where(and(eq(rentManagement.tenantId, this.defaultTenantId), eq(rentManagement.id, id)))
+      .where(and(eq(rentManagement.tenantId, tenantId), eq(rentManagement.id, id)))
       .returning();
     return rent;
   }
@@ -1281,11 +1281,11 @@ export class BackwardCompatibilityStorage {
     return asset;
   }
 
-  async updateAsset(id: number, updateAsset: Partial<InsertAsset>): Promise<Asset> {
+  async updateAsset(tenantId: string, id: number, updateAsset: Partial<InsertAsset>): Promise<Asset> {
     const [asset] = await db
       .update(assets)
       .set(updateAsset)
-      .where(and(eq(assets.tenantId, this.defaultTenantId), eq(assets.id, id)))
+      .where(and(eq(assets.tenantId, tenantId), eq(assets.id, id)))
       .returning();
     return asset;
   }
@@ -1307,11 +1307,11 @@ export class BackwardCompatibilityStorage {
     return liability;
   }
 
-  async updateLiability(id: number, updateLiability: Partial<InsertLiability>): Promise<Liability> {
+  async updateLiability(tenantId: string, id: number, updateLiability: Partial<InsertLiability>): Promise<Liability> {
     const [liability] = await db
       .update(liabilities)
       .set(updateLiability)
-      .where(and(eq(liabilities.tenantId, this.defaultTenantId), eq(liabilities.id, id)))
+      .where(and(eq(liabilities.tenantId, tenantId), eq(liabilities.id, id)))
       .returning();
     return liability;
   }
@@ -1333,11 +1333,11 @@ export class BackwardCompatibilityStorage {
     return equityItem;
   }
 
-  async updateEquity(id: number, updateEquity: Partial<InsertEquity>): Promise<Equity> {
+  async updateEquity(tenantId: string, id: number, updateEquity: Partial<InsertEquity>): Promise<Equity> {
     const [equityItem] = await db
       .update(equity)
       .set(updateEquity)
-      .where(and(eq(equity.tenantId, this.defaultTenantId), eq(equity.id, id)))
+      .where(and(eq(equity.tenantId, tenantId), eq(equity.id, id)))
       .returning();
     return equityItem;
   }
@@ -1359,11 +1359,11 @@ export class BackwardCompatibilityStorage {
     return report;
   }
 
-  async updateReport(id: number, updateReport: Partial<InsertReport>): Promise<Report> {
+  async updateReport(tenantId: string, id: number, updateReport: Partial<InsertReport>): Promise<Report> {
     const [report] = await db
       .update(reports)
       .set(updateReport)
-      .where(and(eq(reports.tenantId, this.defaultTenantId), eq(reports.id, id)))
+      .where(and(eq(reports.tenantId, tenantId), eq(reports.id, id)))
       .returning();
     return report;
   }

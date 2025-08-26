@@ -26,9 +26,7 @@ export default function SuperAdminDashboard() {
   });
 
   const deleteTenantMutation = useMutation({
-    mutationFn: (tenantId: string) => apiRequest(`/api/admin/tenants/${tenantId}`, {
-      method: 'DELETE',
-    }),
+    mutationFn: (tenantId: string) => apiRequest('DELETE', `/api/admin/tenants/${tenantId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenants'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
@@ -87,7 +85,7 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* System Stats */}
-        <SuperAdminStats stats={systemStats} />
+        <SuperAdminStats stats={systemStats as any} />
 
         {/* Main Content */}
         <Tabs defaultValue="tenants" className="space-y-6">
@@ -123,7 +121,7 @@ export default function SuperAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <TenantManagementTable 
-                  tenants={tenants || []}
+                  tenants={(tenants as any) || []}
                   onDeleteTenant={(tenantId) => deleteTenantMutation.mutate(tenantId)}
                   isDeleting={deleteTenantMutation.isPending}
                 />
