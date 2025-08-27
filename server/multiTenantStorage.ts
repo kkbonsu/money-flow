@@ -965,8 +965,8 @@ export class BackwardCompatibilityStorage {
     return multiTenantStorage.getPaymentSchedule(this.defaultTenantId, id);
   }
 
-  async getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]> {
-    return multiTenantStorage.getPaymentSchedulesByLoan(this.defaultTenantId, loanId);
+  async getPaymentSchedulesByLoan(tenantId: string, loanId: number): Promise<PaymentSchedule[]> {
+    return multiTenantStorage.getPaymentSchedulesByLoan(tenantId, loanId);
   }
 
   async createPaymentSchedule(schedule: InsertPaymentSchedule): Promise<PaymentSchedule> {

@@ -67,7 +67,7 @@ export interface IStorage {
   // Payment Schedule methods
   getPaymentSchedules(): Promise<PaymentSchedule[]>;
   getPaymentSchedule(id: number): Promise<PaymentSchedule | undefined>;
-  getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]>;
+  getPaymentSchedulesByLoan(tenantId: string, loanId: number): Promise<PaymentSchedule[]>;
   createPaymentSchedule(schedule: InsertPaymentSchedule): Promise<PaymentSchedule>;
   updatePaymentSchedule(id: number, schedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule>;
   deletePaymentSchedule(id: number): Promise<void>;
@@ -505,9 +505,9 @@ export class DatabaseStorage implements IStorage {
     return schedule || undefined;
   }
 
-  async getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]> {
+  async getPaymentSchedulesByLoan(tenantId: string, loanId: number): Promise<PaymentSchedule[]> {
     return await db.select().from(paymentSchedules)
-      .where(eq(paymentSchedules.loanId, loanId))
+      .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.loanId, loanId)))
       .orderBy(paymentSchedules.dueDate);
   }
 
