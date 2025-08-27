@@ -75,19 +75,19 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
   if (!loan) return null;
 
   const getCustomerName = (customerId: number) => {
-    const customer = customers.find((c: Customer) => c.id === customerId);
+    const customer = (customers as Customer[]).find((c: Customer) => c.id === customerId);
     return customer ? `${customer.firstName} ${customer.lastName}` : `Customer #${customerId}`;
   };
 
   const getUserName = (userId: number | null) => {
     if (!userId) return 'Not assigned';
-    const user = users.find((u: User) => u.id === userId);
+    const user = (users as User[]).find((u: User) => u.id === userId);
     return user ? `${user.firstName} ${user.lastName}` || user.username : 'Unknown User';
   };
 
   const getLoanProductName = (loanProductId: number | null) => {
     if (!loanProductId) return 'N/A';
-    const loanProduct = loanProducts.find((p: LoanProduct) => p.id === loanProductId);
+    const loanProduct = (loanProducts as LoanProduct[]).find((p: LoanProduct) => p.id === loanProductId);
     return loanProduct ? loanProduct.name : 'Unknown Product';
   };
 
@@ -99,9 +99,9 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
     }).format(numAmount);
   };
 
-  const paidPayments = paymentSchedules.filter((p: PaymentSchedule) => p.status === 'paid');
-  const upcomingPayments = paymentSchedules.filter((p: PaymentSchedule) => p.status === 'pending');
-  const totalScheduled = paymentSchedules.reduce((sum: number, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
+  const paidPayments = (paymentSchedules as PaymentSchedule[]).filter((p: PaymentSchedule) => p.status === 'paid');
+  const upcomingPayments = (paymentSchedules as PaymentSchedule[]).filter((p: PaymentSchedule) => p.status === 'pending');
+  const totalScheduled = (paymentSchedules as PaymentSchedule[]).reduce((sum: number, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
   const totalPaid = paidPayments.reduce((sum: number, p: PaymentSchedule) => sum + parseFloat(p.amount), 0);
 
   const getStatusColor = (status: string) => {
