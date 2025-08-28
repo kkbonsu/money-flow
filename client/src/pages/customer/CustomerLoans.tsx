@@ -29,11 +29,11 @@ import { format } from 'date-fns';
 import type { Customer, LoanBook, PaymentSchedule } from '@shared/schema';
 
 const loanApplicationSchema = z.object({
-  amount: z.string().min(1, 'Amount is required').transform(val => parseFloat(val)),
+  amount: z.string().min(1, 'Amount is required'),
   purpose: z.string().min(1, 'Purpose is required'),
-  duration: z.string().min(1, 'Duration is required').transform(val => parseInt(val)),
+  duration: z.string().min(1, 'Duration is required'),
   collateral: z.string().optional(),
-  monthlyIncome: z.string().min(1, 'Monthly income is required').transform(val => parseFloat(val)),
+  monthlyIncome: z.string().min(1, 'Monthly income is required'),
   employmentStatus: z.string().min(1, 'Employment status is required'),
   additionalInfo: z.string().optional(),
 });
