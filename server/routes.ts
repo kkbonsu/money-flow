@@ -112,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email, 
           role: user.role,
           tenantId,
-          isSuperAdmin: user.isSuperAdmin || user.is_super_admin || false
+          isSuperAdmin: user.isSuperAdmin || false
         }, 
         token 
       });
@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email, 
           role: user.role,
           tenantId,
-          isSuperAdmin: user.isSuperAdmin || user.is_super_admin || false
+          isSuperAdmin: user.isSuperAdmin || false
         }, 
         token 
       });
@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.errors.push({
             row: i + 1,
             error: error instanceof Error ? error.message : "Unknown error",
-            data: values
+            data: customerData
           });
         }
       }
@@ -894,7 +894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.errors.push({
             row: i + 1,
             error: error instanceof Error ? error.message : 'Invalid data format',
-            data: loanData
+            data: loanData || {}
           });
         }
       }

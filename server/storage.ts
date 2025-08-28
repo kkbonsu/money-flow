@@ -445,7 +445,6 @@ export class DatabaseStorage implements IStorage {
       dueDate.setDate(1);
       
       schedules.push({
-        tenantId: DEFAULT_TENANT_ID,
         loanId: loan.id,
         dueDate,
         amount: monthlyPayment.toFixed(2),
@@ -478,6 +477,7 @@ export class DatabaseStorage implements IStorage {
         const feeAmount = parseFloat(loanProduct.fee);
         if (feeAmount > 0) {
           await db.insert(incomeManagement).values({
+            tenantId: DEFAULT_TENANT_ID,
             source: 'Loan Processing Fee',
             amount: loanProduct.fee,
             description: `Processing fee for loan #${loan.id} (${loanProduct.name})`,
@@ -1303,7 +1303,7 @@ export class DatabaseStorage implements IStorage {
   async createMfiRegistration(insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
     const [mfi] = await db
       .insert(mfiRegistration)
-      .values(insertMfiRegistration)
+      .values({ ...insertMfiRegistration, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return mfi;
   }
@@ -1330,7 +1330,7 @@ export class DatabaseStorage implements IStorage {
   async createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder> {
     const [shareholder] = await db
       .insert(shareholders)
-      .values(insertShareholder)
+      .values({ ...insertShareholder, tenantId: DEFAULT_TENANT_ID })
       .returning();
     return shareholder;
   }
