@@ -30,6 +30,12 @@ export async function customerApiRequest(
   return res;
 }
 
+// Alias for compatibility with existing code
+export const apiRequest = async (url: string, method: string, data?: unknown) => {
+  const res = await customerApiRequest(method, url, data);
+  return res.json();
+};
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getCustomerQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
