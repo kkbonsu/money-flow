@@ -2007,6 +2007,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer loan application endpoint
+  app.post("/api/customer/loan-application", authenticateCustomerToken, async (req, res) => {
+    try {
+      const customerId = parseInt(req.customer.id);
+      const loanData = insertLoanBookSchema.parse({
+        customerId,
+        loanAmount: req.body.amount.toString(),
+        interestRate: "12.0", // Default rate
+        purpose: req.body.purpose,
+        duration: req.body.duration.toString(),
+        collateral: req.body.collateral || "",
+        monthlyIncome: req.body.monthlyIncome.toString(),
+        employmentStatus: req.body.employmentStatus,
+        additionalInfo: req.body.additionalInfo || "",
+        status: "pending", // Loan application starts as pending
+        applicationDate: new Date().toISOString(),
+      });
+      const loan = await storage.createLoanBook(loanData);
+      res.json(loan);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to submit loan application" });
+    }
+  });
+
   // Shareholder Management routes
   app.get("/api/shareholders", authenticateToken, async (req, res) => {
     try {

@@ -7,13 +7,15 @@ import {
   DollarSign,
   Calendar,
   MessageSquare,
-  HelpCircle
+  HelpCircle,
+  TrendingUp
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/customer/dashboard', icon: Home },
   { name: 'My Loans', href: '/customer/loans', icon: CreditCard },
   { name: 'Payments', href: '/customer/payments', icon: DollarSign },
+  { name: 'Credit Status', href: '/customer/credit-status', icon: TrendingUp },
   { name: 'Payment Schedule', href: '/customer/schedule', icon: Calendar },
   { name: 'Documents', href: '/customer/documents', icon: FileText },
   { name: 'Profile', href: '/customer/profile', icon: User },

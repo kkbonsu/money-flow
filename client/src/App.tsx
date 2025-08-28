@@ -46,6 +46,7 @@ import CustomerSupport from "@/pages/customer/CustomerSupport";
 import CustomerHelp from "@/pages/customer/CustomerHelp";
 import CustomerProfile from "@/pages/customer/CustomerProfile";
 import SupportTickets from "@/pages/SupportTickets";
+import CustomerCreditStatus from "@/pages/customer/CustomerCreditStatus";
 
 function Router() {
   return (
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/customer/documents" component={CustomerDocuments} />
       <Route path="/customer/support" component={CustomerSupport} />
       <Route path="/customer/help" component={CustomerHelp} />
+      <Route path="/customer/credit-status" component={CustomerCreditStatus} />
       <Route path="/customer/profile" component={CustomerProfile} />
       <Route path="/customer">
         <CustomerLogin />
