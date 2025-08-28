@@ -60,7 +60,13 @@ export default function CustomerLoans() {
 
   const applyLoanMutation = useMutation({
     mutationFn: async (data: LoanApplicationForm) => {
-      return apiRequest('/api/customer/loan-application', 'POST', data);
+      const transformedData = {
+        ...data,
+        amount: parseFloat(data.amount),
+        duration: parseInt(data.duration),
+        monthlyIncome: parseFloat(data.monthlyIncome)
+      };
+      return apiRequest('/api/customer/loan-application', 'POST', transformedData);
     },
     onSuccess: () => {
       toast({ 
