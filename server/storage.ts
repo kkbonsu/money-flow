@@ -145,6 +145,14 @@ export interface IStorage {
   createMfiRegistration(mfiRegistration: InsertMfiRegistration): Promise<MfiRegistration>;
   updateMfiRegistration(id: number, mfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration>;
 
+  // Support Ticket methods
+  getSupportTickets(): Promise<SupportTicket[]>;
+  getSupportTicket(id: number): Promise<SupportTicket | undefined>;
+  createSupportTicket(insertTicket: InsertSupportTicket): Promise<SupportTicket>;
+  updateSupportTicket(id: number, updateTicket: Partial<InsertSupportTicket>): Promise<SupportTicket>;
+  getSupportMessages(ticketId: number): Promise<SupportMessage[]>;
+  createSupportMessage(insertMessage: InsertSupportMessage): Promise<SupportMessage>;
+
   // Shareholder methods
   getShareholders(): Promise<Shareholder[]>;
   getShareholder(id: number): Promise<Shareholder | undefined>;
