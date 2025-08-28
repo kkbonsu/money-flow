@@ -37,8 +37,23 @@ export default function CustomerSupport() {
     setIsSubmitting(true);
     
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('/api/customer/support-tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('customer_auth_token')}`,
+        },
+        body: JSON.stringify({
+          title: formData.subject,
+          description: formData.message,
+          category: formData.category,
+          priority: formData.priority,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit ticket');
+      }
       
       toast({
         title: "Support ticket submitted",
