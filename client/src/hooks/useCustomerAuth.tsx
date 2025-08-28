@@ -84,10 +84,10 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('customer_auth_user');
     setCustomer(null);
     
-    // Clear any cached queries
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
+    toast({
+      title: "Signed out",
+      description: "You've been signed out successfully.",
+    });
   };
 
   return (
