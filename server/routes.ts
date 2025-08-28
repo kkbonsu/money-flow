@@ -335,8 +335,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const loansWithOutstanding = await Promise.all(
         loans.map(async (loan: any) => {
           try {
-            const pendingPayments = await storage.getLoanPaymentSchedules(loan.id);
-            const outstandingBalance = pendingPayments
+            const allPayments = await storage.getPaymentSchedules();
+            const loanPayments = allPayments.filter((payment: any) => payment.loanId === loan.id);
+            const outstandingBalance = loanPayments
               .filter((payment: any) => payment.status === 'pending')
               .reduce((sum: number, payment: any) => sum + parseFloat(payment.amount || '0'), 0);
             
