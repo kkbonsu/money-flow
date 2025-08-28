@@ -30,6 +30,15 @@ export async function customerApiRequest(
   return res;
 }
 
+export async function apiRequest(
+  url: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+  data?: unknown
+): Promise<any> {
+  const res = await customerApiRequest(method, url, data);
+  return res.json();
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getCustomerQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
