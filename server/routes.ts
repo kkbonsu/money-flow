@@ -161,25 +161,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Tenant-aware customer authentication routes
+  // Optimized customer authentication endpoint
   app.post("/api/customer/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
       const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
       const customer = await storage.getCustomerByEmail(email);
       
-      if (!customer || !customer.password || !await bcrypt.compare(password, customer.password)) {
+      // Combined validation check
+      if (!customer || !customer.password || !customer.isPortalActive) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      if (!customer.isPortalActive) {
-        return res.status(401).json({ message: "Portal access is not active for this account" });
+      // Password verification
+      if (!await bcrypt.compare(password, customer.password)) {
+        return res.status(401).json({ message: "Invalid credentials" });
       }
       
       const token = generateCustomerToken(customer, tenantId);
       
-      // Update last portal login
-      await storage.updateCustomerLastLogin(tenantId, customer.id);
+      // Async last login update (non-blocking)
+      storage.updateCustomerLastLogin(tenantId, customer.id).catch(console.error);
       
       res.json({ 
         customer: { 
