@@ -1110,3 +1110,42 @@ export type JwtPayload = {
   hierarchyLevel?: number;
   permissions?: string[];
 };
+
+// Support Ticket system for customer support
+export const supportTickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default("open"), // open, in_progress, resolved, closed
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  category: text("category").notNull().default("general"), // general, loan, payment, technical
+  assignedTo: integer("assigned_to").references(() => users.id),
+  customerEmail: text("customer_email"),
+  customerPhone: text("customer_phone"),
+  resolution: text("resolution"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const supportMessages = pgTable("support_messages", {
+  id: serial("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  ticketId: integer("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
+  senderId: integer("sender_id"), // Could be customer or staff user
+  senderType: text("sender_type").notNull(), // "customer" or "staff"
+  message: text("message").notNull(),
+  attachments: text("attachments").array(), // Array of file URLs
+  isInternal: boolean("is_internal").default(false), // Internal staff notes
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSupportTicketSchema = createInsertSchema(supportTickets);
+export const insertSupportMessageSchema = createInsertSchema(supportMessages);
+
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+export type SupportMessage = typeof supportMessages.$inferSelect;
+export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;

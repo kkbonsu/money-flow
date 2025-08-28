@@ -21,7 +21,8 @@ import {
   Banknote,
   Shield,
   Settings,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageSquare
 } from 'lucide-react';
 
 const navigationItems = [
@@ -39,6 +40,7 @@ const navigationItems = [
       { name: 'Payment Schedule', href: '/payment-schedule', icon: Calendar },
       { name: 'Receive Loan Payments (auto)', href: '/receive-payments', icon: Banknote },
       { name: 'Staff', href: '/staff', icon: UserCheck },
+      { name: 'Support Tickets', href: '/support-tickets', icon: MessageSquare },
       { name: 'Income Management', href: '/income', icon: DollarSign },
       { name: 'Expense Management', href: '/expenses', icon: Receipt },
       { name: 'Inventory', href: '/inventory', icon: Package },

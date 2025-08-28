@@ -27,7 +27,9 @@ import {
   insertReportSchema,
   insertUserAuditLogSchema,
   insertMfiRegistrationSchema,
-  insertShareholderSchema
+  insertShareholderSchema,
+  insertSupportTicketSchema,
+  insertSupportMessageSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { simpleTenants } from "@shared/tenantSchema";

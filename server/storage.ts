@@ -12,7 +12,9 @@ import {
   type RentManagement, type InsertRentManagement, type Asset, type InsertAsset,
   type Liability, type InsertLiability, type Equity, type InsertEquity,
   type Report, type InsertReport, type UserAuditLog, type InsertUserAuditLog,
-  type MfiRegistration, type InsertMfiRegistration, type Shareholder, type InsertShareholder
+  type MfiRegistration, type InsertMfiRegistration, type Shareholder, type InsertShareholder,
+  type SupportTicket, type InsertSupportTicket, type SupportMessage, type InsertSupportMessage,
+  supportTickets, supportMessages
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -1315,6 +1317,47 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mfiRegistration.id, id))
       .returning();
     return mfi;
+  }
+
+  // Support Ticket methods
+  async getSupportTickets(): Promise<SupportTicket[]> {
+    return await db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
+  }
+
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    const [ticket] = await db.select().from(supportTickets).where(eq(supportTickets.id, id));
+    return ticket;
+  }
+
+  async createSupportTicket(insertTicket: InsertSupportTicket): Promise<SupportTicket> {
+    const [ticket] = await db
+      .insert(supportTickets)
+      .values({ ...insertTicket, tenantId: DEFAULT_TENANT_ID })
+      .returning();
+    return ticket;
+  }
+
+  async updateSupportTicket(id: number, updateTicket: Partial<InsertSupportTicket>): Promise<SupportTicket> {
+    const [ticket] = await db
+      .update(supportTickets)
+      .set({ ...updateTicket, updatedAt: new Date() })
+      .where(eq(supportTickets.id, id))
+      .returning();
+    return ticket;
+  }
+
+  async getSupportMessages(ticketId: number): Promise<SupportMessage[]> {
+    return await db.select().from(supportMessages)
+      .where(eq(supportMessages.ticketId, ticketId))
+      .orderBy(supportMessages.createdAt);
+  }
+
+  async createSupportMessage(insertMessage: InsertSupportMessage): Promise<SupportMessage> {
+    const [message] = await db
+      .insert(supportMessages)
+      .values({ ...insertMessage, tenantId: DEFAULT_TENANT_ID })
+      .returning();
+    return message;
   }
 
   // Shareholder methods
