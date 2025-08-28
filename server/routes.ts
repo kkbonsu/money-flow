@@ -2021,7 +2021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dateApplied: new Date(),
         notes: req.body.additionalInfo || "",
       });
-      const loan = await storage.createLoanBook(loanData);
+      const loan = await storage.createLoan(loanData);
       res.json(loan);
     } catch (error) {
       console.error('Loan application error:', error);
