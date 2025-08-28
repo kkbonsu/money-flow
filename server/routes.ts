@@ -2024,6 +2024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const loan = await storage.createLoanBook(loanData);
       res.json(loan);
     } catch (error) {
+      console.error('Loan application error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to submit loan application" });
     }
   });
