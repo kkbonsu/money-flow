@@ -2015,14 +2015,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerId,
         loanAmount: req.body.amount.toString(),
         interestRate: "12.0", // Default rate
-        purpose: req.body.purpose,
-        duration: req.body.duration.toString(),
-        collateral: req.body.collateral || "",
-        monthlyIncome: req.body.monthlyIncome.toString(),
-        employmentStatus: req.body.employmentStatus,
-        additionalInfo: req.body.additionalInfo || "",
+        term: parseInt(req.body.duration), // Maps duration to term
         status: "pending", // Loan application starts as pending
-        applicationDate: new Date().toISOString(),
+        purpose: req.body.purpose,
+        dateApplied: new Date(),
+        notes: req.body.additionalInfo || "",
       });
       const loan = await storage.createLoanBook(loanData);
       res.json(loan);
