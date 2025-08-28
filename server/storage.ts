@@ -40,8 +40,8 @@ export interface IStorage {
   getCustomer(id: number): Promise<Customer | undefined>;
   getCustomerByEmail(email: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
-  updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer>;
+  updateCustomer(tenantId: string, id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
+  updateCustomerPassword(tenantId: string, id: number, hashedPassword: string): Promise<Customer>;
   updateCustomerLastLogin(id: number): Promise<Customer>;
   deleteCustomer(id: number): Promise<void>;
   
@@ -254,20 +254,20 @@ export class DatabaseStorage implements IStorage {
     return customer;
   }
 
-  async updateCustomer(id: number, updateCustomer: Partial<InsertCustomer>): Promise<Customer> {
+  async updateCustomer(tenantId: string, id: number, updateCustomer: Partial<InsertCustomer>): Promise<Customer> {
     const [customer] = await db
       .update(customers)
       .set({ ...updateCustomer, updatedAt: new Date() })
-      .where(eq(customers.id, id))
+      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
       .returning();
     return customer;
   }
 
-  async updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer> {
+  async updateCustomerPassword(tenantId: string, id: number, hashedPassword: string): Promise<Customer> {
     const [customer] = await db
       .update(customers)
       .set({ password: hashedPassword, updatedAt: new Date() })
-      .where(eq(customers.id, id))
+      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
       .returning();
     return customer;
   }

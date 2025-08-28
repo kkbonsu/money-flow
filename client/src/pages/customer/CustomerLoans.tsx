@@ -13,21 +13,22 @@ import {
   Download
 } from 'lucide-react';
 import { format } from 'date-fns';
+import type { Customer, LoanBook, PaymentSchedule } from '@shared/schema';
 
 export default function CustomerLoans() {
-  const { data: loans, isLoading } = useQuery({
+  const { data: loans, isLoading } = useQuery<LoanBook[]>({
     queryKey: ['/api/customer/loans'],
   });
 
-  const { data: customer } = useQuery({
+  const { data: customer } = useQuery<Customer>({
     queryKey: ['/api/customer/profile'],
   });
 
-  const { data: payments } = useQuery({
+  const { data: payments } = useQuery<PaymentSchedule[]>({
     queryKey: ['/api/customer/payments'],
   });
 
-  const { data: upcomingPayments } = useQuery({
+  const { data: upcomingPayments } = useQuery<PaymentSchedule[]>({
     queryKey: ['/api/customer/payments/upcoming'],
   });
 
@@ -212,7 +213,7 @@ export default function CustomerLoans() {
                     <div>
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Next Payment Date</p>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {getNextPaymentDate(loan.id) ? format(getNextPaymentDate(loan.id), 'MMM dd, yyyy') : 'N/A'}
+                        {getNextPaymentDate(loan.id) ? format(getNextPaymentDate(loan.id)!, 'MMM dd, yyyy') : 'N/A'}
                       </p>
                     </div>
                   </div>

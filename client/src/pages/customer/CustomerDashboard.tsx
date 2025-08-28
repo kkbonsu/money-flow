@@ -17,21 +17,22 @@ import {
   MapPin
 } from 'lucide-react';
 import { format } from 'date-fns';
+import type { Customer, LoanBook, PaymentSchedule } from '@shared/schema';
 
 export default function CustomerDashboard() {
-  const { data: customer, isLoading: isLoadingCustomer } = useQuery({
+  const { data: customer, isLoading: isLoadingCustomer } = useQuery<Customer>({
     queryKey: ['/api/customer/profile'],
   });
 
-  const { data: loans, isLoading: isLoadingLoans } = useQuery({
+  const { data: loans, isLoading: isLoadingLoans } = useQuery<LoanBook[]>({
     queryKey: ['/api/customer/loans'],
   });
 
-  const { data: payments, isLoading: isLoadingPayments } = useQuery({
+  const { data: payments, isLoading: isLoadingPayments } = useQuery<PaymentSchedule[]>({
     queryKey: ['/api/customer/payments'],
   });
 
-  const { data: upcomingPayments, isLoading: isLoadingUpcoming } = useQuery({
+  const { data: upcomingPayments, isLoading: isLoadingUpcoming } = useQuery<PaymentSchedule[]>({
     queryKey: ['/api/customer/payments/upcoming'],
   });
 
