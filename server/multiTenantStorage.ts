@@ -24,6 +24,8 @@ import {
   permissions,
   rolePermissions,
   userRoles,
+  supportTickets,
+  supportMessages,
   type User, 
   type InsertUser,
   type Customer,
@@ -75,7 +77,11 @@ import {
   type UserRole,
   type InsertUserRole,
   type RolePermission,
-  type InsertRolePermission
+  type InsertRolePermission,
+  type SupportTicket,
+  type InsertSupportTicket,
+  type SupportMessage,
+  type InsertSupportMessage
 } from "@shared/schema";
 import { simpleTenants } from "@shared/tenantSchema";
 import { db } from "./db";
@@ -1065,6 +1071,35 @@ export class BackwardCompatibilityStorage {
 
   async getMonthlyPayments(): Promise<any> {
     return multiTenantStorage.getMonthlyPayments(this.defaultTenantId);
+  }
+
+  // Support Ticket methods
+  async getSupportTickets(): Promise<SupportTicket[]> {
+    return await db.select().from(supportTickets).where(eq(supportTickets.tenantId, this.defaultTenantId)).orderBy(desc(supportTickets.createdAt));
+  }
+
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    const [ticket] = await db.select().from(supportTickets).where(and(eq(supportTickets.id, id), eq(supportTickets.tenantId, this.defaultTenantId)));
+    return ticket || undefined;
+  }
+
+  async createSupportTicket(insertTicket: InsertSupportTicket): Promise<SupportTicket> {
+    const [ticket] = await db.insert(supportTickets).values({ ...insertTicket, tenantId: this.defaultTenantId }).returning();
+    return ticket;
+  }
+
+  async updateSupportTicket(id: number, updateTicket: Partial<InsertSupportTicket>): Promise<SupportTicket> {
+    const [ticket] = await db.update(supportTickets).set({ ...updateTicket, updatedAt: new Date() }).where(and(eq(supportTickets.id, id), eq(supportTickets.tenantId, this.defaultTenantId))).returning();
+    return ticket;
+  }
+
+  async getSupportMessages(ticketId: number): Promise<SupportMessage[]> {
+    return await db.select().from(supportMessages).where(and(eq(supportMessages.ticketId, ticketId), eq(supportMessages.tenantId, this.defaultTenantId))).orderBy(supportMessages.createdAt);
+  }
+
+  async createSupportMessage(insertMessage: InsertSupportMessage): Promise<SupportMessage> {
+    const [message] = await db.insert(supportMessages).values({ ...insertMessage, tenantId: this.defaultTenantId }).returning();
+    return message;
   }
 
   // Dashboard analytics methods
