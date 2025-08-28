@@ -330,7 +330,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const customerId = parseInt(req.customer.id);
       const loans = await storage.getCustomerLoans(customerId);
-      res.json(loans);
+      
+      // Calculate dynamic outstanding balance for each loan
+      const loansWithOutstanding = await Promise.all(
+        loans.map(async (loan: any) => {
+          try {
+            const pendingPayments = await storage.getLoanPaymentSchedules(loan.id);
+            const outstandingBalance = pendingPayments
+              .filter((payment: any) => payment.status === 'pending')
+              .reduce((sum: number, payment: any) => sum + parseFloat(payment.amount || '0'), 0);
+            
+            return {
+              ...loan,
+              outstandingBalance: outstandingBalance.toString()
+            };
+          } catch (error) {
+            console.error(`Error calculating outstanding for loan ${loan.id}:`, error);
+            return {
+              ...loan,
+              outstandingBalance: '0'
+            };
+          }
+        })
+      );
+      
+      res.json(loansWithOutstanding);
     } catch (error) {
       console.error("Customer loans error:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loans" });
