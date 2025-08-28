@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useCustomerAuth } from '@/hooks/useCustomerAuth';
 import { User, Lock } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -19,8 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function CustomerLogin() {
   const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { login, isLoading } = useCustomerAuth();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -31,37 +30,11 @@ export default function CustomerLogin() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
     try {
-      const response = await fetch('/api/customer/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Login failed');
-      }
-
-      const authData = await response.json();
-      localStorage.setItem('customer_auth_token', authData.token);
-      localStorage.setItem('customer_auth_user', JSON.stringify(authData.customer));
-      
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
-      });
-      
+      await login(data);
       setLocation('/customer/dashboard');
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Please check your credentials",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      // Error handling is done in useCustomerAuth
     }
   };
 

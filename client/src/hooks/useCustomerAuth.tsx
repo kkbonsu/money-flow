@@ -40,6 +40,12 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   const login = async (credentials: { email: string; password: string }) => {
     try {
       setIsLoading(true);
+      
+      // Clear any existing session data first
+      localStorage.removeItem('customer_auth_token');
+      localStorage.removeItem('customer_auth_user');
+      setCustomer(null);
+      
       const response = await fetch('/api/customer/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,13 +79,15 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Complete session cleanup
     localStorage.removeItem('customer_auth_token');
     localStorage.removeItem('customer_auth_user');
     setCustomer(null);
-    toast({
-      title: "Signed out",
-      description: "You've been signed out successfully.",
-    });
+    
+    // Clear any cached queries
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   return (

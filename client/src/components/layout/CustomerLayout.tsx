@@ -33,9 +33,11 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
     );
   }
 
-  // Protected customer routes
+  // Protected customer routes - redirect using client-side routing
   if (!isAuthenticated) {
-    window.location.href = '/customer/login';
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '/customer/login');
+    }
     return null;
   }
 
