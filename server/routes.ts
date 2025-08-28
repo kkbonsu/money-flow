@@ -334,26 +334,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const loans = await storage.getCustomerLoans(customerId);
       
       // Calculate dynamic outstanding balance for each loan
-      console.log(`[DEBUG] Calculating outstanding balance for ${loans.length} loans`);
       const loansWithOutstanding = await Promise.all(
         loans.map(async (loan: any) => {
           try {
-            console.log(`[DEBUG] Processing loan ${loan.id} with customer ${loan.customerId}`);
             const allPayments = await storage.getPaymentSchedules();
             const loanPayments = allPayments.filter((payment: any) => payment.loanId === loan.id);
-            console.log(`[DEBUG] Found ${loanPayments.length} total payments for loan ${loan.id}`);
             
             const pendingPayments = loanPayments.filter((payment: any) => payment.status === 'pending');
-            console.log(`[DEBUG] Found ${pendingPayments.length} pending payments for loan ${loan.id}`);
             
             const outstandingBalance = pendingPayments
               .reduce((sum: number, payment: any) => {
                 const amount = parseFloat(payment.amount || '0');
-                console.log(`[DEBUG] Adding payment amount: ${amount}`);
                 return sum + amount;
               }, 0);
             
-            console.log(`[DEBUG] Calculated outstanding balance for loan ${loan.id}: ${outstandingBalance}`);
             
             return {
               ...loan,
