@@ -45,6 +45,7 @@ import CustomerDocuments from "@/pages/customer/CustomerDocuments";
 import CustomerSupport from "@/pages/customer/CustomerSupport";
 import CustomerHelp from "@/pages/customer/CustomerHelp";
 import CustomerProfile from "@/pages/customer/CustomerProfile";
+import SupportTickets from "@/pages/SupportTickets";
 
 function Router() {
   return (
@@ -76,6 +77,7 @@ function Router() {
       <Route path="/payment-schedule" component={PaymentSchedule} />
       <Route path="/receive-payments" component={ReceivePayments} />
       <Route path="/staff" component={Staff} />
+      <Route path="/support-tickets" component={SupportTickets} />
       <Route path="/income" component={Income} />
       <Route path="/expenses" component={Expenses} />
       <Route path="/debt-management" component={DebtManagement} />

@@ -1925,6 +1925,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Support Ticket routes
+  app.get("/api/support-tickets", authenticateToken, async (req, res) => {
+    try {
+      const tickets = await storage.getSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch support tickets" });
+    }
+  });
+
+  app.get("/api/support-tickets/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicket(id);
+      if (!ticket) {
+        return res.status(404).json({ message: "Support ticket not found" });
+      }
+      res.json(ticket);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch support ticket" });
+    }
+  });
+
+  app.post("/api/support-tickets", authenticateToken, async (req, res) => {
+    try {
+      const ticketData = insertSupportTicketSchema.parse(req.body);
+      const ticket = await storage.createSupportTicket(ticketData);
+      res.json(ticket);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create support ticket" });
+    }
+  });
+
+  app.put("/api/support-tickets/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const ticket = await storage.updateSupportTicket(id, updateData);
+      res.json(ticket);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update support ticket" });
+    }
+  });
+
+  app.get("/api/support-tickets/:id/messages", authenticateToken, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const messages = await storage.getSupportMessages(ticketId);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/support-tickets/:id/messages", authenticateToken, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const messageData = insertSupportMessageSchema.parse(req.body);
+      const message = await storage.createSupportMessage({ ...messageData, ticketId });
+      res.json(message);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create message" });
+    }
+  });
+
+  // Customer support ticket creation endpoint
+  app.post("/api/customer/support-tickets", authenticateCustomerToken, async (req, res) => {
+    try {
+      const customerId = parseInt(req.customer.id);
+      const ticketData = insertSupportTicketSchema.parse({
+        ...req.body,
+        customerId,
+        customerEmail: req.customer.email,
+        status: "open"
+      });
+      const ticket = await storage.createSupportTicket(ticketData);
+      res.json(ticket);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create support ticket" });
+    }
+  });
+
   // Shareholder Management routes
   app.get("/api/shareholders", authenticateToken, async (req, res) => {
     try {

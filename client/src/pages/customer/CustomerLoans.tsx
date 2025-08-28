@@ -2,6 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/customerQueryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { 
   CreditCard, 
@@ -10,12 +22,67 @@ import {
   TrendingUp,
   FileText,
   Eye,
-  Download
+  Download,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Customer, LoanBook, PaymentSchedule } from '@shared/schema';
 
+const loanApplicationSchema = z.object({
+  amount: z.string().min(1, 'Amount is required').transform(val => parseFloat(val)),
+  purpose: z.string().min(1, 'Purpose is required'),
+  duration: z.string().min(1, 'Duration is required').transform(val => parseInt(val)),
+  collateral: z.string().optional(),
+  monthlyIncome: z.string().min(1, 'Monthly income is required').transform(val => parseFloat(val)),
+  employmentStatus: z.string().min(1, 'Employment status is required'),
+  additionalInfo: z.string().optional(),
+});
+
+type LoanApplicationForm = z.infer<typeof loanApplicationSchema>;
+
 export default function CustomerLoans() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showApplication, setShowApplication] = useState(false);
+
+  const form = useForm<LoanApplicationForm>({
+    resolver: zodResolver(loanApplicationSchema),
+    defaultValues: {
+      amount: '',
+      purpose: '',
+      duration: '',
+      collateral: '',
+      monthlyIncome: '',
+      employmentStatus: '',
+      additionalInfo: '',
+    },
+  });
+
+  const applyLoanMutation = useMutation({
+    mutationFn: async (data: LoanApplicationForm) => {
+      return apiRequest('/api/customer/loan-application', 'POST', data);
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "Success", 
+        description: "Your loan application has been submitted successfully!" 
+      });
+      setShowApplication(false);
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ['/api/customer/loans'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to submit loan application",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleSubmitApplication = (data: LoanApplicationForm) => {
+    applyLoanMutation.mutate(data);
+  };
   const { data: loans, isLoading } = useQuery<LoanBook[]>({
     queryKey: ['/api/customer/loans'],
   });
@@ -89,13 +156,184 @@ export default function CustomerLoans() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            My Loans
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            View and manage all your loan applications and active loans
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              My Loans
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              View and manage all your loan applications and active loans
+            </p>
+          </div>
+          <Dialog open={showApplication} onOpenChange={setShowApplication}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Apply for Loan
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Loan Application
+                </DialogTitle>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmitApplication)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Loan Amount *</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="e.g. 50000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="duration"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Duration (months) *</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="e.g. 12" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="purpose"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loan Purpose *</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select loan purpose" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="business_expansion">Business Expansion</SelectItem>
+                              <SelectItem value="working_capital">Working Capital</SelectItem>
+                              <SelectItem value="equipment_purchase">Equipment Purchase</SelectItem>
+                              <SelectItem value="inventory">Inventory</SelectItem>
+                              <SelectItem value="education">Education</SelectItem>
+                              <SelectItem value="medical">Medical Emergency</SelectItem>
+                              <SelectItem value="home_improvement">Home Improvement</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="monthlyIncome"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Monthly Income *</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="e.g. 25000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="employmentStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Employment Status *</FormLabel>
+                          <FormControl>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select employment status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="employed">Employed</SelectItem>
+                                <SelectItem value="self_employed">Self Employed</SelectItem>
+                                <SelectItem value="business_owner">Business Owner</SelectItem>
+                                <SelectItem value="freelancer">Freelancer</SelectItem>
+                                <SelectItem value="student">Student</SelectItem>
+                                <SelectItem value="retired">Retired</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="collateral"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Collateral/Security (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Describe any collateral you can provide" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="additionalInfo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Information (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Any additional information about your application" 
+                            rows={3}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-4 justify-end">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setShowApplication(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={applyLoanMutation.isPending}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      {applyLoanMutation.isPending ? 'Submitting...' : 'Submit Application'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Loan Summary Cards */}
