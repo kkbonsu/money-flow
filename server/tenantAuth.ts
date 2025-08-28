@@ -76,6 +76,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
+      console.error('Admin JWT verification error:', err.message, 'Token:', token?.substring(0, 20) + '...');
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
@@ -107,6 +108,7 @@ export const authenticateCustomerToken = (req: Request, res: Response, next: Nex
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
+      console.error('Customer JWT verification error:', err.message, 'Token:', token?.substring(0, 20) + '...');
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
