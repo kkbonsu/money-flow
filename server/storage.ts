@@ -455,7 +455,6 @@ export class DatabaseStorage implements IStorage {
       dueDate.setDate(1);
       
       schedules.push({
-        tenantId: loan.tenantId,
         loanId: loan.id,
         dueDate,
         amount: monthlyPayment.toFixed(2),

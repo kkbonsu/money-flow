@@ -22,8 +22,7 @@ import {
   Shield,
   Settings,
   FileSpreadsheet,
-  MessageSquare,
-  Activity
+  MessageSquare
 } from 'lucide-react';
 
 const navigationItems = [
@@ -54,7 +53,6 @@ const navigationItems = [
     items: [
       { name: 'Financial Reports', href: '/reports', icon: FileText },
       { name: 'Equity Management', href: '/equity', icon: Scale },
-      { name: 'V8 Performance Monitor', href: '/v8-performance', icon: Activity },
     ]
   },
 ];

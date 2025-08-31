@@ -788,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.errors.push({
             row: i + 1,
             error: error instanceof Error ? error.message : "Unknown error",
-            data: customerData || {}
+            data: customerData
           });
         }
       }
@@ -986,7 +986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
       const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const schedules = await storage.getPaymentSchedules();
+      const schedules = await storage.getPaymentSchedules(tenantId);
       res.json(schedules);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment schedules" });
@@ -997,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const loanId = parseInt(req.params.loanId);
       const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const schedules = await storage.getPaymentSchedulesByLoan(loanId);
+      const schedules = await storage.getPaymentSchedulesByLoan(tenantId, loanId);
       res.json(schedules);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment schedules for loan" });
@@ -1008,7 +1008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);
       const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const schedule = await storage.createPaymentSchedule(scheduleData);
+      const schedule = await storage.createPaymentSchedule(tenantId, scheduleData);
       res.json(schedule);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create payment schedule" });
