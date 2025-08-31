@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { registerV8PerformanceRoutes, v8PerformanceMiddleware } from './v8PerformanceRoutes';
 import { setupVite, serveStatic, log } from "./vite";
 
 // Set environment variables if not already set
@@ -9,6 +10,9 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || "financeflow-secret-key-2024"
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Add V8 performance monitoring middleware
+app.use(v8PerformanceMiddleware);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -42,6 +46,9 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+  
+  // Register V8 performance monitoring routes
+  registerV8PerformanceRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

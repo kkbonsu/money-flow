@@ -159,6 +159,6 @@ export class BatchOperations {
     }
     
     this.operations = []; // Clear operations after execution
-    return transaction;
+    return results;
   }
 }

@@ -47,6 +47,7 @@ import CustomerHelp from "@/pages/customer/CustomerHelp";
 import CustomerProfile from "@/pages/customer/CustomerProfile";
 import SupportTickets from "@/pages/SupportTickets";
 import CustomerCreditStatus from "@/pages/customer/CustomerCreditStatus";
+import V8PerformancePage from "@/pages/V8PerformancePage";
 
 function Router() {
   return (
@@ -91,6 +92,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/equity" component={Equity} />
       <Route path="/role-management" component={RoleManagementPage} />
+      <Route path="/v8-performance" component={V8PerformancePage} />
       <Route path="/profile" component={UserProfile} />
       <Route component={NotFound} />
     </Switch>
