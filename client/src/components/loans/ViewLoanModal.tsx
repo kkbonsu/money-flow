@@ -394,7 +394,7 @@ export default function ViewLoanModal({ isOpen, onClose, loan }: ViewLoanModalPr
               variant={loan.status === 'approved' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleStatusChange('approved')}
-              disabled={loan.status === 'approved' || updateLoanStatusMutation.isPending}
+              disabled={loan.status === 'approved' || loan.status === 'disbursed' || updateLoanStatusMutation.isPending}
             >
               Approved
             </Button>

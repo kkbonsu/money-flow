@@ -892,11 +892,11 @@ export class MultiTenantStorage implements IMultiTenantStorage {
         COALESCE(AVG(l.loan_amount), 0) as avg_loan_amount,
         COALESCE(SUM(CASE WHEN ps.status = 'completed' THEN ps.amount END), 0) as total_collected,
         
-        -- Approval Analytics
-        COALESCE(COUNT(CASE WHEN l.status = 'approved' THEN 1 END), 0) as approved_loans,
+        -- Approval Analytics (disbursed loans are approved loans)
+        COALESCE(COUNT(CASE WHEN l.status IN ('approved', 'disbursed') THEN 1 END), 0) as approved_loans,
         COALESCE(COUNT(CASE WHEN l.status = 'pending' THEN 1 END), 0) as pending_loans,
         COALESCE(COUNT(CASE WHEN l.status = 'rejected' THEN 1 END), 0) as rejected_loans,
-        COALESCE(COUNT(CASE WHEN l.created_at >= CURRENT_DATE THEN 1 END), 0) as loans_today,
+        COALESCE(COUNT(CASE WHEN l.created_at >= CURRENT_DATE AND l.status IN ('approved', 'disbursed') THEN 1 END), 0) as loans_today,
         
         -- Risk Assessment
         COALESCE(COUNT(CASE WHEN l.status = 'defaulted' THEN 1 END), 0) as defaulted_loans,
@@ -915,8 +915,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     const rejectedLoans = parseInt(data?.rejected_loans) || 0;
     const totalApplications = approvedLoans + rejectedLoans + parseInt(data?.pending_loans || 0);
     
-    // Calculate approval rate
-    const approvalRate = totalApplications > 0 ? Math.round((approvedLoans / totalApplications) * 100) : 0;
+    // Calculate approval rate: Since disbursed loans are approved loans,
+    // if we have disbursed loans but no rejected/pending, treat disbursed loans as approved applications
+    const approvalRate = totalApplications > 0 ? Math.round((approvedLoans / totalApplications) * 100) : 
+                        (approvedLoans > 0 ? 100 : 0); // If only disbursed loans exist, that's 100% approval
     
     // Calculate default rate
     const defaultRate = totalLoans > 0 ? ((defaultedLoans / totalLoans) * 100).toFixed(1) : "0.0";

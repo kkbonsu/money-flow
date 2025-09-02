@@ -93,9 +93,9 @@ export default function LoanApprovalModal({ isOpen, onClose, loan }: LoanApprova
         rejectionReason: data.rejectionReason,
         disbursedAmount: data.disbursedAmount,
         notes: data.notes,
-        approvalDate: data.status === 'approved' ? new Date().toISOString() : undefined,
+        approvalDate: (data.status === 'approved' || data.status === 'disbursed') ? new Date().toISOString() : undefined,
         disbursementDate: data.status === 'disbursed' ? new Date().toISOString() : undefined,
-        approvedBy: data.status === 'approved' ? user?.id : undefined,
+        approvedBy: (data.status === 'approved' || data.status === 'disbursed') ? user?.id : undefined,
         disbursedBy: data.status === 'disbursed' ? user?.id : undefined
       };
 

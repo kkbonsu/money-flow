@@ -22,7 +22,7 @@ export default function LoanPortfolioMetrics() {
   const totalLoans = loans.length;
   const activeLoans = loans.filter((loan: LoanBook) => loan.status === 'disbursed').length;
   const pendingLoans = loans.filter((loan: LoanBook) => loan.status === 'pending').length;
-  const approvedLoans = loans.filter((loan: LoanBook) => loan.status === 'approved').length;
+  const approvedLoans = loans.filter((loan: LoanBook) => loan.status === 'approved' || loan.status === 'disbursed').length;
   const rejectedLoans = loans.filter((loan: LoanBook) => loan.status === 'rejected').length;
 
   // Financial metrics
