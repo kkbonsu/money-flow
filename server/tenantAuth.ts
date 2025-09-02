@@ -83,7 +83,8 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     const payload = decoded as JwtPayload;
     
     // Verify tenant context matches token (allow fallback for migration)
-    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId) {
+    // Skip tenant mismatch check for super admin users accessing cross-tenant data
+    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId && !payload.isSuperAdmin) {
       return res.status(403).json({ message: 'Token tenant mismatch' });
     }
     
@@ -115,7 +116,8 @@ export const authenticateCustomerToken = (req: Request, res: Response, next: Nex
     const payload = decoded as any; // Customer token payload
     
     // Verify tenant context matches token (allow fallback for migration)
-    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId) {
+    // Skip tenant mismatch check for super admin users accessing cross-tenant data
+    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId && !payload.isSuperAdmin) {
       return res.status(403).json({ message: 'Token tenant mismatch' });
     }
     
