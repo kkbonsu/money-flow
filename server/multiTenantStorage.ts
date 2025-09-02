@@ -1051,6 +1051,84 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   async deleteShareholder(id: number): Promise<void> {
     await db.delete(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
   }
+
+  // Inventory methods
+  async getInventory(tenantId: string): Promise<Inventory[]> {
+    return await db.select().from(inventory).where(eq(inventory.tenantId, tenantId));
+  }
+
+  async createInventory(insertInventory: InsertInventory): Promise<Inventory> {
+    const [inventoryItem] = await db
+      .insert(inventory)
+      .values({ ...insertInventory, tenantId: this.defaultTenantId })
+      .returning();
+    return inventoryItem;
+  }
+
+  async updateInventory(tenantId: string, id: number, updateInventory: Partial<InsertInventory>): Promise<Inventory> {
+    const [inventoryItem] = await db
+      .update(inventory)
+      .set(updateInventory)
+      .where(and(eq(inventory.tenantId, tenantId), eq(inventory.id, id)))
+      .returning();
+    return inventoryItem;
+  }
+
+  async deleteInventory(id: number): Promise<void> {
+    await db.delete(inventory).where(and(eq(inventory.tenantId, this.defaultTenantId), eq(inventory.id, id)));
+  }
+
+  // Asset methods
+  async getAssets(tenantId: string): Promise<Asset[]> {
+    return await db.select().from(assets).where(eq(assets.tenantId, tenantId));
+  }
+
+  async createAsset(insertAsset: InsertAsset): Promise<Asset> {
+    const [asset] = await db
+      .insert(assets)
+      .values({ ...insertAsset, tenantId: this.defaultTenantId })
+      .returning();
+    return asset;
+  }
+
+  async updateAsset(tenantId: string, id: number, updateAsset: Partial<InsertAsset>): Promise<Asset> {
+    const [asset] = await db
+      .update(assets)
+      .set(updateAsset)
+      .where(and(eq(assets.tenantId, tenantId), eq(assets.id, id)))
+      .returning();
+    return asset;
+  }
+
+  async deleteAsset(id: number): Promise<void> {
+    await db.delete(assets).where(and(eq(assets.tenantId, this.defaultTenantId), eq(assets.id, id)));
+  }
+
+  // Liabilities methods
+  async getLiabilities(tenantId: string): Promise<Liability[]> {
+    return await db.select().from(liabilities).where(eq(liabilities.tenantId, tenantId));
+  }
+
+  async createLiability(insertLiability: InsertLiability): Promise<Liability> {
+    const [liability] = await db
+      .insert(liabilities)
+      .values({ ...insertLiability, tenantId: this.defaultTenantId })
+      .returning();
+    return liability;
+  }
+
+  async updateLiability(tenantId: string, id: number, updateLiability: Partial<InsertLiability>): Promise<Liability> {
+    const [liability] = await db
+      .update(liabilities)
+      .set(updateLiability)
+      .where(and(eq(liabilities.tenantId, tenantId), eq(liabilities.id, id)))
+      .returning();
+    return liability;
+  }
+
+  async deleteLiability(id: number): Promise<void> {
+    await db.delete(liabilities).where(and(eq(liabilities.tenantId, this.defaultTenantId), eq(liabilities.id, id)));
+  }
 }
 
 // Export the multi-tenant storage instance
