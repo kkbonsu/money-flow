@@ -262,16 +262,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete tenant endpoint
+  // Delete tenant endpoint with cascade deletion
   app.delete("/api/admin/tenants/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
     try {
       const { tenantId } = req.params;
       
-      // Note: In production, you might want to soft-delete or archive instead
-      await db.delete(simpleTenants).where(eq(simpleTenants.id, tenantId));
+      // Use the cascade deletion method from storage
+      await storage.deleteTenant(tenantId);
       
-      res.json({ message: "Tenant deleted successfully" });
+      res.json({ message: "Tenant and all associated data deleted successfully" });
     } catch (error) {
+      console.error("Tenant deletion error:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete tenant" });
     }
   });

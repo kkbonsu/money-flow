@@ -7,14 +7,19 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Users, Plus, Settings, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { CreateTenantDialog } from '@/components/tenant/CreateTenantDialog';
 import { TenantManagementTable } from '@/components/tenant/TenantManagementTable';
 import { TenantOnboardingWizard } from '@/components/tenant/TenantOnboardingWizard';
+import { TenantDetailsModal } from '@/components/tenant/TenantDetailsModal';
+import { TenantUsersModal } from '@/components/tenant/TenantUsersModal';
+import { TenantSettingsModal } from '@/components/tenant/TenantSettingsModal';
 import { SuperAdminStats } from '@/components/tenant/SuperAdminStats';
 
 export default function SuperAdminDashboard() {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showUsersModal, setShowUsersModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data: tenants, isLoading } = useQuery({
@@ -65,23 +70,13 @@ export default function SuperAdminDashboard() {
               Manage tenants, users, and system-wide settings
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={() => setShowOnboardingWizard(true)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Activity className="h-4 w-4" />
-              Onboard Tenant
-            </Button>
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Create Tenant
-            </Button>
-          </div>
+          <Button
+            onClick={() => setShowOnboardingWizard(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Onboard New Tenant
+          </Button>
         </div>
 
         {/* System Stats */}
@@ -124,6 +119,18 @@ export default function SuperAdminDashboard() {
                   tenants={(tenants as any) || []}
                   onDeleteTenant={(tenantId) => deleteTenantMutation.mutate(tenantId)}
                   isDeleting={deleteTenantMutation.isPending}
+                  onViewDetails={(tenantId) => {
+                    setSelectedTenantId(tenantId);
+                    setShowDetailsModal(true);
+                  }}
+                  onManageUsers={(tenantId) => {
+                    setSelectedTenantId(tenantId);
+                    setShowUsersModal(true);
+                  }}
+                  onEditSettings={(tenantId) => {
+                    setSelectedTenantId(tenantId);
+                    setShowSettingsModal(true);
+                  }}
                 />
               </CardContent>
             </Card>
@@ -180,14 +187,28 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* Dialogs */}
-      <CreateTenantDialog 
-        open={showCreateDialog} 
-        onOpenChange={setShowCreateDialog}
-      />
       
       <TenantOnboardingWizard
         open={showOnboardingWizard}
         onOpenChange={setShowOnboardingWizard}
+      />
+      
+      <TenantDetailsModal
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        tenantId={selectedTenantId}
+      />
+      
+      <TenantUsersModal
+        open={showUsersModal}
+        onOpenChange={setShowUsersModal}
+        tenantId={selectedTenantId}
+      />
+      
+      <TenantSettingsModal
+        open={showSettingsModal}
+        onOpenChange={setShowSettingsModal}
+        tenantId={selectedTenantId}
       />
     </div>
   );

@@ -230,6 +230,68 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return tenant;
   }
 
+  async deleteTenant(tenantId: string): Promise<void> {
+    console.log(`[TENANT_DELETE] Starting cascade deletion for tenant ${tenantId}`);
+    
+    try {
+      // Delete in order of dependencies (children first, then parents)
+      
+      // 1. Delete payment schedules first (they reference loans)
+      console.log(`[TENANT_DELETE] Deleting payment schedules...`);
+      await db.delete(paymentSchedules).where(eq(paymentSchedules.tenantId, tenantId));
+      
+      // 2. Delete loan books (they reference customers)
+      console.log(`[TENANT_DELETE] Deleting loan books...`);
+      await db.delete(loanBooks).where(eq(loanBooks.tenantId, tenantId));
+      
+      // 3. Delete customers
+      console.log(`[TENANT_DELETE] Deleting customers...`);
+      await db.delete(customers).where(eq(customers.tenantId, tenantId));
+      
+      // 4. Delete users (staff)
+      console.log(`[TENANT_DELETE] Deleting users...`);
+      await db.delete(users).where(eq(users.tenantId, tenantId));
+      
+      // 5. Delete financial records
+      console.log(`[TENANT_DELETE] Deleting financial records...`);
+      await db.delete(income).where(eq(income.tenantId, tenantId));
+      await db.delete(expenses).where(eq(expenses.tenantId, tenantId));
+      await db.delete(bankAccounts).where(eq(bankAccounts.tenantId, tenantId));
+      await db.delete(pettyCash).where(eq(pettyCash.tenantId, tenantId));
+      
+      // 6. Delete inventory and rent
+      console.log(`[TENANT_DELETE] Deleting inventory and rent...`);
+      await db.delete(inventory).where(eq(inventory.tenantId, tenantId));
+      await db.delete(rent).where(eq(rent.tenantId, tenantId));
+      
+      // 7. Delete balance sheet items
+      console.log(`[TENANT_DELETE] Deleting assets, liabilities, and equity...`);
+      await db.delete(assets).where(eq(assets.tenantId, tenantId));
+      await db.delete(liabilities).where(eq(liabilities.tenantId, tenantId));
+      await db.delete(equity).where(eq(equity.tenantId, tenantId));
+      
+      // 8. Delete MFI-specific data
+      console.log(`[TENANT_DELETE] Deleting MFI registration and shareholders...`);
+      await db.delete(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
+      await db.delete(shareholders).where(eq(shareholders.tenantId, tenantId));
+      
+      // 9. Delete audit logs and reports
+      console.log(`[TENANT_DELETE] Deleting audit logs and reports...`);
+      await db.delete(userAuditLogs).where(eq(userAuditLogs.tenantId, tenantId));
+      await db.delete(reports).where(eq(reports.tenantId, tenantId));
+      
+      // 10. Finally delete the tenant itself
+      console.log(`[TENANT_DELETE] Deleting tenant record...`);
+      await db.delete(simpleTenants).where(eq(simpleTenants.id, tenantId));
+      
+      console.log(`[TENANT_DELETE] Successfully completed cascade deletion for tenant ${tenantId}`);
+      
+    } catch (error) {
+      console.error(`[TENANT_DELETE] Error during cascade deletion for tenant ${tenantId}:`, error);
+      throw error;
+    }
+  }
+
   // User tenant access methods
   async getUserTenantAccess(userId: number): Promise<UserTenantAccess[]> {
     return await db

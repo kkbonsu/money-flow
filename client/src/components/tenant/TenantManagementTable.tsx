@@ -51,12 +51,18 @@ interface TenantManagementTableProps {
   tenants: Tenant[];
   onDeleteTenant: (tenantId: string) => void;
   isDeleting: boolean;
+  onViewDetails?: (tenantId: string) => void;
+  onManageUsers?: (tenantId: string) => void;
+  onEditSettings?: (tenantId: string) => void;
 }
 
 export function TenantManagementTable({ 
   tenants, 
   onDeleteTenant, 
-  isDeleting 
+  isDeleting,
+  onViewDetails,
+  onManageUsers,
+  onEditSettings
 }: TenantManagementTableProps) {
   const [tenantToDelete, setTenantToDelete] = useState<string | null>(null);
 
@@ -152,15 +158,24 @@ export function TenantManagementTable({
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem 
+                        className="cursor-pointer"
+                        onClick={() => onViewDetails?.(tenant.id)}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem 
+                        className="cursor-pointer"
+                        onClick={() => onManageUsers?.(tenant.id)}
+                      >
                         <Users className="mr-2 h-4 w-4" />
                         Manage Users
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem 
+                        className="cursor-pointer"
+                        onClick={() => onEditSettings?.(tenant.id)}
+                      >
                         <Settings className="mr-2 h-4 w-4" />
                         Edit Settings
                       </DropdownMenuItem>
