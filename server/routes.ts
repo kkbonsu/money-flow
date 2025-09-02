@@ -103,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const tenantId = req.tenantContext.tenantId;
       
-      const user = await storage.createUser('default-tenant-001', {
+      const user = await storage.createUser(tenantId, {
         ...userData,
         password: hashedPassword,
       });
@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Tenant context required' });
       }
       const tenantId = req.tenantContext.tenantId;
-      const customer = await storage.getCustomerByEmail('default-tenant-001', email);
+      const customer = await storage.getCustomerByEmail(tenantId, email);
       
       // Combined validation check
       if (!customer || !customer.password || !customer.isPortalActive) {
@@ -2114,7 +2114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/customer/support-tickets", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const tenantId = req.customer.tenantId || 'default-tenant-001';
+      const tenantId = req.customer.tenantId;
       const ticketData = insertSupportTicketSchema.parse({
         ...req.body,
         tenantId: tenantId,

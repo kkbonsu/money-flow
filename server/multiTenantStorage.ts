@@ -838,24 +838,27 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   async getLoanPortfolio(tenantId: string): Promise<any> {
     const result = await db.execute(sql`
       SELECT 
-        COALESCE(SUM(CASE WHEN l.status = 'active' THEN l.loan_amount END), 0) as active_loans,
-        COALESCE(SUM(CASE WHEN l.status = 'completed' THEN l.loan_amount END), 0) as completed_loans,
-        COALESCE(SUM(CASE WHEN l.status = 'defaulted' THEN l.loan_amount END), 0) as defaulted_loans,
-        COUNT(CASE WHEN l.status = 'active' THEN 1 END) as active_count,
-        COUNT(CASE WHEN l.status = 'completed' THEN 1 END) as completed_count,
-        COUNT(CASE WHEN l.status = 'defaulted' THEN 1 END) as defaulted_count
+        TO_CHAR(l.created_at, 'Mon') as month,
+        COALESCE(SUM(l.loan_amount::numeric), 0) as "totalLoans",
+        COUNT(l.id) as "loanCount"
       FROM loan_books l 
       WHERE l.tenant_id = ${tenantId}
+        AND l.created_at >= (CURRENT_DATE - INTERVAL '12 months')
+      GROUP BY TO_CHAR(l.created_at, 'Mon'), EXTRACT(MONTH FROM l.created_at)
+      ORDER BY EXTRACT(MONTH FROM l.created_at)
     `);
     
-    return result.rows[0] || {
-      active_loans: 0,
-      completed_loans: 0,
-      defaulted_loans: 0,
-      active_count: 0,
-      completed_count: 0,
-      defaulted_count: 0
-    };
+    // If no data, return last 6 months with zero values for chart display
+    if (result.rows.length === 0) {
+      const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months.map(month => ({
+        month,
+        totalLoans: 0,
+        loanCount: 0
+      }));
+    }
+    
+    return result.rows;
   }
 
   async getPaymentStatus(tenantId: string): Promise<any> {
