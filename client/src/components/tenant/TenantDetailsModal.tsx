@@ -42,17 +42,17 @@ export function TenantDetailsModal({ open, onOpenChange, tenantId }: TenantDetai
   });
 
   const { data: shareholders } = useQuery({
-    queryKey: ['/api/shareholders', tenantId],
+    queryKey: ['/api/admin/shareholders', tenantId],
     enabled: !!tenantId && open,
   });
 
   const { data: equity } = useQuery({
-    queryKey: ['/api/equity', tenantId],
+    queryKey: ['/api/admin/equity', tenantId],
     enabled: !!tenantId && open,
   });
 
   const { data: users } = useQuery({
-    queryKey: ['/api/users', tenantId],
+    queryKey: ['/api/admin/tenant-users', tenantId],
     enabled: !!tenantId && open,
   });
 

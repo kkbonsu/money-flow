@@ -262,6 +262,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update tenant endpoint
+  app.patch("/api/admin/tenants/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const updateData = req.body;
+      
+      const tenant = await storage.updateTenant(tenantId, updateData);
+      res.json(tenant);
+    } catch (error) {
+      console.error("Tenant update error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update tenant" });
+    }
+  });
+
   // Delete tenant endpoint with cascade deletion
   app.delete("/api/admin/tenants/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
     try {
@@ -2189,14 +2203,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/shareholders/:id", authenticateToken, async (req, res) => {
     try {
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
       const { id } = req.params;
-      const shareholder = await storage.getShareholder(parseInt(id));
+      const shareholder = await storage.getShareholder(req.user.tenantId, parseInt(id));
       if (!shareholder) {
         return res.status(404).json({ message: "Shareholder not found" });
       }
       res.json(shareholder);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch shareholder" });
+    }
+  });
+
+  // Super admin route to get shareholders by tenant ID
+  app.get("/api/admin/shareholders/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const shareholders = await storage.getShareholders(tenantId);
+      res.json(shareholders);
+    } catch (error) {
+      console.error("Shareholders fetch error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch shareholders" });
+    }
+  });
+
+  // Super admin route to get equity by tenant ID
+  app.get("/api/admin/equity/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const equity = await storage.getEquity(tenantId);
+      res.json(equity);
+    } catch (error) {
+      console.error("Equity fetch error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch equity" });
+    }
+  });
+
+  // Tenant user management routes for super admin
+  app.get("/api/admin/tenant-users/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const users = await storage.getAllUsers(tenantId);
+      // Remove passwords from response
+      const safeUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Tenant users fetch error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenant users" });
+    }
+  });
+
+  app.post("/api/admin/tenant-users/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const userData = req.body;
+      const user = await storage.createUser(tenantId, userData);
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error("Create tenant user error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to create user" });
+    }
+  });
+
+  app.patch("/api/admin/tenant-users/:tenantId/:userId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId, userId } = req.params;
+      const updateData = req.body;
+      const user = await storage.updateUser(tenantId, parseInt(userId), updateData);
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Update tenant user error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/admin/tenant-users/:tenantId/:userId", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId, userId } = req.params;
+      await storage.deleteUser(tenantId, parseInt(userId));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete tenant user error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete user" });
     }
   });
 
@@ -2216,9 +2313,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/shareholders/:id", authenticateToken, async (req, res) => {
     try {
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
       const { id } = req.params;
       const validatedData = insertShareholderSchema.partial().parse(req.body);
-      const shareholder = await storage.updateShareholder(parseInt(id), validatedData);
+      const shareholder = await storage.updateShareholder(req.user.tenantId, parseInt(id), validatedData);
       res.json(shareholder);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -2231,8 +2331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/shareholders/:id", authenticateToken, async (req, res) => {
     try {
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
       const { id } = req.params;
-      await storage.deleteShareholder(parseInt(id));
+      await storage.deleteShareholder(req.user.tenantId, parseInt(id));
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete shareholder" });

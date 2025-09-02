@@ -100,12 +100,12 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
   });
 
   const addUserMutation = useMutation({
-    mutationFn: (userData: any) => 
-      fetch(`/api/admin/tenant-users/${tenantId}`, {
+    mutationFn: async (userData: any) => {
+      return await apiRequest(`/api/admin/tenant-users/${tenantId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
-      }).then(res => res.json()),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users', tenantId] });
       setShowAddUser(false);
@@ -125,12 +125,12 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ userId, userData }: { userId: string; userData: any }) => 
-      fetch(`/api/admin/tenant-users/${tenantId}/${userId}`, {
+    mutationFn: async ({ userId, userData }: { userId: string; userData: any }) => {
+      return await apiRequest(`/api/admin/tenant-users/${tenantId}/${userId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
-      }).then(res => res.json()),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users', tenantId] });
       setEditingUser(null);
@@ -149,10 +149,11 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (userId: string) => 
-      fetch(`/api/admin/tenant-users/${tenantId}/${userId}`, {
+    mutationFn: async (userId: string) => {
+      return await apiRequest(`/api/admin/tenant-users/${tenantId}/${userId}`, {
         method: 'DELETE',
-      }).then(res => res.json()),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users', tenantId] });
       setUserToDelete(null);

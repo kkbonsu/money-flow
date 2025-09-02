@@ -1088,8 +1088,8 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return await db.select().from(shareholders).where(eq(shareholders.tenantId, tenantId));
   }
 
-  async getShareholder(id: number): Promise<Shareholder | undefined> {
-    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
+  async getShareholder(tenantId: string, id: number): Promise<Shareholder | undefined> {
+    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
     return shareholder || undefined;
   }
 
@@ -1101,18 +1101,19 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return shareholder;
   }
 
-  async updateShareholder(id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
+  async updateShareholder(tenantId: string, id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
     const [shareholder] = await db
       .update(shareholders)
       .set(updateShareholder)
-      .where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)))
+      .where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)))
       .returning();
     return shareholder;
   }
 
-  async deleteShareholder(id: number): Promise<void> {
-    await db.delete(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
+  async deleteShareholder(tenantId: string, id: number): Promise<void> {
+    await db.delete(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
   }
+
 
   // Inventory methods
   async getInventory(tenantId: string): Promise<Inventory[]> {
@@ -1707,8 +1708,8 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(shareholders).where(eq(shareholders.tenantId, tenantId));
   }
 
-  async getShareholder(id: number): Promise<Shareholder | undefined> {
-    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
+  async getShareholder(tenantId: string, id: number): Promise<Shareholder | undefined> {
+    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
     return shareholder || undefined;
   }
 
@@ -1720,17 +1721,17 @@ export class BackwardCompatibilityStorage {
     return shareholder;
   }
 
-  async updateShareholder(id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
+  async updateShareholder(tenantId: string, id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
     const [shareholder] = await db
       .update(shareholders)
       .set(updateShareholder)
-      .where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)))
+      .where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)))
       .returning();
     return shareholder;
   }
 
-  async deleteShareholder(id: number): Promise<void> {
-    await db.delete(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
+  async deleteShareholder(tenantId: string, id: number): Promise<void> {
+    await db.delete(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
   }
 
   // Role and Permission methods to complete interface

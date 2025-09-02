@@ -113,12 +113,12 @@ export function TenantSettingsModal({ open, onOpenChange, tenantId }: TenantSett
   });
 
   const updateTenantMutation = useMutation({
-    mutationFn: (updatedSettings: Partial<TenantSettings>) => 
-      fetch(`/api/admin/tenants/${tenantId}`, {
+    mutationFn: async (updatedSettings: Partial<TenantSettings>) => {
+      return await apiRequest(`/api/admin/tenants/${tenantId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedSettings),
-      }).then(res => res.json()),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenants'] });
       toast({
@@ -162,7 +162,17 @@ export function TenantSettingsModal({ open, onOpenChange, tenantId }: TenantSett
   }, [tenant]);
 
   const handleSave = () => {
-    updateTenantMutation.mutate(settings);
+    // Transform settings back to the server format
+    const updateData = {
+      name: settings.name,
+      slug: settings.slug,
+      status: settings.isActive ? 'active' : 'inactive',
+      plan: settings.plan,
+      primaryColor: settings.branding.primaryColor,
+      description: settings.branding.description,
+      features: settings.branding.features,
+    };
+    updateTenantMutation.mutate(updateData);
   };
 
   const toggleFeature = (feature: string) => {

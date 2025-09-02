@@ -54,33 +54,17 @@ const onboardingSchema = z.object({
   adminLastName: z.string().min(1, 'Last name is required'),
   
   // Step 3: MFI Registration
-  companyName: z.string().min(2, 'Company name is required'),
-  registrationNumber: z.string().min(2, 'Registration number is required'),
-  licenseNumber: z.string().min(2, 'License number is required'),
-  licenseExpiryDate: z.string().min(1, 'License expiry date is required'),
-  regulatoryBody: z.string().min(2, 'Regulatory body is required'),
-  businessType: z.string().min(2, 'Business type is required'),
-  address: z.string().min(5, 'Address is required'),
-  phone: z.string().min(10, 'Phone number is required'),
-  
-  // Step 4: Shareholders (array of shareholders)
-  shareholders: z.array(z.object({
-    name: z.string().min(2, 'Shareholder name is required'),
-    shares: z.number().min(1, 'Number of shares must be at least 1'),
-    shareType: z.string().min(1, 'Share type is required'),
-    nationality: z.string().optional(),
-  })).min(1, 'At least one shareholder is required'),
-  
-  // Step 5: Equity Structure (array of equity entries)
-  equityEntries: z.array(z.object({
-    accountName: z.string().min(2, 'Account name is required'),
-    amount: z.number().min(0, 'Amount must be non-negative'),
-    description: z.string().optional(),
-  })).min(1, 'At least one equity entry is required'),
+  companyName: z.string().optional(),
+  registrationNumber: z.string().optional(),
+  licenseNumber: z.string().optional(),
+  licenseExpiryDate: z.string().optional(),
+  regulatoryBody: z.string().optional(),
+  businessType: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
   
   // Step 6: Configuration
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, 'Valid hex color required').default('#2563eb'),
-  features: z.array(z.string()).min(1, 'At least one feature must be selected'),
   theme: z.enum(['light', 'dark']).default('light'),
 });
 
@@ -95,9 +79,9 @@ const steps = [
   { id: 1, title: 'Organization Details', icon: Building2 },
   { id: 2, title: 'Admin User', icon: User },
   { id: 3, title: 'MFI Registration', icon: Shield },
-  { id: 4, title: 'Shareholders', icon: User },
-  { id: 5, title: 'Equity Structure', icon: Settings },
-  { id: 6, title: 'Configuration', icon: Settings },
+  { id: 4, title: 'Shareholders', icon: Users },
+  { id: 5, title: 'Equity Structure', icon: DollarSign },
+  { id: 6, title: 'Branding & Features', icon: Palette },
   { id: 7, title: 'Review & Create', icon: CheckCircle },
 ];
 
@@ -131,10 +115,7 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
       businessType: '',
       address: '',
       phone: '',
-      shareholders: [{ name: '', shares: 1000, shareType: 'ordinary', nationality: '' }],
-      equityEntries: [{ accountName: 'Share Capital', amount: 10000, description: 'Initial share capital' }],
       primaryColor: '#2563eb',
-      features: ['loans', 'payments', 'analytics'],
       theme: 'light',
     },
   });
@@ -314,7 +295,28 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
     if (currentStep === 7) {
       onboardTenantMutation.mutate({ ...data, features: selectedFeatures, shareholders, equityEntries });
     } else {
-      nextStep();
+      // Validate current step before proceeding
+      let isValid = true;
+      
+      if (currentStep === 1) {
+        isValid = !!data.orgName && !!data.orgSlug;
+      } else if (currentStep === 2) {
+        isValid = !!data.adminUsername && !!data.adminEmail && !!data.adminPassword && !!data.adminFirstName && !!data.adminLastName;
+      } else if (currentStep === 4) {
+        isValid = shareholders.every(s => s.name && s.shares > 0 && s.shareType);
+      } else if (currentStep === 5) {
+        isValid = equityEntries.every(e => e.accountName && e.amount >= 0);
+      }
+      
+      if (isValid) {
+        nextStep();
+      } else {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields before proceeding",
+          variant: "destructive",
+        });
+      }
     }
   };
 
