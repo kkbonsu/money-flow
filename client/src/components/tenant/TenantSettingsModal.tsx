@@ -60,18 +60,21 @@ interface TenantSettings {
   };
 }
 
+// Real application features that correspond to actual Money Flow functionality
 const availableFeatures = [
   'Loan Management',
-  'Customer Portal', 
-  'Payment Tracking',
-  'Financial Reports',
-  'Multi-Currency',
-  'SMS Notifications',
-  'Email Alerts',
-  'Mobile App',
-  'API Access',
-  'Custom Branding',
-  'Advanced Analytics',
+  'Payment Schedules',
+  'Customer Portal',
+  'Financial Analytics',
+  'Financial Reporting',
+  'Staff Management',
+  'Inventory Management',
+  'Asset Tracking',
+  'BoG Regulatory Reports',
+  'LIORA AI Assistant',
+  'Loan Simulator',
+  'Bank Integration',
+  'Multi-Currency Support',
   'Audit Logging'
 ];
 
@@ -135,51 +138,55 @@ export function TenantSettingsModal({ open, onOpenChange, tenantId }: TenantSett
 
   useEffect(() => {
     if (tenant) {
+      // Parse settings from JSONB field in simpleTenants
+      const tenantSettings = tenant.settings || {};
+      
       setSettings({
         name: tenant.name || '',
         slug: tenant.slug || '',
-        isActive: tenant.isActive !== false,
-        plan: tenant.plan || 'basic',
+        isActive: tenantSettings.isActive !== false,
+        plan: tenantSettings.plan || 'basic',
         branding: {
-          primaryColor: tenant.branding?.primaryColor || '#2563eb',
-          description: tenant.branding?.description || '',
-          features: tenant.branding?.features || []
+          primaryColor: tenantSettings.branding?.primaryColor || '#2563eb',
+          description: tenantSettings.branding?.description || '',
+          features: tenantSettings.branding?.features || []
         },
         settings: {
-          theme: tenant.settings?.theme || 'light',
-          timezone: tenant.settings?.timezone || 'UTC',
-          currency: tenant.settings?.currency || 'GHS',
-          language: tenant.settings?.language || 'en',
-          emailNotifications: tenant.settings?.emailNotifications !== false,
-          smsNotifications: tenant.settings?.smsNotifications === true,
-          twoFactorRequired: tenant.settings?.twoFactorRequired === true
+          theme: tenantSettings.preferences?.theme || 'light',
+          timezone: tenantSettings.preferences?.timezone || 'UTC',
+          currency: tenantSettings.preferences?.currency || 'GHS',
+          language: tenantSettings.preferences?.language || 'en',
+          emailNotifications: tenantSettings.preferences?.emailNotifications !== false,
+          smsNotifications: tenantSettings.preferences?.smsNotifications === true,
+          twoFactorRequired: tenantSettings.preferences?.twoFactorRequired === true
         }
       });
     }
   }, [tenant]);
 
   const handleSave = () => {
-    // Transform settings back to the server format
+    // Transform settings back to the server format - simpleTenants only has id, name, slug, settings
     const updateData = {
       name: settings.name,
       slug: settings.slug,
-      status: settings.isActive ? 'active' : 'inactive',
-      plan: settings.plan,
-      primaryColor: settings.branding.primaryColor,
-      description: settings.branding.description,
-      features: settings.branding.features,
+      settings: {
+        isActive: settings.isActive,
+        plan: settings.plan,
+        branding: settings.branding,
+        preferences: settings.settings
+      }
     };
     updateTenantMutation.mutate(updateData);
   };
 
-  const toggleFeature = (feature: string) => {
+  const toggleFeature = (featureId: string) => {
     setSettings(prev => ({
       ...prev,
       branding: {
         ...prev.branding,
-        features: prev.branding.features.includes(feature)
-          ? prev.branding.features.filter(f => f !== feature)
-          : [...prev.branding.features, feature]
+        features: prev.branding.features.includes(featureId)
+          ? prev.branding.features.filter(f => f !== featureId)
+          : [...prev.branding.features, featureId]
       }
     }));
   };
