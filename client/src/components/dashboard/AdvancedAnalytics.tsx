@@ -71,17 +71,19 @@ export default function AdvancedAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">Low</div>
+                <div className="text-3xl font-bold text-orange-600">
+                  {analytics?.default_rate === "0.0" ? "Low" : parseFloat(analytics?.default_rate) < 5 ? "Medium" : "High"}
+                </div>
                 <p className="text-sm text-muted-foreground">Portfolio Risk</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Default Rate:</span>
-                  <span className="font-medium">2.1%</span>
+                  <span className="font-medium">{analytics?.default_rate}%</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>At Risk Loans:</span>
-                  <span className="font-medium">5</span>
+                  <span className="font-medium">{analytics?.at_risk_loans}</span>
                 </div>
               </div>
             </div>
@@ -183,17 +185,17 @@ export default function AdvancedAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600">87%</div>
+                <div className="text-3xl font-bold text-indigo-600">{analytics?.approval_rate}%</div>
                 <p className="text-sm text-muted-foreground">Approval Rate</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Approved Today:</span>
-                  <span className="font-medium">12</span>
+                  <span className="font-medium">{analytics?.approved_today}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Pending Review:</span>
-                  <span className="font-medium">3</span>
+                  <span className="font-medium">{analytics?.pending_review}</span>
                 </div>
               </div>
             </div>

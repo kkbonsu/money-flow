@@ -890,18 +890,51 @@ export class MultiTenantStorage implements IMultiTenantStorage {
         COALESCE(COUNT(DISTINCT c.id), 0) as total_customers,
         COALESCE(COUNT(DISTINCT l.id), 0) as total_loans,
         COALESCE(AVG(l.loan_amount), 0) as avg_loan_amount,
-        COALESCE(SUM(CASE WHEN ps.status = 'completed' THEN ps.amount END), 0) as total_collected
+        COALESCE(SUM(CASE WHEN ps.status = 'completed' THEN ps.amount END), 0) as total_collected,
+        
+        -- Approval Analytics
+        COALESCE(COUNT(CASE WHEN l.status = 'approved' THEN 1 END), 0) as approved_loans,
+        COALESCE(COUNT(CASE WHEN l.status = 'pending' THEN 1 END), 0) as pending_loans,
+        COALESCE(COUNT(CASE WHEN l.status = 'rejected' THEN 1 END), 0) as rejected_loans,
+        COALESCE(COUNT(CASE WHEN l.created_at >= CURRENT_DATE THEN 1 END), 0) as loans_today,
+        
+        -- Risk Assessment
+        COALESCE(COUNT(CASE WHEN l.status = 'defaulted' THEN 1 END), 0) as defaulted_loans,
+        COALESCE(COUNT(CASE WHEN ps.status = 'overdue' AND ps.due_date < (CURRENT_DATE - INTERVAL '30 days') THEN 1 END), 0) as at_risk_loans
+        
       FROM customers c
       LEFT JOIN loan_books l ON c.id = l.customer_id AND l.tenant_id = ${tenantId}
       LEFT JOIN payment_schedules ps ON l.id = ps.loan_id AND ps.tenant_id = ${tenantId}
       WHERE c.tenant_id = ${tenantId}
     `);
     
-    return result.rows[0] || {
-      total_customers: 0,
-      total_loans: 0,
-      avg_loan_amount: 0,
-      total_collected: 0
+    const data = result.rows[0];
+    const totalLoans = parseInt(data?.total_loans) || 0;
+    const defaultedLoans = parseInt(data?.defaulted_loans) || 0;
+    const approvedLoans = parseInt(data?.approved_loans) || 0;
+    const rejectedLoans = parseInt(data?.rejected_loans) || 0;
+    const totalApplications = approvedLoans + rejectedLoans + parseInt(data?.pending_loans || 0);
+    
+    // Calculate approval rate
+    const approvalRate = totalApplications > 0 ? Math.round((approvedLoans / totalApplications) * 100) : 0;
+    
+    // Calculate default rate
+    const defaultRate = totalLoans > 0 ? ((defaultedLoans / totalLoans) * 100).toFixed(1) : "0.0";
+    
+    return {
+      total_customers: data?.total_customers || 0,
+      total_loans: data?.total_loans || 0,
+      avg_loan_amount: data?.avg_loan_amount || 0,
+      total_collected: data?.total_collected || 0,
+      
+      // Approval Analytics
+      approval_rate: approvalRate,
+      approved_today: parseInt(data?.loans_today) || 0,
+      pending_review: parseInt(data?.pending_loans) || 0,
+      
+      // Risk Assessment  
+      default_rate: defaultRate,
+      at_risk_loans: parseInt(data?.at_risk_loans) || 0
     };
   }
 }
