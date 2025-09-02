@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import type { TenantInfo } from '@/types/tenant';
 
 export function useTenant() {
-  const { data: tenant, isLoading } = useQuery({
+  const { data: tenant, isLoading } = useQuery<TenantInfo>({
     queryKey: ['/api/tenant/info'],
     retry: false,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -10,9 +11,9 @@ export function useTenant() {
   return {
     tenant,
     isLoading,
-    tenantId: tenant?.id,
-    tenantSlug: tenant?.slug,
-    tenantName: tenant?.name,
+    tenantId: tenant?.id || 'default-tenant-001',
+    tenantSlug: tenant?.slug || 'default',
+    tenantName: tenant?.name || 'Default Organization',
   };
 }
 

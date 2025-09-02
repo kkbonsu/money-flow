@@ -469,6 +469,8 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   educationContent: many(educationContent),
   borrowerFeedback: many(borrowerFeedback),
   debtCollectionActivities: many(debtCollectionActivities),
+  supportTickets: many(supportTickets),
+  supportMessages: many(supportMessages),
 }));
 
 export const roleRelations = relations(roles, ({ one, many }) => ({
@@ -1114,7 +1116,7 @@ export type JwtPayload = {
 // Support Ticket system for customer support
 export const supportTickets = pgTable("support_tickets", {
   id: serial("id").primaryKey(),
-  tenantId: text("tenant_id").notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -1132,7 +1134,7 @@ export const supportTickets = pgTable("support_tickets", {
 
 export const supportMessages = pgTable("support_messages", {
   id: serial("id").primaryKey(),
-  tenantId: text("tenant_id").notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   ticketId: integer("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
   senderId: integer("sender_id"), // Could be customer or staff user
   senderType: text("sender_type").notNull(), // "customer" or "staff"

@@ -9,8 +9,15 @@ async function throwIfResNotOk(res: Response) {
 
 function getCustomerAuthHeaders(): HeadersInit {
   const token = localStorage.getItem('customer_auth_token');
+  
+  // Extract tenant slug from subdomain  
+  const hostname = window.location.hostname;
+  const subdomain = hostname.split('.')[0];
+  const tenantSlug = (subdomain === 'localhost' || subdomain.includes('replit')) ? 'default' : subdomain;
+  
   return {
     'Content-Type': 'application/json',
+    'X-Tenant-Slug': tenantSlug,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }

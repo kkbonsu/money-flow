@@ -10,8 +10,15 @@ async function throwIfResNotOk(res: Response) {
 
 function getAuthHeaders(): HeadersInit {
   const authData = authApi.getStoredAuth();
+  
+  // Extract tenant slug from subdomain
+  const hostname = window.location.hostname;
+  const subdomain = hostname.split('.')[0];
+  const tenantSlug = (subdomain === 'localhost' || subdomain.includes('replit')) ? 'default' : subdomain;
+  
   return {
     'Content-Type': 'application/json',
+    'X-Tenant-Slug': tenantSlug,
     ...(authData ? { Authorization: `Bearer ${authData.token}` } : {}),
   };
 }

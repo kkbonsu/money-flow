@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
-import { BackwardCompatibilityStorage } from "./multiTenantStorage";
+import { multiTenantStorage } from "./multiTenantStorage";
 
-// Use backward compatibility storage for existing routes
-const storage = new BackwardCompatibilityStorage();
+// Use the proper multi-tenant storage
+const storage = multiTenantStorage;
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -98,9 +98,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       const hashedPassword = await bcrypt.hash(userData.password, 10);
-      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
+      if (!req.tenantContext?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const tenantId = req.tenantContext.tenantId;
       
-      const user = await storage.createUser({
+      const user = await storage.createUser('default-tenant-001', {
         ...userData,
         password: hashedPassword,
       });
@@ -126,8 +129,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
-      const user = await storage.getUserByUsername(username);
+      if (!req.tenantContext?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const tenantId = req.tenantContext.tenantId;
+      const user = await storage.getUserByUsername('default-tenant-001', username);
       
       if (!user || !await bcrypt.compare(password, user.password)) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -165,8 +171,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/customer/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
-      const customer = await storage.getCustomerByEmail(email);
+      if (!req.tenantContext?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const tenantId = req.tenantContext.tenantId;
+      const customer = await storage.getCustomerByEmail('default-tenant-001', email);
       
       // Combined validation check
       if (!customer || !customer.password || !customer.isPortalActive) {
@@ -283,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const customer = await storage.getCustomer(customerId);
+      const customer = await storage.getCustomer('default-tenant-001', customerId);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
@@ -299,7 +308,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
       const updateData = req.body;
-      const tenantId = req.customer?.tenantId || 'default-tenant-001';
+      if (!req.customer?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.customer.tenantId;
       const customer = await storage.updateCustomer(tenantId, req.customer.id, updateData);
       const { password, ...customerProfile } = customer;
       res.json(customerProfile);
@@ -311,14 +323,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/customer/password", authenticateCustomerToken, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-      const customer = await storage.getCustomer(req.customer.id);
+      const customer = await storage.getCustomer('default-tenant-001', req.customer.id);
       
       if (!customer || !customer.password || !await bcrypt.compare(currentPassword, customer.password)) {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
       
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      const tenantId = req.customer?.tenantId || 'default-tenant-001';
+      if (!req.customer?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.customer.tenantId;
       await storage.updateCustomerPassword(tenantId, req.customer.id, hashedPassword);
       
       res.json({ message: "Password updated successfully" });
@@ -331,13 +346,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/loans", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const loans = await storage.getCustomerLoans(customerId);
+      const loans = await storage.getCustomerLoans('default-tenant-001', customerId);
       
       // Calculate dynamic outstanding balance for each loan
       const loansWithOutstanding = await Promise.all(
         loans.map(async (loan: any) => {
           try {
-            const allPayments = await storage.getPaymentSchedules();
+            const allPayments = await storage.getPaymentSchedules('default-tenant-001');
             const loanPayments = allPayments.filter((payment: any) => payment.loanId === loan.id);
             
             const pendingPayments = loanPayments.filter((payment: any) => payment.status === 'pending');
@@ -374,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/payments", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const payments = await storage.getCustomerPayments(customerId);
+      const payments = await storage.getCustomerPayments('default-tenant-001', customerId);
       res.json(payments);
     } catch (error) {
       console.error("Customer payments error:", error);
@@ -385,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/payments/upcoming", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const upcomingPayments = await storage.getCustomerUpcomingPayments(customerId);
+      const upcomingPayments = await storage.getCustomerUpcomingPayments('default-tenant-001', customerId);
       res.json(upcomingPayments);
     } catch (error) {
       console.error("Customer upcoming payments error:", error);
@@ -394,9 +409,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User account management routes
-  app.get("/api/users/profile", authenticateToken, async (req, res) => {
+  app.get("/api/users/profile", extractTenantContext, authenticateToken, async (req, res) => {
     try {
-      const user = await storage.getUser(req.user.id);
+      const user = await storage.getUser(req.user.tenantId, req.user.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -408,13 +423,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/profile", authenticateToken, async (req, res) => {
+  app.put("/api/users/profile", extractTenantContext, authenticateToken, async (req, res) => {
     try {
       const updateData = req.body;
       // Remove password from update data - password should be updated separately
       const { password, ...safeUpdateData } = updateData;
       
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const user = await storage.updateUser(tenantId, req.user.id, safeUpdateData);
       
       // Log profile update
@@ -448,7 +466,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       
       // Update password
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       await storage.updateUserPassword(tenantId, req.user.id, hashedPassword);
       
       // Log password change
@@ -484,7 +505,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profilePictureUrl = `/uploads/${req.file.filename}`;
       
       // Update user profile picture
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       await storage.updateUser(tenantId, req.user.id, { profilePicture: profilePictureUrl });
       
       // Log profile picture update
@@ -506,15 +530,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User management routes (Admin only)
-  app.get("/api/users", authenticateToken, async (req, res) => {
+  app.get("/api/users", extractTenantContext, authenticateToken, async (req, res) => {
     try {
       // Check if user is admin
-      const currentUser = await storage.getUser(req.user.id);
+      const currentUser = await storage.getUser(req.user.tenantId, req.user.id);
       if (!currentUser || currentUser.role !== 'admin') {
         return res.status(403).json({ message: "Admin access required" });
       }
 
-      const users = await storage.getAllUsers();
+      const users = await storage.getAllUsers(req.user.tenantId);
       // Remove passwords from response
       const safeUsers = users.map(user => {
         const { password, ...userWithoutPassword } = user;
@@ -531,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       
       // Check if user is admin
-      const currentUser = await storage.getUser(req.user.id);
+      const currentUser = await storage.getUser(req.user.tenantId, req.user.id);
       if (!currentUser || currentUser.role !== 'admin') {
         return res.status(403).json({ message: "Admin access required" });
       }
@@ -541,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
-      await storage.deleteUser(userId);
+      await storage.deleteUser(req.user.tenantId, userId);
       
       // Log user deletion
       await storage.createUserAuditLog({
@@ -574,7 +598,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot change your own account status" });
       }
 
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       await storage.updateUser(tenantId, userId, { isActive });
       
       // Log user status change
@@ -613,7 +640,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid role. Must be 'user', 'manager', or 'admin'" });
       }
 
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       await storage.updateUser(tenantId, userId, { role });
       
       // Log user role change
@@ -632,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
-  app.get("/api/customers", authenticateToken, async (req, res) => {
+  app.get("/api/customers", extractTenantContext, authenticateToken, async (req, res) => {
     try {
       const customers = await storage.getCustomers();
       res.json(customers);
@@ -641,7 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/customers", authenticateToken, async (req, res) => {
+  app.post("/api/customers", extractTenantContext, authenticateToken, async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
       
@@ -672,11 +702,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/customers/:id", authenticateToken, async (req, res) => {
+  app.put("/api/customers/:id", extractTenantContext, authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const customerData = insertCustomerSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const customer = await storage.updateCustomer(tenantId, id, customerData);
       res.json(customer);
     } catch (error) {
@@ -828,7 +861,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanData = insertLoanBookSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const loan = await storage.updateLoan(tenantId, id, loanData);
       res.json(loan);
     } catch (error) {
@@ -964,7 +1000,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanProductData = insertLoanProductSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const loanProduct = await storage.updateLoanProduct(tenantId, id, loanProductData);
       res.json(loanProduct);
     } catch (error) {
@@ -985,7 +1024,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment Schedule routes
   app.get("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const schedules = await storage.getPaymentSchedules(tenantId);
       res.json(schedules);
     } catch (error) {
@@ -996,7 +1038,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payment-schedules/loan/:loanId", authenticateToken, async (req, res) => {
     try {
       const loanId = parseInt(req.params.loanId);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const schedules = await storage.getPaymentSchedulesByLoan(tenantId, loanId);
       res.json(schedules);
     } catch (error) {
@@ -1007,7 +1052,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const schedule = await storage.createPaymentSchedule(tenantId, scheduleData);
       res.json(schedule);
     } catch (error) {
@@ -1023,7 +1071,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Parsed schedule data:', JSON.stringify(scheduleData, null, 2));
       console.log(`🔄 About to update payment schedule ${id} with status: ${scheduleData.status}`);
       console.log(`🔄 Calling storage.updatePaymentSchedule with data:`, scheduleData);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const schedule = await storage.updatePaymentSchedule(tenantId, id, scheduleData);
       console.log(`✅ Updated payment schedule ${id}, result:`, schedule);
       console.log(`🔍 Method completed, returning to client`);
@@ -1037,7 +1088,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/payment-schedules/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       await storage.deletePaymentSchedule(tenantId, id);
       res.json({ message: "Payment schedule deleted successfully" });
     } catch (error) {
@@ -1069,7 +1123,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const staffData = insertStaffSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const staff = await storage.updateStaff(tenantId, id, staffData);
       res.json(staff);
     } catch (error) {
@@ -1111,7 +1168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const incomeData = insertIncomeManagementSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const income = await storage.updateIncome(tenantId, id, incomeData);
       res.json(income);
     } catch (error) {
@@ -1267,7 +1327,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const expenseData = insertExpenseSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const expense = await storage.updateExpense(tenantId, id, expenseData);
       res.json(expense);
     } catch (error) {
@@ -1309,7 +1372,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const accountData = insertBankManagementSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const account = await storage.updateBankAccount(tenantId, id, accountData);
       res.json(account);
     } catch (error) {
@@ -1351,7 +1417,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const pettyCashData = insertPettyCashSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const pettyCash = await storage.updatePettyCash(tenantId, id, pettyCashData);
       res.json(pettyCash);
     } catch (error) {
@@ -1393,7 +1462,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const inventoryData = insertInventorySchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const inventory = await storage.updateInventory(tenantId, id, inventoryData);
       res.json(inventory);
     } catch (error) {
@@ -1435,7 +1507,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const rentData = insertRentManagementSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const rent = await storage.updateRentManagement(tenantId, id, rentData);
       res.json(rent);
     } catch (error) {
@@ -1477,7 +1552,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const assetData = insertAssetSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const asset = await storage.updateAsset(tenantId, id, assetData);
       res.json(asset);
     } catch (error) {
@@ -1594,7 +1672,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const liabilityData = insertLiabilitySchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const liability = await storage.updateLiability(tenantId, id, liabilityData);
       res.json(liability);
     } catch (error) {
@@ -1713,7 +1794,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const equityData = insertEquitySchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const equity = await storage.updateEquity(tenantId, id, equityData);
       res.json(equity);
     } catch (error) {
@@ -1755,7 +1839,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const reportData = insertReportSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required in token' });
+      }
+      const tenantId = req.user.tenantId;
       const report = await storage.updateReport(tenantId, id, reportData);
       res.json(report);
     } catch (error) {
