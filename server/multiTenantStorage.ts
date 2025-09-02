@@ -864,23 +864,23 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   async getPaymentStatus(tenantId: string): Promise<any> {
     const result = await db.execute(sql`
       SELECT 
-        COALESCE(SUM(CASE WHEN ps.status = 'completed' THEN ps.amount END), 0) as paid_amount,
-        COALESCE(SUM(CASE WHEN ps.status = 'pending' THEN ps.amount END), 0) as pending_amount,
-        COALESCE(SUM(CASE WHEN ps.status = 'overdue' THEN ps.amount END), 0) as overdue_amount,
-        COUNT(CASE WHEN ps.status = 'completed' THEN 1 END) as paid_count,
-        COUNT(CASE WHEN ps.status = 'pending' THEN 1 END) as pending_count,
-        COUNT(CASE WHEN ps.status = 'overdue' THEN 1 END) as overdue_count
+        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date >= CURRENT_DATE THEN 1 END) as "onTime",
+        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < CURRENT_DATE AND ps.due_date >= (CURRENT_DATE - INTERVAL '7 days') THEN 1 END) as "overdue7Days",
+        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < (CURRENT_DATE - INTERVAL '7 days') AND ps.due_date >= (CURRENT_DATE - INTERVAL '30 days') THEN 1 END) as "overdue30Days",
+        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < (CURRENT_DATE - INTERVAL '30 days') THEN 1 END) as "overdue90Days",
+        COUNT(CASE WHEN ps.status = 'pending' THEN 1 END) as "totalPending",
+        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < CURRENT_DATE THEN 1 END) as "totalOverdue"
       FROM payment_schedules ps 
       WHERE ps.tenant_id = ${tenantId}
     `);
     
     return result.rows[0] || {
-      paid_amount: 0,
-      pending_amount: 0,
-      overdue_amount: 0,
-      paid_count: 0,
-      pending_count: 0,
-      overdue_count: 0
+      onTime: 0,
+      overdue7Days: 0,
+      overdue30Days: 0,
+      overdue90Days: 0,
+      totalPending: 0,
+      totalOverdue: 0
     };
   }
 
