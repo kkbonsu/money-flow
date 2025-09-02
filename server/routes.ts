@@ -1983,11 +1983,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/support-tickets", authenticateToken, async (req, res) => {
     try {
-      const ticketData = insertSupportTicketSchema.parse(req.body);
+      const tenantId = req.user?.tenantId || 'default-tenant-001';
+      const ticketData = insertSupportTicketSchema.parse({
+        ...req.body,
+        tenantId: tenantId
+      });
       const ticket = await storage.createSupportTicket(ticketData);
       res.json(ticket);
     } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create support ticket" });
+      console.error('Admin support ticket creation error:', error);
+      if (error instanceof z.ZodError) {
+        console.error('Validation errors:', JSON.stringify(error.errors, null, 2));
+        res.status(400).json({ 
+          message: "Validation error: " + error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        });
+      } else {
+        res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create support ticket" });
+      }
     }
   });
 
@@ -2039,7 +2051,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(ticket);
     } catch (error) {
       console.error('Support ticket creation error:', error);
+      console.error('Request body:', req.body);
+      console.error('Customer data:', req.customer);
       if (error instanceof z.ZodError) {
+        console.error('Zod validation errors:', JSON.stringify(error.errors, null, 2));
         res.status(400).json({ 
           message: "Validation error: " + error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
         });
