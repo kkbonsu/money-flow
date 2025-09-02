@@ -101,10 +101,7 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
 
   const addUserMutation = useMutation({
     mutationFn: async (userData: any) => {
-      return await apiRequest(`/api/admin/tenant-users/${tenantId}`, {
-        method: 'POST',
-        body: JSON.stringify(userData),
-      });
+      return await apiRequest('POST', `/api/admin/tenant-users/${tenantId}`, userData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users', tenantId] });
@@ -126,10 +123,7 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ userId, userData }: { userId: string; userData: any }) => {
-      return await apiRequest(`/api/admin/tenant-users/${tenantId}/${userId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(userData),
-      });
+      return await apiRequest('PATCH', `/api/admin/tenant-users/${tenantId}/${userId}`, userData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users', tenantId] });
@@ -150,9 +144,7 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      return await apiRequest(`/api/admin/tenant-users/${tenantId}/${userId}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest('DELETE', `/api/admin/tenant-users/${tenantId}/${userId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users', tenantId] });

@@ -114,10 +114,7 @@ export function TenantSettingsModal({ open, onOpenChange, tenantId }: TenantSett
 
   const updateTenantMutation = useMutation({
     mutationFn: async (updatedSettings: Partial<TenantSettings>) => {
-      return await apiRequest(`/api/admin/tenants/${tenantId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updatedSettings),
-      });
+      return await apiRequest('PATCH', `/api/admin/tenants/${tenantId}`, updatedSettings);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenants'] });
