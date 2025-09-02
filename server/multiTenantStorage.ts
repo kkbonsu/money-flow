@@ -833,6 +833,74 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     
     return result;
   }
+
+  // Dashboard analytics methods (tenant-aware)
+  async getLoanPortfolio(tenantId: string): Promise<any> {
+    const result = await db.execute(sql`
+      SELECT 
+        COALESCE(SUM(CASE WHEN l.status = 'active' THEN l.loan_amount END), 0) as active_loans,
+        COALESCE(SUM(CASE WHEN l.status = 'completed' THEN l.loan_amount END), 0) as completed_loans,
+        COALESCE(SUM(CASE WHEN l.status = 'defaulted' THEN l.loan_amount END), 0) as defaulted_loans,
+        COUNT(CASE WHEN l.status = 'active' THEN 1 END) as active_count,
+        COUNT(CASE WHEN l.status = 'completed' THEN 1 END) as completed_count,
+        COUNT(CASE WHEN l.status = 'defaulted' THEN 1 END) as defaulted_count
+      FROM loan_books l 
+      WHERE l.tenant_id = ${tenantId}
+    `);
+    
+    return result.rows[0] || {
+      active_loans: 0,
+      completed_loans: 0,
+      defaulted_loans: 0,
+      active_count: 0,
+      completed_count: 0,
+      defaulted_count: 0
+    };
+  }
+
+  async getPaymentStatus(tenantId: string): Promise<any> {
+    const result = await db.execute(sql`
+      SELECT 
+        COALESCE(SUM(CASE WHEN ps.status = 'completed' THEN ps.amount END), 0) as paid_amount,
+        COALESCE(SUM(CASE WHEN ps.status = 'pending' THEN ps.amount END), 0) as pending_amount,
+        COALESCE(SUM(CASE WHEN ps.status = 'overdue' THEN ps.amount END), 0) as overdue_amount,
+        COUNT(CASE WHEN ps.status = 'completed' THEN 1 END) as paid_count,
+        COUNT(CASE WHEN ps.status = 'pending' THEN 1 END) as pending_count,
+        COUNT(CASE WHEN ps.status = 'overdue' THEN 1 END) as overdue_count
+      FROM payment_schedules ps 
+      WHERE ps.tenant_id = ${tenantId}
+    `);
+    
+    return result.rows[0] || {
+      paid_amount: 0,
+      pending_amount: 0,
+      overdue_amount: 0,
+      paid_count: 0,
+      pending_count: 0,
+      overdue_count: 0
+    };
+  }
+
+  async getAdvancedAnalytics(tenantId: string): Promise<any> {
+    const result = await db.execute(sql`
+      SELECT 
+        COALESCE(COUNT(DISTINCT c.id), 0) as total_customers,
+        COALESCE(COUNT(DISTINCT l.id), 0) as total_loans,
+        COALESCE(AVG(l.loan_amount), 0) as avg_loan_amount,
+        COALESCE(SUM(CASE WHEN ps.status = 'completed' THEN ps.amount END), 0) as total_collected
+      FROM customers c
+      LEFT JOIN loan_books l ON c.id = l.customer_id AND l.tenant_id = ${tenantId}
+      LEFT JOIN payment_schedules ps ON l.id = ps.loan_id AND ps.tenant_id = ${tenantId}
+      WHERE c.tenant_id = ${tenantId}
+    `);
+    
+    return result.rows[0] || {
+      total_customers: 0,
+      total_loans: 0,
+      avg_loan_amount: 0,
+      total_collected: 0
+    };
+  }
 }
 
 // Export the multi-tenant storage instance
@@ -1122,125 +1190,15 @@ export class BackwardCompatibilityStorage {
 
   // Dashboard analytics methods
   async getLoanPortfolio(): Promise<any> {
-    const portfolioData = await db
-      .select({
-        month: sql`TO_CHAR(${loanBooks.createdAt}, 'Mon')`,
-        totalLoans: sql`count(*)`,
-        totalAmount: sql`sum(${loanBooks.loanAmount}::numeric)`
-      })
-      .from(loanBooks)
-      .where(and(
-        eq(loanBooks.tenantId, this.defaultTenantId),
-        sql`${loanBooks.createdAt} >= (CURRENT_DATE - INTERVAL '12 months')`
-      ))
-      .groupBy(sql`TO_CHAR(${loanBooks.createdAt}, 'Mon')`);
-
-    return portfolioData.map(item => ({
-      month: item.month,
-      totalLoans: parseInt(item.totalLoans?.toString() || '0'),
-      totalAmount: parseFloat(item.totalAmount?.toString() || '0')
-    }));
+    return new MultiTenantStorage().getLoanPortfolio(this.defaultTenantId);
   }
 
   async getAdvancedAnalytics(): Promise<any> {
-    // Compliance score calculation
-    const totalLoansResult = await db
-      .select({ count: sql`count(*)` })
-      .from(loanBooks)
-      .where(eq(loanBooks.tenantId, this.defaultTenantId));
-    const totalLoans = parseInt(totalLoansResult[0]?.count?.toString() || '0');
-
-    const compliantLoansResult = await db
-      .select({ count: sql`count(*)` })
-      .from(loanBooks)
-      .where(and(
-        eq(loanBooks.tenantId, this.defaultTenantId),
-        sql`${loanBooks.status} IN ('active', 'paid')`
-      ));
-    const compliantLoans = parseInt(compliantLoansResult[0]?.count?.toString() || '0');
-    
-    const complianceScore = totalLoans > 0 ? Math.round((compliantLoans / totalLoans) * 100) : 100;
-
-    // Risk assessment
-    const overdueResult = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < CURRENT_DATE`
-      ));
-    const overdueCount = parseInt(overdueResult[0]?.count?.toString() || '0');
-    const riskLevel = overdueCount > 10 ? 'High' : overdueCount > 5 ? 'Medium' : 'Low';
-
-    // Portfolio performance
-    const totalPortfolioResult = await db
-      .select({ total: sql`sum(${loanBooks.loanAmount}::numeric)` })
-      .from(loanBooks)
-      .where(eq(loanBooks.tenantId, this.defaultTenantId));
-    const totalPortfolio = parseFloat(totalPortfolioResult[0]?.total?.toString() || '0');
-    
-    const performanceScore = Math.round(75 + Math.random() * 20); // Simulated performance
-
-    return {
-      complianceScore,
-      riskLevel,
-      performanceScore,
-      totalPortfolio: `$${totalPortfolio.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-    };
+    return new MultiTenantStorage().getAdvancedAnalytics(this.defaultTenantId);
   }
 
   async getPaymentStatus(): Promise<any> {
-    // On-time payments (paid on or before due date)
-    const onTimeResult = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'paid'),
-        sql`${paymentSchedules.paidDate} <= ${paymentSchedules.dueDate}`
-      ));
-    const onTime = parseInt(onTimeResult[0]?.count?.toString() || '0');
-
-    // Overdue 7 days
-    const overdue7Result = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '7 days')`
-      ));
-    const overdue7Days = parseInt(overdue7Result[0]?.count?.toString() || '0');
-
-    // Overdue 30 days
-    const overdue30Result = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '30 days')`
-      ));
-    const overdue30Days = parseInt(overdue30Result[0]?.count?.toString() || '0');
-
-    // Default (overdue 90+ days)
-    const defaultResult = await db
-      .select({ count: sql`count(*)` })
-      .from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, this.defaultTenantId),
-        eq(paymentSchedules.status, 'pending'),
-        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '90 days')`
-      ));
-    const defaultCount = parseInt(defaultResult[0]?.count?.toString() || '0');
-
-    return {
-      onTime,
-      overdue7Days,
-      overdue30Days,
-      default: defaultCount
-    };
+    return new MultiTenantStorage().getPaymentStatus(this.defaultTenantId);
   }
 
   // Additional methods needed by routes
@@ -1582,5 +1540,6 @@ export class BackwardCompatibilityStorage {
       and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId))
     );
   }
+
 
 }
