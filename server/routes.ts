@@ -126,14 +126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", extractTenantContext, async (req, res) => {
     try {
       const { username, password } = req.body;
       if (!req.tenantContext?.tenantId) {
         return res.status(400).json({ message: 'Tenant context required' });
       }
       const tenantId = req.tenantContext.tenantId;
-      const user = await storage.getUserByUsername('default-tenant-001', username);
+      const user = await storage.getUserByUsername(tenantId, username);
       
       if (!user || !await bcrypt.compare(password, user.password)) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -143,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update last login and log the login
       await storage.updateUserLastLogin(tenantId, user.id);
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog(tenantId, {
         userId: user.id,
         action: 'login',
         description: 'User logged in successfully',
@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Optimized customer authentication endpoint
-  app.post("/api/customer/auth/login", async (req, res) => {
+  app.post("/api/customer/auth/login", extractTenantContext, async (req, res) => {
     try {
       const { email, password } = req.body;
       if (!req.tenantContext?.tenantId) {

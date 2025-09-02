@@ -309,6 +309,23 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     await db.delete(users).where(and(eq(users.tenantId, tenantId), eq(users.id, id)));
   }
 
+  // User audit log methods (tenant-aware)
+  async createUserAuditLog(tenantId: string, insertLog: InsertUserAuditLog): Promise<UserAuditLog> {
+    const [log] = await db
+      .insert(userAuditLogs)
+      .values({ ...insertLog, tenantId })
+      .returning();
+    return log;
+  }
+
+  async getUserAuditLogs(tenantId: string, userId: number): Promise<UserAuditLog[]> {
+    return await db
+      .select()
+      .from(userAuditLogs)
+      .where(and(eq(userAuditLogs.tenantId, tenantId), eq(userAuditLogs.userId, userId)))
+      .orderBy(desc(userAuditLogs.timestamp));
+  }
+
   // Tenant-aware customer methods
   async getCustomers(tenantId: string): Promise<Customer[]> {
     return await db.select().from(customers).where(eq(customers.tenantId, tenantId)).orderBy(desc(customers.createdAt));
