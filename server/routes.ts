@@ -2027,8 +2027,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/customer/support-tickets", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
+      const tenantId = req.customer.tenantId || 'default-tenant-001';
       const ticketData = insertSupportTicketSchema.parse({
         ...req.body,
+        tenantId: tenantId,
         customerId,
         customerEmail: req.customer.email,
         status: "open"
@@ -2036,7 +2038,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticket = await storage.createSupportTicket(ticketData);
       res.json(ticket);
     } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create support ticket" });
+      console.error('Support ticket creation error:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ 
+          message: "Validation error: " + error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        });
+      } else {
+        res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create support ticket" });
+      }
     }
   });
 
