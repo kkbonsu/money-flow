@@ -118,7 +118,7 @@ export function TenantDetailsModal({ open, onOpenChange, tenantId }: TenantDetai
             </Card>
 
             {/* MFI Registration */}
-            {mfiRegistration && (
+            {mfiRegistration && Object.keys(mfiRegistration).length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">

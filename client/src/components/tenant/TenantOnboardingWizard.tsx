@@ -123,81 +123,47 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
   const onboardTenantMutation = useMutation({
     mutationFn: async (data: OnboardingForm) => {
       // Step 1: Create tenant
-      const tenant = await apiRequest('/api/admin/tenants', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: data.orgName,
-          slug: data.orgSlug,
-          settings: {
-            theme: data.theme,
-            features: selectedFeatures,
-            branding: {
-              primaryColor: data.primaryColor,
-              description: data.orgDescription,
-            }
-          }
-        }),
-      });
-
-      // Step 2: Create admin user for the tenant
-      const adminUser = await apiRequest('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'X-Tenant-ID': tenant.id,
-        },
-        body: JSON.stringify({
+      const tenantResponse = await apiRequest('POST', '/api/admin/tenants', {
+        name: data.orgName,
+        slug: data.orgSlug,
+        adminUser: {
           username: data.adminUsername,
           email: data.adminEmail,
           password: data.adminPassword,
           firstName: data.adminFirstName,
           lastName: data.adminLastName,
           role: 'admin',
-        }),
+        }
+      });
+      const tenant = await tenantResponse.json();
+
+      // Admin user is created in step 1, no need for separate step
+
+      // Step 2: Create MFI Registration
+      const mfiRegistrationResponse = await apiRequest('POST', `/api/admin/mfi-registration/${tenant.tenant.id}`, {
+        companyName: data.companyName || data.orgName,
+        registrationNumber: data.registrationNumber,
+        licenseNumber: data.licenseNumber,
+        licenseExpiryDate: data.licenseExpiryDate,
+        regulatoryBody: data.regulatoryBody,
+        businessType: data.businessType,
+        address: data.address,
+        phone: data.phone,
       });
 
-      // Step 3: Create MFI Registration
-      const mfiRegistration = await apiRequest('/api/mfi-registration', {
-        method: 'POST',
-        headers: {
-          'X-Tenant-ID': tenant.id,
-        },
-        body: JSON.stringify({
-          companyName: data.companyName,
-          registrationNumber: data.registrationNumber,
-          licenseNumber: data.licenseNumber,
-          licenseExpiryDate: data.licenseExpiryDate,
-          regulatoryBody: data.regulatoryBody,
-          businessType: data.businessType,
-          address: data.address,
-          phone: data.phone,
-        }),
-      });
-
-      // Step 4: Create Shareholders
+      // Step 3: Create Shareholders
       const shareholderPromises = shareholders.map(shareholder =>
-        apiRequest('/api/shareholders', {
-          method: 'POST',
-          headers: {
-            'X-Tenant-ID': tenant.id,
-          },
-          body: JSON.stringify(shareholder),
-        })
+        apiRequest('POST', `/api/admin/shareholders/${tenant.tenant.id}`, shareholder)
       );
       const createdShareholders = await Promise.all(shareholderPromises);
 
-      // Step 5: Create Equity Entries
+      // Step 4: Create Equity Entries
       const equityPromises = equityEntries.map(equity =>
-        apiRequest('/api/equity', {
-          method: 'POST',
-          headers: {
-            'X-Tenant-ID': tenant.id,
-          },
-          body: JSON.stringify(equity),
-        })
+        apiRequest('POST', `/api/admin/equity/${tenant.tenant.id}`, equity)
       );
       const createdEquity = await Promise.all(equityPromises);
 
-      return { tenant, adminUser, mfiRegistration, shareholders: createdShareholders, equity: createdEquity };
+      return { tenant, mfiRegistration: mfiRegistrationResponse, shareholders: createdShareholders, equity: createdEquity };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenants'] });
@@ -244,7 +210,7 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
       ? selectedFeatures.filter(f => f !== feature)
       : [...selectedFeatures, feature];
     setSelectedFeatures(newFeatures);
-    form.setValue('features', newFeatures);
+    // Features are managed separately, not in the form
   };
 
   const nextStep = () => {
@@ -293,7 +259,7 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
 
   const onSubmit = (data: OnboardingForm) => {
     if (currentStep === 7) {
-      onboardTenantMutation.mutate({ ...data, features: selectedFeatures, shareholders, equityEntries });
+      onboardTenantMutation.mutate(data);
     } else {
       // Validate current step before proceeding
       let isValid = true;
