@@ -664,7 +664,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer routes
   app.get("/api/customers", extractTenantContext, authenticateToken, async (req, res) => {
     try {
-      const customers = await storage.getCustomers();
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const customers = await storage.getCustomers(req.user.tenantId);
       res.json(customers);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch customers" });
@@ -840,7 +843,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan Book routes
   app.get("/api/loans", authenticateToken, async (req, res) => {
     try {
-      const loans = await storage.getLoans();
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const loans = await storage.getLoans(req.user.tenantId);
       res.json(loans);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loans" });
@@ -1773,7 +1779,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Equity routes
   app.get("/api/equity", authenticateToken, async (req, res) => {
     try {
-      const equity = await storage.getEquity();
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const equity = await storage.getEquity(req.user.tenantId);
       res.json(equity);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch equity" });
@@ -1818,7 +1827,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports routes
   app.get("/api/reports", authenticateToken, async (req, res) => {
     try {
-      const reports = await storage.getReports();
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const reports = await storage.getReports(req.user.tenantId);
       res.json(reports);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch reports" });
@@ -2009,7 +2021,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MFI Registration routes
   app.get("/api/mfi-registration", authenticateToken, async (req, res) => {
     try {
-      const mfiRegistration = await storage.getMfiRegistration();
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const mfiRegistration = await storage.getMfiRegistration(req.user.tenantId);
       res.json(mfiRegistration);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch MFI registration" });
@@ -2161,7 +2176,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Shareholder Management routes
   app.get("/api/shareholders", authenticateToken, async (req, res) => {
     try {
-      const shareholders = await storage.getShareholders();
+      if (!req.user?.tenantId) {
+        return res.status(400).json({ message: 'Tenant context required' });
+      }
+      const shareholders = await storage.getShareholders(req.user.tenantId);
       res.json(shareholders);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch shareholders" });

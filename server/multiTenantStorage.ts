@@ -939,6 +939,118 @@ export class MultiTenantStorage implements IMultiTenantStorage {
       at_risk_loans: parseInt(data?.at_risk_loans) || 0
     };
   }
+
+  // Equity methods
+  async getEquity(tenantId: string): Promise<Equity[]> {
+    return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
+  }
+
+  async createEquity(insertEquity: InsertEquity): Promise<Equity> {
+    const [equityItem] = await db
+      .insert(equity)
+      .values({ ...insertEquity, tenantId: this.defaultTenantId })
+      .returning();
+    return equityItem;
+  }
+
+  async updateEquity(tenantId: string, id: number, updateEquity: Partial<InsertEquity>): Promise<Equity> {
+    const [equityItem] = await db
+      .update(equity)
+      .set(updateEquity)
+      .where(and(eq(equity.tenantId, tenantId), eq(equity.id, id)))
+      .returning();
+    return equityItem;
+  }
+
+  async deleteEquity(id: number): Promise<void> {
+    await db.delete(equity).where(and(eq(equity.tenantId, this.defaultTenantId), eq(equity.id, id)));
+  }
+
+  // Report methods
+  async getReports(tenantId: string): Promise<Report[]> {
+    return await db.select().from(reports).where(eq(reports.tenantId, tenantId));
+  }
+
+  async createReport(insertReport: InsertReport): Promise<Report> {
+    const [report] = await db
+      .insert(reports)
+      .values({ ...insertReport, tenantId: this.defaultTenantId })
+      .returning();
+    return report;
+  }
+
+  async updateReport(tenantId: string, id: number, updateReport: Partial<InsertReport>): Promise<Report> {
+    const [report] = await db
+      .update(reports)
+      .set(updateReport)
+      .where(and(eq(reports.tenantId, tenantId), eq(reports.id, id)))
+      .returning();
+    return report;
+  }
+
+  async deleteReport(id: number): Promise<void> {
+    await db.delete(reports).where(and(eq(reports.tenantId, this.defaultTenantId), eq(reports.id, id)));
+  }
+
+  // MFI Registration methods
+  async getMfiRegistration(tenantId: string): Promise<MfiRegistration | undefined> {
+    const [registration] = await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
+    return registration || undefined;
+  }
+
+  async createMfiRegistration(insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
+    const [registration] = await db
+      .insert(mfiRegistration)
+      .values({ ...insertMfiRegistration, tenantId: this.defaultTenantId } as any)
+      .returning();
+    return registration;
+  }
+
+  async updateMfiRegistration(id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
+    // Handle Date conversion for licenseExpiryDate if present
+    const updateData: any = { ...updateMfiRegistration, updatedAt: new Date() };
+    if (updateData.licenseExpiryDate instanceof Date) {
+      updateData.licenseExpiryDate = updateData.licenseExpiryDate.toISOString().split('T')[0];
+    }
+    
+    const [registration] = await db
+      .update(mfiRegistration)
+      .set(updateData)
+      .where(and(eq(mfiRegistration.tenantId, this.defaultTenantId), eq(mfiRegistration.id, id)))
+      .returning();
+    return registration;
+  }
+
+  // Shareholder methods
+  async getShareholders(tenantId: string): Promise<Shareholder[]> {
+    return await db.select().from(shareholders).where(eq(shareholders.tenantId, tenantId));
+  }
+
+  async getShareholder(id: number): Promise<Shareholder | undefined> {
+    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
+    return shareholder || undefined;
+  }
+
+  async createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder> {
+    const [shareholder] = await db
+      .insert(shareholders)
+      .values({ ...insertShareholder, tenantId: this.defaultTenantId })
+      .returning();
+    return shareholder;
+  }
+
+  async updateShareholder(id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
+    const [shareholder] = await db
+      .update(shareholders)
+      .set(updateShareholder)
+      .where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)))
+      .returning();
+    return shareholder;
+  }
+
+  async deleteShareholder(id: number): Promise<void> {
+    await db.delete(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
+  }
 }
 
 // Export the multi-tenant storage instance
@@ -1370,8 +1482,8 @@ export class BackwardCompatibilityStorage {
   }
 
   // Equity methods
-  async getEquity(): Promise<Equity[]> {
-    return await db.select().from(equity).where(eq(equity.tenantId, this.defaultTenantId));
+  async getEquity(tenantId: string): Promise<Equity[]> {
+    return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
   }
 
   async createEquity(insertEquity: InsertEquity): Promise<Equity> {
@@ -1396,8 +1508,8 @@ export class BackwardCompatibilityStorage {
   }
 
   // Report methods
-  async getReports(): Promise<Report[]> {
-    return await db.select().from(reports).where(eq(reports.tenantId, this.defaultTenantId));
+  async getReports(tenantId: string): Promise<Report[]> {
+    return await db.select().from(reports).where(eq(reports.tenantId, tenantId));
   }
 
   async createReport(insertReport: InsertReport): Promise<Report> {
@@ -1422,8 +1534,8 @@ export class BackwardCompatibilityStorage {
   }
 
   // MFI Registration methods
-  async getMfiRegistration(): Promise<MfiRegistration | undefined> {
-    const [registration] = await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, this.defaultTenantId));
+  async getMfiRegistration(tenantId: string): Promise<MfiRegistration | undefined> {
+    const [registration] = await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
     return registration || undefined;
   }
 
@@ -1451,8 +1563,8 @@ export class BackwardCompatibilityStorage {
   }
 
   // Shareholder methods
-  async getShareholders(): Promise<Shareholder[]> {
-    return await db.select().from(shareholders).where(eq(shareholders.tenantId, this.defaultTenantId));
+  async getShareholders(tenantId: string): Promise<Shareholder[]> {
+    return await db.select().from(shareholders).where(eq(shareholders.tenantId, tenantId));
   }
 
   async getShareholder(id: number): Promise<Shareholder | undefined> {
