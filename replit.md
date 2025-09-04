@@ -2,9 +2,9 @@
 
 ## Overview
 
-Money Flow is a comprehensive **multi-tenant SaaS B2B** financial management system designed to streamline financial operations for multiple microfinance institutions. It handles core functionalities such as loan management, customer relations, payment scheduling, staff management, and detailed financial tracking including income, expenses, assets, liabilities, and equity. The system features complete tenant isolation with PayloadCMS-inspired architecture, tenant-aware authentication, and provides robust reporting and analytics capabilities to support informed decision-making across multiple organizations.
+Money Flow is a comprehensive **multi-branch financial management system** designed to streamline financial operations for microfinance institutions with multiple branches. Built on a clean organization/branch hierarchy, it enables users to belong to a single organization while working across multiple branches. The system handles core functionalities such as loan management, customer relations, payment scheduling, staff management, and detailed financial tracking including income, expenses, assets, liabilities, and equity. It provides branch-specific operations, consolidated reporting, and robust analytics capabilities to support informed decision-making across all organizational units.
 
-**Phase 3.5 Status: COMPLETE** - Full multi-tenant architecture implemented with tenant-aware authentication, context middleware, and backward compatibility layer.
+**Architecture Refactor Status: COMPLETE** - Successfully migrated from complex subdomain-based multi-tenancy to a simplified organization/branch hierarchy with proper user-branch access control.
 
 **Performance Optimization Phase: COMPLETE** - Comprehensive performance improvements implemented including database indexing, query optimization, smart caching, and monitoring systems.
 
@@ -36,9 +36,9 @@ Money Flow employs a modern full-stack monorepo architecture, ensuring clear sep
 - **API Design**: RESTful API with structured error handling for reliable client-server communication.
 
 ### Key Features & Implementations
-- **Multi-Tenant Architecture**: PayloadCMS-inspired tenant isolation with automatic field injection, tenant-aware queries, and flexible collection-based tenant behavior.
-- **Database Layer**: Centralized Drizzle ORM schema (`shared/schema.ts`) with auto-generated migrations and Row-Level Security (RLS) for tenant isolation.
-- **Authentication System**: Tenant-aware JWT-based authentication with multi-level access (tenant-level, user-level, role-based) and tenant context management.
+- **Organization/Branch Architecture**: Clean hierarchy where users belong to one organization but can access multiple branches, inspired by enterprise systems like Salesforce and banking platforms.
+- **Database Layer**: Centralized Drizzle ORM schema (`shared/schema.ts`) with organization and branch context for all entities, supporting branch-specific operations and inter-branch transfers.
+- **Authentication System**: Organization-aware JWT authentication with branch context switching, role-based permissions per branch, and seamless workspace management without subdomain complexity.
 - **Core Business Entities**: Comprehensive tenant-scoped CRUD operations for Users, Customers, Loan Books, Payment Schedules, Staff, Income, Expenses, Bank Accounts, Petty Cash, Inventory, Rent, Assets, Liabilities, and Equity.
 - **Tenant Management**: Complete tenant administration with subscription plans, branding customization, domain-based resolution, and usage tracking.
 - **Payment Schedule System**: Automated payment schedule generation using amortization, tracking, and "Mark as Paid" functionality, with automatic income logging for interest payments.

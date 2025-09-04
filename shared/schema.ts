@@ -3,7 +3,83 @@ import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Tenants collection - Core multi-tenant management (matching current DB schema)
+// Organizations - Replacing tenants for cleaner architecture
+export const organizations = pgTable("organizations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  code: varchar("code").notNull().unique(), // "ABC-MFI-001"
+  type: varchar("type").default("multi_branch"), // single_branch, multi_branch
+  settings: jsonb("settings").default({
+    branding: { logo: null, primaryColor: "#2563eb", secondaryColor: "#64748b" },
+    features: ["loans", "savings", "payments", "analytics"],
+    defaults: { currency: "GHS", locale: "en-GH", timezone: "Africa/Accra" }
+  }),
+  subscription: jsonb("subscription").default({
+    plan: "professional",
+    limits: { branches: 10, users: 100, loans: 10000, storage: 1024 }
+  }),
+  status: varchar("status").default("active"), // active, suspended, trial
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Branches within organizations
+export const branches = pgTable("branches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(), // "Main Branch", "Kumasi Branch"
+  code: varchar("code").notNull(), // "MAIN", "KUM01"
+  type: varchar("type").default("branch"), // headquarters, branch, sub_branch, outlet
+  parentBranchId: varchar("parent_branch_id").references(() => branches.id), // For hierarchical branches
+  
+  // Location & Contact
+  address: jsonb("address").default({
+    street: "", city: "", region: "", country: "Ghana", postalCode: ""
+  }),
+  contact: jsonb("contact").default({
+    phone: "", email: "", fax: "", operatingHours: {}
+  }),
+  
+  // Management
+  managerUserId: integer("manager_user_id").references(() => users.id),
+  settings: jsonb("settings").default({}),
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueOrgBranch: unique().on(table.organizationId, table.code),
+}));
+
+// User-Branch Access (many-to-many) - Users can work at multiple branches
+export const userBranchAccess = pgTable("user_branch_access", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  branchId: varchar("branch_id").notNull().references(() => branches.id, { onDelete: "cascade" }),
+  
+  // Branch-specific role (can override organization role)
+  branchRole: varchar("branch_role"), // null = use org role, or specific: manager, user, viewer
+  
+  // Branch-specific permissions
+  permissions: jsonb("permissions").default([]),
+  
+  // Access control flags
+  canView: boolean("can_view").default(true),
+  canCreate: boolean("can_create").default(true),
+  canEdit: boolean("can_edit").default(true),
+  canDelete: boolean("can_delete").default(false),
+  canApprove: boolean("can_approve").default(false),
+  
+  // Metadata
+  assignedBy: integer("assigned_by").references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+}, (table) => ({
+  uniqueUserBranch: unique().on(table.userId, table.branchId),
+}));
+
+// Tenants collection - LEGACY (will be migrated to organizations)
 export const tenants = pgTable("tenants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
@@ -63,18 +139,23 @@ export const userRoles = pgTable("user_roles", {
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(), // Legacy field - will be removed
+  
+  // Organization assignment (single organization per user)
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  primaryBranchId: varchar("primary_branch_id").references(() => branches.id),
+  
   username: text("username").notNull(),
   password: text("password").notNull(),
   email: text("email").notNull(),
-  role: text("role").notNull().default("user"),
+  role: text("role").notNull().default("user"), // Organization-wide role
   profilePicture: text("profile_picture"),
   firstName: text("first_name"),
   lastName: text("last_name"),
   phone: text("phone"),
   lastLogin: timestamp("last_login"),
   isActive: boolean("is_active").default(true),
-  isSuperAdmin: boolean("is_super_admin").default(false), // Can access all tenants
+  isSystemAdmin: boolean("is_super_admin").default(false), // System-wide admin
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -93,6 +174,8 @@ export const userTenantAccess = pgTable("user_tenant_access", {
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  branchId: varchar("branch_id").references(() => branches.id),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
@@ -122,6 +205,10 @@ export const loanProducts = pgTable("loan_products", {
 export const loanBooks = pgTable("loan_books", {
   id: serial("id").primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  branchId: varchar("branch_id").references(() => branches.id),
+  originatingBranchId: varchar("originating_branch_id").references(() => branches.id),
+  servicingBranchId: varchar("servicing_branch_id").references(() => branches.id),
   customerId: integer("customer_id").references(() => customers.id),
   loanProductId: integer("loan_product_id").references(() => loanProducts.id),
   loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
@@ -148,6 +235,8 @@ export const loanBooks = pgTable("loan_books", {
 export const paymentSchedules = pgTable("payment_schedules", {
   id: serial("id").primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  branchId: varchar("branch_id").references(() => branches.id),
   loanId: integer("loan_id").references(() => loanBooks.id),
   dueDate: timestamp("due_date").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
@@ -178,6 +267,8 @@ export const staff = pgTable("staff", {
 export const incomeManagement = pgTable("income_management", {
   id: serial("id").primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  branchId: varchar("branch_id").references(() => branches.id),
   source: text("source").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -189,6 +280,8 @@ export const incomeManagement = pgTable("income_management", {
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  branchId: varchar("branch_id").references(() => branches.id),
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -200,6 +293,8 @@ export const expenses = pgTable("expenses", {
 export const bankManagement = pgTable("bank_management", {
   id: serial("id").primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  branchId: varchar("branch_id").references(() => branches.id),
   accountName: text("account_name").notNull(),
   bankName: text("bank_name").notNull(),
   accountNumber: text("account_number").notNull(),

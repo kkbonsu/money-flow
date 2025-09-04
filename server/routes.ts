@@ -125,6 +125,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Branch switching endpoint
+  app.post("/api/auth/switch-branch", authenticateToken, async (req, res) => {
+    try {
+      const { branchId } = req.body;
+      const userId = (req as any).user?.userId || (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Import organization auth functions
+      const { generateOrganizationToken } = await import('./organizationAuth');
+      
+      // Generate new token with updated branch context
+      const newToken = await generateOrganizationToken(userId);
+
+      res.json({ 
+        message: 'Branch switched successfully',
+        token: newToken
+      });
+    } catch (error: any) {
+      console.error('Error switching branch:', error);
+      res.status(500).json({ message: error.message || 'Failed to switch branch' });
+    }
+  });
+
   app.post("/api/auth/login", extractTenantContext, async (req, res) => {
     try {
       const { username, password } = req.body;
