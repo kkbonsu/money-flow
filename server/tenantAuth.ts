@@ -202,15 +202,7 @@ export const createTenantWithAdmin = async (tenantData: {
     // Create tenant
     const tenant = await multiTenantStorage.createTenant({
       name: tenantData.name,
-      slug: tenantData.slug,
-      settings: {
-        theme: 'light',
-        features: ['loans', 'payments', 'analytics'],
-        branding: {
-          primaryColor: '#3B82F6',
-          logoUrl: null
-        }
-      }
+      slug: tenantData.slug
     });
 
     // Create admin user for the tenant

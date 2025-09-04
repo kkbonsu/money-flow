@@ -83,7 +83,6 @@ import {
   type SupportMessage,
   type InsertSupportMessage
 } from "@shared/schema";
-import { simpleTenants } from "@shared/tenantSchema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -202,30 +201,50 @@ export interface IMultiTenantStorage {
 
 // @ts-ignore - Temporarily suppress interface implementation warnings during migration
 export class MultiTenantStorage implements IMultiTenantStorage {
-  // Tenant management methods (updated for simple tenant structure)
-  async getTenant(tenantId: string): Promise<any | undefined> {
-    const [tenant] = await db.select().from(simpleTenants).where(eq(simpleTenants.id, tenantId));
+  // Tenant management methods (using comprehensive tenant schema)
+  async getTenant(tenantId: string): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
     return tenant || undefined;
   }
 
-  async getTenantBySlug(slug: string): Promise<any | undefined> {
-    const [tenant] = await db.select().from(simpleTenants).where(eq(simpleTenants.slug, slug));
+  async getTenantBySlug(slug: string): Promise<Tenant | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, slug));
     return tenant || undefined;
   }
 
-  async createTenant(insertTenant: any): Promise<any> {
+  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
     const [tenant] = await db
-      .insert(simpleTenants)
-      .values(insertTenant)
+      .insert(tenants)
+      .values({
+        name: insertTenant.name,
+        slug: insertTenant.slug,
+        // Only include fields that exist in current DB schema
+        plan: insertTenant.plan || "basic",
+        limits: insertTenant.limits || {
+          maxLoans: 100,
+          maxUsers: 5,
+          maxStorage: 1024
+        },
+        branding: insertTenant.branding || {
+          logo: null,
+          primaryColor: "#2563eb",
+          secondaryColor: "#64748b",
+          companyName: insertTenant.name
+        },
+        currency: insertTenant.currency || "GHS",
+        locale: insertTenant.locale || "en-GH",
+        timezone: insertTenant.timezone || "Africa/Accra",
+        status: insertTenant.status || "active"
+      })
       .returning();
     return tenant;
   }
 
-  async updateTenant(tenantId: string, updateTenant: any): Promise<any> {
+  async updateTenant(tenantId: string, updateTenant: Partial<InsertTenant>): Promise<Tenant> {
     const [tenant] = await db
-      .update(simpleTenants)
+      .update(tenants)
       .set({ ...updateTenant, updatedAt: new Date() })
-      .where(eq(simpleTenants.id, tenantId))
+      .where(eq(tenants.id, tenantId))
       .returning();
     return tenant;
   }
@@ -254,15 +273,15 @@ export class MultiTenantStorage implements IMultiTenantStorage {
       
       // 5. Delete financial records
       console.log(`[TENANT_DELETE] Deleting financial records...`);
-      await db.delete(income).where(eq(income.tenantId, tenantId));
+      await db.delete(incomeManagement).where(eq(incomeManagement.tenantId, tenantId));
       await db.delete(expenses).where(eq(expenses.tenantId, tenantId));
-      await db.delete(bankAccounts).where(eq(bankAccounts.tenantId, tenantId));
+      await db.delete(bankManagement).where(eq(bankManagement.tenantId, tenantId));
       await db.delete(pettyCash).where(eq(pettyCash.tenantId, tenantId));
       
       // 6. Delete inventory and rent
       console.log(`[TENANT_DELETE] Deleting inventory and rent...`);
       await db.delete(inventory).where(eq(inventory.tenantId, tenantId));
-      await db.delete(rent).where(eq(rent.tenantId, tenantId));
+      await db.delete(rentManagement).where(eq(rentManagement.tenantId, tenantId));
       
       // 7. Delete balance sheet items
       console.log(`[TENANT_DELETE] Deleting assets, liabilities, and equity...`);
@@ -282,7 +301,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
       
       // 10. Finally delete the tenant itself
       console.log(`[TENANT_DELETE] Deleting tenant record...`);
-      await db.delete(simpleTenants).where(eq(simpleTenants.id, tenantId));
+      await db.delete(tenants).where(eq(tenants.id, tenantId));
       
       console.log(`[TENANT_DELETE] Successfully completed cascade deletion for tenant ${tenantId}`);
       
@@ -970,12 +989,12 @@ export class MultiTenantStorage implements IMultiTenantStorage {
       WHERE c.tenant_id = ${tenantId}
     `);
     
-    const data = result.rows[0];
-    const totalLoans = parseInt(data?.total_loans) || 0;
-    const defaultedLoans = parseInt(data?.defaulted_loans) || 0;
-    const approvedLoans = parseInt(data?.approved_loans) || 0;
-    const rejectedLoans = parseInt(data?.rejected_loans) || 0;
-    const totalApplications = approvedLoans + rejectedLoans + parseInt(data?.pending_loans || 0);
+    const data = result.rows[0] as any;
+    const totalLoans = parseInt(data?.total_loans || "0") || 0;
+    const defaultedLoans = parseInt(data?.defaulted_loans || "0") || 0;
+    const approvedLoans = parseInt(data?.approved_loans || "0") || 0;
+    const rejectedLoans = parseInt(data?.rejected_loans || "0") || 0;
+    const totalApplications = approvedLoans + rejectedLoans + parseInt(data?.pending_loans || "0");
     
     // Calculate approval rate: Since disbursed loans are approved loans,
     // if we have disbursed loans but no rejected/pending, treat disbursed loans as approved applications
@@ -993,12 +1012,12 @@ export class MultiTenantStorage implements IMultiTenantStorage {
       
       // Approval Analytics
       approval_rate: approvalRate,
-      approved_today: parseInt(data?.loans_today) || 0,
-      pending_review: parseInt(data?.pending_loans) || 0,
+      approved_today: parseInt(data?.loans_today || "0") || 0,
+      pending_review: parseInt(data?.pending_loans || "0") || 0,
       
       // Risk Assessment  
       default_rate: defaultRate,
-      at_risk_loans: parseInt(data?.at_risk_loans) || 0
+      at_risk_loans: parseInt(data?.at_risk_loans || "0") || 0
     };
   }
 
@@ -1007,10 +1026,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
   }
 
-  async createEquity(insertEquity: InsertEquity): Promise<Equity> {
+  async createEquity(tenantId: string, insertEquity: InsertEquity): Promise<Equity> {
     const [equityItem] = await db
       .insert(equity)
-      .values({ ...insertEquity, tenantId: this.defaultTenantId })
+      .values({ ...insertEquity, tenantId })
       .returning();
     return equityItem;
   }
@@ -1627,10 +1646,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
   }
 
-  async createEquity(insertEquity: InsertEquity): Promise<Equity> {
+  async createEquity(tenantId: string, insertEquity: InsertEquity): Promise<Equity> {
     const [equityItem] = await db
       .insert(equity)
-      .values({ ...insertEquity, tenantId: this.defaultTenantId })
+      .values({ ...insertEquity, tenantId })
       .returning();
     return equityItem;
   }
@@ -1832,5 +1851,142 @@ export class BackwardCompatibilityStorage {
     );
   }
 
+  // MFI Registration methods for complete onboarding
+  async getMFIRegistration(tenantId: string): Promise<MfiRegistration | undefined> {
+    const [registration] = await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
+    return registration || undefined;
+  }
 
+  async createMFIRegistration(tenantId: string, insertMfi: InsertMfiRegistration): Promise<MfiRegistration> {
+    const [registration] = await db
+      .insert(mfiRegistration)
+      .values({ ...insertMfi, tenantId })
+      .returning();
+    return registration;
+  }
+
+  async updateMFIRegistration(tenantId: string, updateMfi: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
+    const [registration] = await db
+      .update(mfiRegistration)
+      .set(updateMfi)
+      .where(eq(mfiRegistration.tenantId, tenantId))
+      .returning();
+    return registration;
+  }
+
+  // Shareholder methods for GIPC compliance
+  async getShareholdersByTenant(tenantId: string): Promise<Shareholder[]> {
+    return await db.select().from(shareholders).where(eq(shareholders.tenantId, tenantId));
+  }
+
+  async createShareholder(tenantId: string, insertShareholder: InsertShareholder): Promise<Shareholder> {
+    const [shareholder] = await db
+      .insert(shareholders)
+      .values({ ...insertShareholder, tenantId })
+      .returning();
+    return shareholder;
+  }
+
+  async updateShareholder(tenantId: string, id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
+    const [shareholder] = await db
+      .update(shareholders)
+      .set(updateShareholder)
+      .where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)))
+      .returning();
+    return shareholder;
+  }
+
+  async deleteShareholder(tenantId: string, id: number): Promise<void> {
+    await db.delete(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
+  }
+
+  // Support ticket methods
+  async getSupportTickets(tenantId: string): Promise<SupportTicket[]> {
+    return await db.select().from(supportTickets).where(eq(supportTickets.tenantId, tenantId));
+  }
+
+  async getSupportTicket(tenantId: string, id: number): Promise<SupportTicket | undefined> {
+    const [ticket] = await db.select().from(supportTickets).where(and(eq(supportTickets.tenantId, tenantId), eq(supportTickets.id, id)));
+    return ticket || undefined;
+  }
+
+  async createSupportTicket(tenantId: string, insertTicket: InsertSupportTicket): Promise<SupportTicket> {
+    const [ticket] = await db
+      .insert(supportTickets)
+      .values({ ...insertTicket, tenantId })
+      .returning();
+    return ticket;
+  }
+
+  async updateSupportTicket(tenantId: string, id: number, updateTicket: Partial<InsertSupportTicket>): Promise<SupportTicket> {
+    const [ticket] = await db
+      .update(supportTickets)
+      .set(updateTicket)
+      .where(and(eq(supportTickets.tenantId, tenantId), eq(supportTickets.id, id)))
+      .returning();
+    return ticket;
+  }
+
+  async getSupportMessages(tenantId: string, ticketId: number): Promise<SupportMessage[]> {
+    return await db.select().from(supportMessages).where(and(eq(supportMessages.tenantId, tenantId), eq(supportMessages.ticketId, ticketId)));
+  }
+
+  async createSupportMessage(tenantId: string, insertMessage: InsertSupportMessage): Promise<SupportMessage> {
+    const [message] = await db
+      .insert(supportMessages)
+      .values({ ...insertMessage, tenantId })
+      .returning();
+    return message;
+  }
+
+  // Additional methods for complete tenant-aware operations
+  async getPettyCash(tenantId: string): Promise<PettyCash[]> {
+    return await db.select().from(pettyCash).where(eq(pettyCash.tenantId, tenantId));
+  }
+
+  async createPettyCash(tenantId: string, insertPetty: InsertPettyCash): Promise<PettyCash> {
+    const [petty] = await db
+      .insert(pettyCash)
+      .values({ ...insertPetty, tenantId })
+      .returning();
+    return petty;
+  }
+
+  async updatePettyCash(tenantId: string, id: number, updatePetty: Partial<InsertPettyCash>): Promise<PettyCash> {
+    const [petty] = await db
+      .update(pettyCash)
+      .set(updatePetty)
+      .where(and(eq(pettyCash.tenantId, tenantId), eq(pettyCash.id, id)))
+      .returning();
+    return petty;
+  }
+
+  async deletePettyCash(tenantId: string, id: number): Promise<void> {
+    await db.delete(pettyCash).where(and(eq(pettyCash.tenantId, tenantId), eq(pettyCash.id, id)));
+  }
+
+  async getRentManagement(tenantId: string): Promise<RentManagement[]> {
+    return await db.select().from(rentManagement).where(eq(rentManagement.tenantId, tenantId));
+  }
+
+  async createRentManagement(tenantId: string, insertRent: InsertRentManagement): Promise<RentManagement> {
+    const [rent] = await db
+      .insert(rentManagement)
+      .values({ ...insertRent, tenantId })
+      .returning();
+    return rent;
+  }
+
+  async updateRentManagement(tenantId: string, id: number, updateRent: Partial<InsertRentManagement>): Promise<RentManagement> {
+    const [rent] = await db
+      .update(rentManagement)
+      .set(updateRent)
+      .where(and(eq(rentManagement.tenantId, tenantId), eq(rentManagement.id, id)))
+      .returning();
+    return rent;
+  }
+
+  async deleteRentManagement(tenantId: string, id: number): Promise<void> {
+    await db.delete(rentManagement).where(and(eq(rentManagement.tenantId, tenantId), eq(rentManagement.id, id)));
+  }
 }

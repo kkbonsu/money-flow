@@ -32,7 +32,6 @@ import {
   insertSupportMessageSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { simpleTenants } from "@shared/tenantSchema";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -211,28 +210,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Tenant management routes (Super Admin only)
-  app.post("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
+  // Enhanced tenant onboarding with MFI registration, shareholders, and equity
+  app.post("/api/admin/tenants", extractTenantContext, authenticateToken, requireSuperAdmin, async (req, res) => {
     try {
-      const { name, slug, adminUser } = req.body;
+      const { 
+        name, 
+        slug, 
+        adminUser, 
+        mfiRegistration: mfiData, 
+        shareholders: shareholdersData, 
+        equity: equityData 
+      } = req.body;
       
-      // Create tenant with admin user
-      const result = await createTenantWithAdmin({
+      // Step 1: Create tenant with admin user using comprehensive schema
+      const tenant = await storage.createTenant({
         name,
         slug,
-        adminUser
+        branding: {
+          logo: null,
+          primaryColor: "#2563eb",
+          secondaryColor: "#64748b",
+          companyName: name
+        }
       });
       
-      res.json(result);
+      // Step 2: Create admin user
+      const hashedPassword = await bcrypt.hash(adminUser.password, 10);
+      const user = await storage.createUser(tenant.id, {
+        username: adminUser.username,
+        email: adminUser.email,
+        password: hashedPassword,
+        firstName: adminUser.firstName,
+        lastName: adminUser.lastName,
+        role: 'admin',
+        isActive: true,
+        isSuperAdmin: false
+      });
+      
+      // Step 3: Create MFI registration if provided (real implementation, not placeholder)
+      let mfiRegistration = null;
+      if (mfiData) {
+        mfiRegistration = await storage.createMfiRegistration(tenant.id, {
+          companyName: mfiData.companyName || name,
+          registrationNumber: mfiData.registrationNumber || '',
+          registeredAddress: mfiData.registeredAddress || '',
+          physicalAddress: mfiData.physicalAddress || mfiData.registeredAddress || '',
+          contactPhone: mfiData.contactPhone || '',
+          contactEmail: adminUser.email,
+          paidUpCapital: mfiData.paidUpCapital || "0.00",
+          boGLicenseNumber: mfiData.boGLicenseNumber || '',
+          licenseExpiryDate: mfiData.licenseExpiryDate ? new Date(mfiData.licenseExpiryDate) : undefined,
+          isActive: true
+        });
+      }
+      
+      // Step 4: Create shareholders if provided (real implementation for GIPC compliance)
+      const createdShareholders = [];
+      if (shareholdersData && shareholdersData.length > 0) {
+        for (const shareholder of shareholdersData) {
+          const created = await storage.createShareholder(tenant.id, {
+            shareholderType: shareholder.shareholderType || 'local',
+            name: shareholder.name,
+            nationality: shareholder.nationality || 'Ghanaian',
+            idType: shareholder.idType || 'ghana_card',
+            idNumber: shareholder.idNumber || '',
+            address: shareholder.address || mfiData?.registeredAddress || '',
+            contactPhone: shareholder.contactPhone || '',
+            contactEmail: shareholder.contactEmail || '',
+            sharesOwned: shareholder.sharesOwned || 0,
+            sharePercentage: shareholder.sharePercentage || "0.00",
+            investmentAmount: shareholder.investmentAmount || "0.00",
+            investmentCurrency: shareholder.investmentCurrency || "GHS",
+            isActive: true
+          });
+          createdShareholders.push(created);
+        }
+      }
+      
+      // Step 5: Create equity entries if provided (real financial implementation)
+      const createdEquity = [];
+      if (equityData && equityData.length > 0) {
+        for (const equityItem of equityData) {
+          const created = await storage.createEquity(tenant.id, {
+            equityType: equityItem.equityType || equityItem.accountName,
+            amount: equityItem.amount.toString(),
+            date: new Date(equityItem.date || Date.now()),
+            description: equityItem.description || `Initial ${equityItem.equityType || 'equity'} entry`
+          });
+          createdEquity.push(created);
+        }
+      }
+      
+      res.json({ 
+        tenant, 
+        user, 
+        mfiRegistration,
+        shareholders: createdShareholders,
+        equity: createdEquity,
+        message: `Tenant "${name}" created successfully with complete onboarding data`
+      });
     } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create tenant" });
+      console.error("Complete tenant onboarding error:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create tenant with complete onboarding" });
     }
   });
 
   app.get("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
     try {
-      const tenants = await db.select().from(simpleTenants);
-      res.json(tenants);
+      const allTenants = await db.select().from(tenants);
+      res.json(allTenants);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenants" });
     }
@@ -246,8 +332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeTenantsResult,
         totalUsersResult
       ] = await Promise.all([
-        db.select({ count: sql<number>`count(*)` }).from(simpleTenants),
-        db.select({ count: sql<number>`count(*)` }).from(simpleTenants),
+        db.select({ count: sql<number>`count(*)` }).from(tenants),
+        db.select({ count: sql<number>`count(*)` }).from(tenants),
         db.select({ count: sql<number>`count(*)` }).from(users)
       ]);
 
