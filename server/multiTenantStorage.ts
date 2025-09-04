@@ -212,29 +212,36 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return tenant || undefined;
   }
 
+  async getTenantByDomain(domain: string): Promise<Tenant | undefined> {
+    // For now, extract slug from domain (e.g., "abc.moneyflow.app" -> "abc")
+    const slug = domain.split('.')[0];
+    return this.getTenantBySlug(slug);
+  }
+
   async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
     const [tenant] = await db
       .insert(tenants)
       .values({
         name: insertTenant.name,
         slug: insertTenant.slug,
-        // Only include fields that exist in current DB schema
-        plan: insertTenant.plan || "basic",
-        limits: insertTenant.limits || {
-          maxLoans: 100,
-          maxUsers: 5,
-          maxStorage: 1024
-        },
-        branding: insertTenant.branding || {
-          logo: null,
-          primaryColor: "#2563eb",
-          secondaryColor: "#64748b",
-          companyName: insertTenant.name
-        },
-        currency: insertTenant.currency || "GHS",
-        locale: insertTenant.locale || "en-GH",
-        timezone: insertTenant.timezone || "Africa/Accra",
-        status: insertTenant.status || "active"
+        settings: insertTenant.settings || {
+          theme: 'light',
+          features: ['loans', 'payments', 'analytics'],
+          branding: {
+            primaryColor: '#2563eb',
+            logoUrl: null,
+            companyName: insertTenant.name
+          },
+          currency: 'GHS',
+          locale: 'en-GH',
+          timezone: 'Africa/Accra',
+          plan: 'basic',
+          limits: {
+            maxLoans: 100,
+            maxUsers: 5,
+            maxStorage: 1024
+          }
+        }
       })
       .returning();
     return tenant;

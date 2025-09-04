@@ -222,15 +222,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         equity: equityData 
       } = req.body;
       
-      // Step 1: Create tenant with admin user using comprehensive schema
+      // Step 1: Create tenant with admin user (using current DB schema)
       const tenant = await storage.createTenant({
         name,
         slug,
-        branding: {
-          logo: null,
-          primaryColor: "#2563eb",
-          secondaryColor: "#64748b",
-          companyName: name
+        settings: {
+          theme: 'light',
+          features: ['loans', 'payments', 'analytics'],
+          branding: {
+            primaryColor: '#2563eb',
+            logoUrl: null,
+            companyName: name
+          },
+          currency: 'GHS',
+          locale: 'en-GH',
+          timezone: 'Africa/Accra',
+          plan: 'basic',
+          limits: {
+            maxLoans: 100,
+            maxUsers: 5,
+            maxStorage: 1024
+          },
+          mfiRegistration: mfiData,
+          shareholders: shareholdersData,
+          equity: equityData
         }
       });
       

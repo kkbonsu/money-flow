@@ -1,39 +1,14 @@
 import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, date, uuid, jsonb, unique } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Tenants collection - Core multi-tenant management
+// Tenants collection - Core multi-tenant management (matching current DB schema)
 export const tenants = pgTable("tenants", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(), // "ABC Microfinance Ltd"
-  slug: text("slug").notNull().unique(), // "abc-microfinance"
-  domain: text("domain"), // "abc.moneyflow.app"
-  
-  // Subscription & Limits
-  plan: text("plan").notNull().default("basic"), // 'basic', 'professional', 'enterprise'
-  limits: jsonb("limits").notNull().default({
-    maxLoans: 100,
-    maxUsers: 5,
-    maxStorage: 1024 // MB
-  }),
-  
-  // Branding & Customization
-  branding: jsonb("branding").notNull().default({
-    logo: null,
-    primaryColor: "#2563eb",
-    secondaryColor: "#64748b",
-    companyName: ""
-  }),
-  
-  // Regional Settings
-  currency: text("currency").notNull().default("GHS"), // "GHS", "USD"
-  locale: text("locale").notNull().default("en-GH"), // "en-GH"
-  timezone: text("timezone").notNull().default("Africa/Accra"), // "Africa/Accra"
-  
-  // Status & Metadata
-  status: text("status").notNull().default("active"), // 'active', 'suspended', 'trial'
-  subscriptionEnds: timestamp("subscription_ends"),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  slug: varchar("slug").notNull().unique(),
+  settings: jsonb("settings").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
