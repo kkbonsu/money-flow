@@ -4,25 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Eye, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { Expense } from '@shared/schema';
 import AddExpenseModal from './AddExpenseModal';
-import ViewExpenseModal from './ViewExpenseModal';
 import EditExpenseModal from './EditExpenseModal';
-import DeleteExpenseDialog from './DeleteExpenseDialog';
 
 export default function ExpenseTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
-  const { data: expenses = [], isLoading } = useQuery({
+  const { data: expenses = [], isLoading } = useQuery<Expense[]>({
     queryKey: ['/api/expenses'],
   });
 
@@ -41,26 +37,14 @@ export default function ExpenseTable() {
     }).format(amount);
   };
 
-  const handleViewClick = (expense: Expense) => {
-    setSelectedExpense(expense);
-    setIsViewModalOpen(true);
-  };
-
   const handleEditClick = (expense: Expense) => {
     setSelectedExpense(expense);
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteClick = (expense: Expense) => {
-    setSelectedExpense(expense);
-    setIsDeleteDialogOpen(true);
-  };
-
   const closeModals = () => {
     setIsAddModalOpen(false);
-    setIsViewModalOpen(false);
     setIsEditModalOpen(false);
-    setIsDeleteDialogOpen(false);
     setSelectedExpense(null);
   };
 
@@ -138,7 +122,7 @@ export default function ExpenseTable() {
                 filteredExpenses.map((item: Expense) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.description}</TableCell>
-                    <TableCell>{formatCurrency(item.amount)}</TableCell>
+                    <TableCell>{formatCurrency(Number(item.amount))}</TableCell>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.vendor || 'N/A'}</TableCell>
                     <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
@@ -147,23 +131,9 @@ export default function ExpenseTable() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleViewClick(item)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
                           onClick={() => handleEditClick(item)}
                         >
                           <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteClick(item)}
-                        >
-                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -183,9 +153,7 @@ export default function ExpenseTable() {
 
       {/* Modals */}
       <AddExpenseModal isOpen={isAddModalOpen} onClose={closeModals} />
-      <ViewExpenseModal isOpen={isViewModalOpen} onClose={closeModals} expense={selectedExpense} />
       <EditExpenseModal isOpen={isEditModalOpen} onClose={closeModals} expense={selectedExpense} />
-      <DeleteExpenseDialog isOpen={isDeleteDialogOpen} onClose={closeModals} expense={selectedExpense} />
     </Card>
   );
 }
