@@ -290,30 +290,7 @@ export const expenses = pgTable("expenses", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const bankManagement = pgTable("bank_management", {
-  id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
-  organizationId: varchar("organization_id").references(() => organizations.id),
-  branchId: varchar("branch_id").references(() => branches.id),
-  accountName: text("account_name").notNull(),
-  bankName: text("bank_name").notNull(),
-  accountNumber: text("account_number").notNull(),
-  balance: decimal("balance", { precision: 15, scale: 2 }).notNull(),
-  status: text("status").notNull().default("active"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
 
-export const pettyCash = pgTable("petty_cash", {
-  id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
-  description: text("description").notNull(),
-  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
-  type: text("type").notNull(),
-  date: text("date").notNull(),
-  purpose: text("purpose"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
 export const inventory = pgTable("inventory", {
   id: serial("id").primaryKey(),
@@ -328,17 +305,6 @@ export const inventory = pgTable("inventory", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const rentManagement = pgTable("rent_management", {
-  id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
-  propertyName: text("property_name").notNull(),
-  tenantName: text("tenant_name").notNull(),
-  monthlyRent: decimal("monthly_rent", { precision: 15, scale: 2 }).notNull(),
-  dueDate: timestamp("due_date").notNull(),
-  status: text("status").notNull().default("pending"),
-  paidDate: timestamp("paid_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
@@ -704,19 +670,6 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
   }),
 }));
 
-export const bankManagementRelations = relations(bankManagement, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [bankManagement.tenantId],
-    references: [tenants.id],
-  }),
-}));
-
-export const pettyCashRelations = relations(pettyCash, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [pettyCash.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
 export const inventoryRelations = relations(inventory, ({ one }) => ({
   tenant: one(tenants, {
@@ -725,12 +678,6 @@ export const inventoryRelations = relations(inventory, ({ one }) => ({
   }),
 }));
 
-export const rentManagementRelations = relations(rentManagement, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [rentManagement.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
 export const assetsRelations = relations(assets, ({ one }) => ({
   tenant: one(tenants, {
@@ -959,22 +906,6 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
-export const insertBankManagementSchema = createInsertSchema(bankManagement).omit({
-  id: true,
-  tenantId: true, // Injected by middleware
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  balance: z.union([z.string(), z.number()]).transform((val) => val.toString()),
-});
-
-export const insertPettyCashSchema = createInsertSchema(pettyCash).omit({
-  id: true,
-  tenantId: true, // Injected by middleware
-  createdAt: true,
-}).extend({
-  amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
-});
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
@@ -985,11 +916,6 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
   totalValue: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
-export const insertRentManagementSchema = createInsertSchema(rentManagement).omit({
-  id: true,
-  tenantId: true, // Injected by middleware
-  createdAt: true,
-});
 
 export const insertAssetSchema = createInsertSchema(assets).omit({
   id: true,
@@ -1105,17 +1031,10 @@ export type InsertIncomeManagement = z.infer<typeof insertIncomeManagementSchema
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 
-export type BankManagement = typeof bankManagement.$inferSelect;
-export type InsertBankManagement = z.infer<typeof insertBankManagementSchema>;
-
-export type PettyCash = typeof pettyCash.$inferSelect;
-export type InsertPettyCash = z.infer<typeof insertPettyCashSchema>;
 
 export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = z.infer<typeof insertInventorySchema>;
 
-export type RentManagement = typeof rentManagement.$inferSelect;
-export type InsertRentManagement = z.infer<typeof insertRentManagementSchema>;
 
 export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
