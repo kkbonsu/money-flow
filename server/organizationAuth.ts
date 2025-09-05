@@ -4,7 +4,7 @@ import { db } from "./db";
 import { organizations, branches, users, userBranchAccess } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "moneyflow-development-secret-2025";
 
 // Organization context type
 export interface OrganizationContext {

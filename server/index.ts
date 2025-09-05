@@ -4,7 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 
 // Set environment variables if not already set
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
-process.env.JWT_SECRET = process.env.JWT_SECRET || "financeflow-secret-key-2024";
+process.env.JWT_SECRET = process.env.JWT_SECRET || "moneyflow-development-secret-2025";
 
 const app = express();
 app.use(express.json());

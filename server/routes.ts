@@ -41,7 +41,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
   extractTenantContext, 
-  authenticateToken, 
+  authenticateToken as legacyAuthenticateToken, 
   authenticateCustomerToken, 
   requireRole, 
   requireSuperAdmin,
@@ -49,12 +49,16 @@ import {
   generateCustomerToken,
   createTenantWithAdmin
 } from "./tenantAuth";
+import { authenticateWithOrganization } from "./organizationAuth";
+
+// Use organization-aware authentication as the main auth middleware
+const authenticateToken = authenticateWithOrganization;
 import { eq, and, sql } from "drizzle-orm";
 import { users, tenants } from "@shared/schema";
 import roleRoutes from "./roleRoutes";
 import { registerOptimizedRoutes } from "./optimizedRoutes";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "moneyflow-development-secret-2025";
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -243,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/switch-branch", authenticateToken, async (req, res) => {
+  app.post("/api/auth/switch-branch", legacyAuthenticateToken, async (req, res) => {
     try {
       const { branchId } = req.body;
       const userId = (req as any).user?.userId || (req as any).user?.id;
@@ -924,19 +928,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
-  app.get("/api/customers", extractTenantContext, authenticateToken, async (req, res) => {
+  app.get("/api/customers", authenticateToken, async (req, res) => {
     try {
-      if (!req.user?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required' });
+      if (!req.user?.organizationId) {
+        return res.status(400).json({ message: 'Organization context required' });
       }
-      const customers = await storage.getCustomers(req.user.tenantId);
+      const customers = await storage.getCustomers(req.user.organizationId);
       res.json(customers);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch customers" });
     }
   });
 
-  app.post("/api/customers", extractTenantContext, authenticateToken, async (req, res) => {
+  app.post("/api/customers", authenticateToken, async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
       

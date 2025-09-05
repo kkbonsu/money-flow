@@ -4,7 +4,7 @@ import { multiTenantStorage } from "./multiTenantStorage";
 import type { JwtPayload } from "@shared/schema";
 import type { SimpleTenantContext } from "@shared/tenantSchema";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "moneyflow-development-secret-2025";
 
 // Extend Express Request to include tenant context
 declare global {
