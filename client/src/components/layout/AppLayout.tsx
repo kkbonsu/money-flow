@@ -16,8 +16,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     if (isLoading) return;
     
-    // If not authenticated and not on login page, redirect to login
-    if (!isAuthenticated && location !== '/login') {
+    // Public routes that don't require authentication
+    const publicRoutes = ['/login', '/onboard'];
+    const isPublicRoute = publicRoutes.includes(location);
+    
+    // If not authenticated and not on a public route, redirect to login
+    if (!isAuthenticated && !isPublicRoute) {
       setLocation('/login');
       return;
     }
@@ -41,12 +45,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
+  // Public routes that don't require authentication
+  const publicRoutes = ['/login', '/onboard'];
+  const isPublicRoute = publicRoutes.includes(location);
+  
   // Don't render anything while redirecting
-  if ((!isAuthenticated && location !== '/login') || (isAuthenticated && location === '/login')) {
+  if ((!isAuthenticated && !isPublicRoute) || (isAuthenticated && location === '/login')) {
     return null;
   }
 
-  if (location === '/login') {
+  if (isPublicRoute) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         {children}

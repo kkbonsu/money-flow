@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
-import { BarChart } from 'lucide-react';
+import { BarChart, Building2 } from 'lucide-react';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -96,6 +96,22 @@ export default function Login() {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+          
+          <div className="mt-6 pt-4 border-t">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-3">
+                Don't have an organization yet?
+              </p>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setLocation('/onboard')}
+              >
+                <Building2 className="w-4 h-4 mr-2" />
+                Create New Organization
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
