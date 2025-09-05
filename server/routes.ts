@@ -32,7 +32,8 @@ import {
   insertSupportMessageSchema,
   organizations,
   branches,
-  userBranchAccess
+  userBranchAccess,
+  tenants
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -153,6 +154,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash admin password
       const hashedPassword = await bcrypt.hash(data.adminUser.password, 10);
       
+      // Create corresponding tenant record for legacy compatibility
+      await db.insert(tenants).values({
+        id: organization.id,
+        name: organization.name,
+        slug: organization.code.toLowerCase().replace('_', '-'),
+        settings: {},
+      }).onConflictDoNothing();
+
       // Create admin user
       const [adminUser] = await db.insert(users).values({
         organizationId: organization.id,
