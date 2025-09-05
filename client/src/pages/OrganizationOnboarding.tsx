@@ -84,15 +84,26 @@ export default function OrganizationOnboarding() {
       return response.json();
     },
     onSuccess: (data) => {
+      console.log('Organization created successfully:', data);
+      
       toast({
         title: "Organization Created!",
-        description: `${form.name} has been successfully set up.`,
+        description: `${form.name} has been successfully set up. You can now login with username: ${data.user?.username}`,
       });
       
       // Auto-login with the admin user
       if (data.token) {
+        console.log('Setting token and redirecting...');
         localStorage.setItem('token', data.token);
-        setLocation('/dashboard');
+        
+        // Force a page reload to ensure auth state is updated
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
+      } else {
+        console.error('No token received from server');
+        // Redirect to login page with a message
+        setLocation('/login');
       }
     },
     onError: (error: any) => {

@@ -164,6 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).returning();
       
       // Hash admin password
+      console.log('Creating admin user with password length:', data.adminUser.password?.length || 0);
       const hashedPassword = await bcrypt.hash(data.adminUser.password, 10);
       
       // Create corresponding tenant record for legacy compatibility FIRST
@@ -271,19 +272,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
+      console.log('Login attempt for username:', username);
       
       // Find user by username across all organizations
       const userResult = await db.select().from(users)
         .where(eq(users.username, username))
         .limit(1);
       
+      console.log('User search result:', userResult.length > 0 ? 'Found user' : 'No user found');
+      
       if (!userResult.length) {
+        console.log('No user found with username:', username);
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
       const user = userResult[0];
+      console.log('Found user:', { id: user.id, username: user.username, hasPassword: !!user.password });
       
-      if (!await bcrypt.compare(password, user.password)) {
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      console.log('Password comparison result:', passwordMatch, 'for password length:', password?.length || 0);
+      
+      if (!passwordMatch) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
