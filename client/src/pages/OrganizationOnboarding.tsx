@@ -96,9 +96,16 @@ export default function OrganizationOnboarding() {
       }
     },
     onError: (error: any) => {
+      let description = error.message || "Failed to create organization";
+      
+      // Handle duplicate code error with helpful suggestion
+      if (error.message?.includes('already exists')) {
+        description = `${error.message} Try adding numbers or your location (e.g., ${form.code}-01, ${form.code}-ACCRA)`;
+      }
+      
       toast({
-        title: "Setup Failed",
-        description: error.message || "Failed to create organization",
+        title: "Setup Failed", 
+        description,
         variant: "destructive",
       });
     },

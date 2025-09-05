@@ -134,6 +134,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = req.body;
       
+      // Check if organization code already exists
+      const existingOrg = await db.select().from(organizations)
+        .where(eq(organizations.code, data.code))
+        .limit(1);
+      
+      if (existingOrg.length > 0) {
+        return res.status(400).json({ 
+          message: `Organization code "${data.code}" already exists. Please choose a different code.`,
+          code: 'DUPLICATE_CODE'
+        });
+      }
+      
       // Create organization
       const [organization] = await db.insert(organizations).values({
         name: data.name,
