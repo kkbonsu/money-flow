@@ -1349,7 +1349,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan Products routes
   app.get("/api/loan-products", authenticateToken, async (req, res) => {
     try {
-      const loanProducts = await storage.getLoanProducts();
+      const tenantId = req.user?.tenantId || "84ec4c01-4b24-475c-8c2e-303e1e7b38be";
+      const loanProducts = await storage.getLoanProducts(tenantId);
       res.json(loanProducts);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loan products" });
@@ -1361,7 +1362,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Received loan product data:', req.body);
       const loanProductData = insertLoanProductSchema.parse(req.body);
       console.log('Parsed loan product data:', loanProductData);
-      const loanProduct = await storage.createLoanProduct(loanProductData);
+      // Use the default tenant ID or get from user context
+      const tenantId = req.user?.tenantId || "84ec4c01-4b24-475c-8c2e-303e1e7b38be";
+      const loanProduct = await storage.createLoanProduct(tenantId, loanProductData);
       res.json(loanProduct);
     } catch (error) {
       console.error('Loan product creation error:', error);
@@ -1373,10 +1376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanProductData = insertLoanProductSchema.parse(req.body);
-      if (!req.user?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required in token' });
-      }
-      const tenantId = req.user.tenantId;
+      const tenantId = req.user?.tenantId || "84ec4c01-4b24-475c-8c2e-303e1e7b38be";
       const loanProduct = await storage.updateLoanProduct(tenantId, id, loanProductData);
       res.json(loanProduct);
     } catch (error) {
@@ -1387,7 +1387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/loan-products/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteLoanProduct(id);
+      const tenantId = req.user?.tenantId || "84ec4c01-4b24-475c-8c2e-303e1e7b38be";
+      await storage.deleteLoanProduct(tenantId, id);
       res.json({ message: "Loan product deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete loan product" });
