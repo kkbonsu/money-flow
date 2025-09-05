@@ -29,7 +29,10 @@ import {
   insertMfiRegistrationSchema,
   insertShareholderSchema,
   insertSupportTicketSchema,
-  insertSupportMessageSchema
+  insertSupportMessageSchema,
+  organizations,
+  branches,
+  userBranchAccess
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -125,7 +128,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Branch switching endpoint
+  // Organization onboarding endpoint
+  app.post("/api/organizations/onboard", async (req, res) => {
+    try {
+      const data = req.body;
+      
+      // Create organization
+      const [organization] = await db.insert(organizations).values({
+        name: data.name,
+        code: data.code,
+        type: data.type,
+      }).returning();
+      
+      // Create main branch
+      const [branch] = await db.insert(branches).values({
+        organizationId: organization.id,
+        name: data.branchName,
+        code: data.branchCode,
+        type: 'headquarters',
+        address: data.address,
+        contact: data.contact,
+      }).returning();
+      
+      // Hash admin password
+      const hashedPassword = await bcrypt.hash(data.adminUser.password, 10);
+      
+      // Create admin user
+      const [adminUser] = await db.insert(users).values({
+        organizationId: organization.id,
+        primaryBranchId: branch.id,
+        username: data.adminUser.username,
+        email: data.adminUser.email,
+        password: hashedPassword,
+        firstName: data.adminUser.firstName,
+        lastName: data.adminUser.lastName,
+        role: 'admin',
+        tenantId: organization.id, // Legacy compatibility
+      }).returning();
+      
+      // Create user-branch access
+      await db.insert(userBranchAccess).values({
+        userId: adminUser.id,
+        branchId: branch.id,
+        branchRole: 'admin',
+        canView: true,
+        canCreate: true,
+        canEdit: true,
+        canDelete: true,
+        canApprove: true,
+      });
+      
+      // Generate token for auto-login
+      const { generateOrganizationToken } = await import('./organizationAuth');
+      const token = await generateOrganizationToken(adminUser.id);
+      
+      res.json({
+        message: 'Organization created successfully',
+        organization,
+        branch,
+        user: {
+          id: adminUser.id,
+          username: adminUser.username,
+          email: adminUser.email,
+          role: adminUser.role,
+          organizationId: adminUser.organizationId,
+        },
+        token
+      });
+    } catch (error: any) {
+      console.error('Organization onboarding error:', error);
+      res.status(500).json({ message: error.message || 'Failed to create organization' });
+    }
+  });
+
   app.post("/api/auth/switch-branch", authenticateToken, async (req, res) => {
     try {
       const { branchId } = req.body;
@@ -151,30 +226,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", extractTenantContext, async (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      if (!req.tenantContext?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required' });
-      }
-      const tenantId = req.tenantContext.tenantId;
-      const user = await storage.getUserByUsername(tenantId, username);
       
-      if (!user || !await bcrypt.compare(password, user.password)) {
+      // Find user by username across all organizations
+      const userResult = await db.select().from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+      
+      if (!userResult.length) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      const token = generateUserToken(user, tenantId);
+      const user = userResult[0];
       
-      // Update last login and log the login
-      await storage.updateUserLastLogin(tenantId, user.id);
-      await storage.createUserAuditLog(tenantId, {
-        userId: user.id,
-        action: 'login',
-        description: 'User logged in successfully',
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent']
-      });
+      if (!await bcrypt.compare(password, user.password)) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Generate organization-aware token
+      const { generateOrganizationToken } = await import('./organizationAuth');
+      const token = await generateOrganizationToken(user.id);
+      
+      // Update last login
+      await db.update(users)
+        .set({ lastLogin: new Date() })
+        .where(eq(users.id, user.id));
       
       res.json({ 
         user: { 
@@ -182,12 +260,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           email: user.email, 
           role: user.role,
-          tenantId,
-          isSuperAdmin: user.isSuperAdmin || false
+          organizationId: user.organizationId,
+          isSystemAdmin: user.isSystemAdmin || false
         }, 
         token 
       });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Login failed" });
     }
   });

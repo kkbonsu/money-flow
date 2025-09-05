@@ -47,6 +47,7 @@ import CustomerHelp from "@/pages/customer/CustomerHelp";
 import CustomerProfile from "@/pages/customer/CustomerProfile";
 import SupportTickets from "@/pages/SupportTickets";
 import CustomerCreditStatus from "@/pages/customer/CustomerCreditStatus";
+import OrganizationOnboarding from "@/pages/OrganizationOnboarding";
 
 function Router() {
   return (
@@ -68,6 +69,7 @@ function Router() {
 
       {/* Staff Portal Routes */}
       <Route path="/login" component={Login} />
+      <Route path="/onboard" component={OrganizationOnboarding} />
       <Route path="/super-admin" component={SuperAdminDashboard} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
