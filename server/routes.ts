@@ -51,7 +51,7 @@ import { authenticateWithOrganization } from "./organizationAuth";
 // Use organization-aware authentication as the main auth middleware
 const authenticateToken = authenticateWithOrganization;
 import { eq, and, sql } from "drizzle-orm";
-import { users, tenants } from "@shared/schema";
+import { users } from "@shared/schema";
 import roleRoutes from "./roleRoutes";
 import { registerOptimizedRoutes } from "./optimizedRoutes";
 

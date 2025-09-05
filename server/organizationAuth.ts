@@ -260,7 +260,7 @@ export const requireBranchAccess = (req: Request, res: Response, next: NextFunct
   }
 
   // Check if user has access to the requested branch
-  const hasAccess = req.user.branches.some(b => b.branchId === requestedBranchId);
+  const hasAccess = req.user.branches.some((b: any) => b.branchId === requestedBranchId);
   
   if (!hasAccess) {
     return res.status(403).json({ message: 'No access to this branch' });
