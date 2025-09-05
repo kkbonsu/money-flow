@@ -614,6 +614,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User profile endpoint
+  app.get("/api/users/profile", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Get user profile using raw SQL to avoid schema issues
+      const userQuery = `SELECT id, username, email, role, first_name, last_name, phone, organization_id, primary_branch_id, is_super_admin, last_login FROM users WHERE id = $1`;
+      const userResult = await pool.query(userQuery, [userId]);
+      
+      if (!userResult.rows.length) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const user = userResult.rows[0];
+      
+      // Remove sensitive data and format response
+      res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone,
+        organizationId: user.organization_id,
+        primaryBranchId: user.primary_branch_id,
+        isSystemAdmin: user.is_super_admin || false,
+        lastLogin: user.last_login
+      });
+    } catch (error) {
+      console.error("User profile error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch user profile" });
+    }
+  });
+
   // Customer profile routes
   app.get("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
@@ -1176,10 +1214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan Book routes
   app.get("/api/loans", authenticateToken, async (req, res) => {
     try {
-      if (!req.user?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required' });
-      }
-      const loans = await storage.getLoans(req.user.tenantId);
+      const loans = await storage.getLoans();
       res.json(loans);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loans" });
@@ -1200,11 +1235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanData = insertLoanBookSchema.parse(req.body);
-      if (!req.user?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required in token' });
-      }
-      const tenantId = req.user.tenantId;
-      const loan = await storage.updateLoan(tenantId, id, loanData);
+      const loan = await storage.updateLoan(id, loanData);
       res.json(loan);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update loan" });
@@ -2086,7 +2117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan portfolio data
   app.get("/api/dashboard/loan-portfolio", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getLoanPortfolio(req.user.tenantId);
+      const data = await storage.getLoanPortfolioData();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loan portfolio data" });
@@ -2096,7 +2127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment status data
   app.get("/api/dashboard/payment-status", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getPaymentStatus(req.user.tenantId);
+      const data = await storage.getPaymentStatusData();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment status data" });
@@ -2106,7 +2137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advanced analytics data
   app.get("/api/dashboard/advanced-analytics", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getAdvancedAnalytics(req.user.tenantId);
+      const data = await storage.getAdvancedAnalyticsData();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch advanced analytics data" });
