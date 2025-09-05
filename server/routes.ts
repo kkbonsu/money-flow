@@ -1358,10 +1358,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/loan-products", authenticateToken, async (req, res) => {
     try {
+      console.log('Received loan product data:', req.body);
       const loanProductData = insertLoanProductSchema.parse(req.body);
+      console.log('Parsed loan product data:', loanProductData);
       const loanProduct = await storage.createLoanProduct(loanProductData);
       res.json(loanProduct);
     } catch (error) {
+      console.error('Loan product creation error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create loan product" });
     }
   });

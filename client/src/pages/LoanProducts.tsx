@@ -49,7 +49,8 @@ export default function LoanProducts() {
 
   const createMutation = useMutation({
     mutationFn: async (data: LoanProductFormData) => {
-      await apiRequest("POST", "/api/loan-products", data);
+      const response = await apiRequest("POST", "/api/loan-products", data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/loan-products"] });
@@ -72,7 +73,8 @@ export default function LoanProducts() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: LoanProductFormData }) => {
-      await apiRequest("PUT", `/api/loan-products/${id}`, data);
+      const response = await apiRequest("PUT", `/api/loan-products/${id}`, data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/loan-products"] });
@@ -95,7 +97,8 @@ export default function LoanProducts() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/loan-products/${id}`);
+      const response = await apiRequest("DELETE", `/api/loan-products/${id}`);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/loan-products"] });
