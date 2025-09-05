@@ -221,14 +221,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         canApprove: true,
       });
       
+      // Create MFI Registration if provided
+      let mfiRegistration = null;
+      if (data.mfiRegistration && data.mfiRegistration.companyName) {
+        const [mfiReg] = await db.insert(mfiRegistration).values({
+          companyName: data.mfiRegistration.companyName,
+          registrationNumber: data.mfiRegistration.registrationNumber,
+          registeredAddress: data.mfiRegistration.registeredAddress,
+          licenseExpiryDate: data.mfiRegistration.licenseExpiryDate ? new Date(data.mfiRegistration.licenseExpiryDate) : null,
+          physicalAddress: data.mfiRegistration.physicalAddress,
+          contactPhone: data.mfiRegistration.contactPhone,
+          contactEmail: data.mfiRegistration.contactEmail,
+          paidUpCapital: data.mfiRegistration.paidUpCapital,
+          minimumCapitalRequired: data.mfiRegistration.minimumCapitalRequired,
+          bogLicenseNumber: data.mfiRegistration.bogLicenseNumber,
+          tenantId: organization.id
+        }).returning();
+        
+        mfiRegistration = mfiReg;
+      }
+
+      // Create Shareholders if provided
+      const createdShareholders = [];
+      if (data.shareholders && data.shareholders.length > 0) {
+        for (const shareholder of data.shareholders) {
+          const [createdShareholder] = await db.insert(shareholders).values({
+            shareholderType: shareholder.shareholderType,
+            name: shareholder.name,
+            nationality: shareholder.nationality,
+            idType: shareholder.idType,
+            idNumber: shareholder.idNumber,
+            address: shareholder.address,
+            contactPhone: shareholder.contactPhone,
+            contactEmail: shareholder.contactEmail,
+            sharesOwned: shareholder.sharesOwned,
+            sharePercentage: shareholder.sharePercentage,
+            investmentAmount: shareholder.investmentAmount,
+            investmentCurrency: shareholder.investmentCurrency,
+            tenantId: organization.id
+          }).returning();
+          
+          createdShareholders.push(createdShareholder);
+        }
+      }
+
+      // Create Initial Equity if provided
+      const createdEquity = [];
+      if (data.initialEquity && data.initialEquity.length > 0) {
+        for (const equityEntry of data.initialEquity) {
+          const [createdEquityEntry] = await db.insert(equity).values({
+            equityType: equityEntry.equityType,
+            amount: equityEntry.amount,
+            date: new Date(),
+            description: equityEntry.description,
+            tenantId: organization.id,
+            organizationId: organization.id,
+            branchId: branch.id
+          }).returning();
+          
+          createdEquity.push(createdEquityEntry);
+        }
+      }
+
       // Generate token for auto-login
       const { generateOrganizationToken } = await import('./organizationAuth');
       const token = await generateOrganizationToken(adminUser.id);
       
       res.json({
-        message: 'Organization created successfully',
+        message: 'Organization created successfully with comprehensive setup',
         organization,
         branch,
+        mfiRegistration,
+        shareholders: createdShareholders,
+        initialEquity: createdEquity,
         user: {
           id: adminUser.id,
           username: adminUser.username,
