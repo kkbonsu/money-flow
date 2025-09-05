@@ -68,10 +68,20 @@ export default function OrganizationOnboarding() {
 
   const createOrganizationMutation = useMutation({
     mutationFn: async (data: OrganizationForm) => {
-      return apiRequest('/api/organizations/onboard', {
+      const response = await fetch('/api/organizations/onboard', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create organization');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
