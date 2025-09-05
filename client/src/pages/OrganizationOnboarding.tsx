@@ -88,7 +88,9 @@ export default function OrganizationOnboarding() {
       
       toast({
         title: "Organization Created!",
-        description: `${form.name} has been successfully set up. You can now login with username: ${data.user?.username}`,
+        description: `${form.name} has been successfully set up. You can now login with:
+Username: ${data.user?.username}
+Password: ${form.adminUser.username}123`,
       });
       
       // Auto-login with the admin user
