@@ -166,15 +166,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash admin password
       const hashedPassword = await bcrypt.hash(data.adminUser.password, 10);
       
-      // Create corresponding tenant record for legacy compatibility
-      await db.insert(tenants).values({
-        id: organization.id,
-        name: organization.name,
-        slug: organization.code.toLowerCase().replace('_', '-'),
-        settings: {},
-      }).onConflictDoNothing();
+      // Create corresponding tenant record for legacy compatibility FIRST
+      let tenantRecord;
+      try {
+        [tenantRecord] = await db.insert(tenants).values({
+          id: organization.id,
+          name: organization.name,
+          slug: organization.code.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+          settings: {},
+        }).returning();
+        console.log('Tenant created successfully:', tenantRecord.id);
+      } catch (tenantError) {
+        console.log('Tenant creation failed, checking if it exists:', tenantError);
+        // Try to get existing tenant
+        const existingTenant = await db.select().from(tenants)
+          .where(eq(tenants.id, organization.id)).limit(1);
+        
+        if (existingTenant.length > 0) {
+          tenantRecord = existingTenant[0];
+          console.log('Using existing tenant:', tenantRecord.id);
+        } else {
+          throw new Error(`Failed to create tenant record: ${tenantError.message}`);
+        }
+      }
 
-      // Create admin user
+      // Ensure we have a valid tenant record before creating user
+      if (!tenantRecord) {
+        throw new Error('No valid tenant record available');
+      }
+
+      // Create admin user with verified tenant reference
       const [adminUser] = await db.insert(users).values({
         organizationId: organization.id,
         primaryBranchId: branch.id,
@@ -184,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName: data.adminUser.firstName,
         lastName: data.adminUser.lastName,
         role: 'admin',
-        tenantId: organization.id, // Legacy compatibility
+        tenantId: organization.id, // Legacy compatibility - now guaranteed to exist
       }).returning();
       
       // Create user-branch access
