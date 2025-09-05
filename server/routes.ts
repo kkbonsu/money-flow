@@ -930,6 +930,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.user?.organizationId) {
         return res.status(400).json({ message: 'Organization context required' });
       }
+      // Use organizationId as tenantId for backward compatibility during migration
       const customers = await storage.getCustomers(req.user.organizationId);
       res.json(customers);
     } catch (error) {
@@ -952,7 +953,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPortalActive: true
       };
       
-      const customer = await storage.createCustomer(customerWithPortal);
+      if (!req.user?.organizationId) {
+        return res.status(400).json({ message: 'Organization context required' });
+      }
+      const customer = await storage.createCustomer(req.user.organizationId, customerWithPortal);
       
       // Return customer data with generated credentials
       res.json({
@@ -976,7 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Tenant context required in token' });
       }
       const tenantId = req.user.tenantId;
-      const customer = await storage.updateCustomer(tenantId, id, customerData);
+      const customer = await storage.updateCustomer(req.user.organizationId, id, customerData);
       res.json(customer);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update customer" });
@@ -986,7 +990,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/customers/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteCustomer(id);
+      if (!req.user?.organizationId) {
+        return res.status(400).json({ message: 'Organization context required' });
+      }
+      await storage.deleteCustomer(req.user.organizationId, id);
       res.json({ message: "Customer deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete customer" });
@@ -1617,95 +1624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bank Management routes
-  app.get("/api/bank-accounts", authenticateToken, async (req, res) => {
-    try {
-      const accounts = await storage.getBankAccounts();
-      res.json(accounts);
-    } catch (error) {
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch bank accounts" });
-    }
-  });
 
-  app.post("/api/bank-accounts", authenticateToken, async (req, res) => {
-    try {
-      const accountData = insertBankManagementSchema.parse(req.body);
-      const account = await storage.createBankAccount(accountData);
-      res.json(account);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create bank account" });
-    }
-  });
-
-  app.put("/api/bank-accounts/:id", authenticateToken, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const accountData = insertBankManagementSchema.parse(req.body);
-      if (!req.user?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required in token' });
-      }
-      const tenantId = req.user.tenantId;
-      const account = await storage.updateBankAccount(tenantId, id, accountData);
-      res.json(account);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update bank account" });
-    }
-  });
-
-  app.delete("/api/bank-accounts/:id", authenticateToken, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteBankAccount(id);
-      res.json({ message: "Bank account deleted successfully" });
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete bank account" });
-    }
-  });
-
-  // Petty Cash routes
-  app.get("/api/petty-cash", authenticateToken, async (req, res) => {
-    try {
-      const pettyCash = await storage.getPettyCash();
-      res.json(pettyCash);
-    } catch (error) {
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch petty cash" });
-    }
-  });
-
-  app.post("/api/petty-cash", authenticateToken, async (req, res) => {
-    try {
-      const pettyCashData = insertPettyCashSchema.parse(req.body);
-      const pettyCash = await storage.createPettyCash(pettyCashData);
-      res.json(pettyCash);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create petty cash" });
-    }
-  });
-
-  app.put("/api/petty-cash/:id", authenticateToken, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const pettyCashData = insertPettyCashSchema.parse(req.body);
-      if (!req.user?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required in token' });
-      }
-      const tenantId = req.user.tenantId;
-      const pettyCash = await storage.updatePettyCash(tenantId, id, pettyCashData);
-      res.json(pettyCash);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update petty cash" });
-    }
-  });
-
-  app.delete("/api/petty-cash/:id", authenticateToken, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deletePettyCash(id);
-      res.json({ message: "Petty cash deleted successfully" });
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete petty cash" });
-    }
-  });
 
   // Inventory routes
   app.get("/api/inventory", authenticateToken, async (req, res) => {
@@ -1752,50 +1671,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rent Management routes
-  app.get("/api/rent", authenticateToken, async (req, res) => {
-    try {
-      const rent = await storage.getRentManagement();
-      res.json(rent);
-    } catch (error) {
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch rent management" });
-    }
-  });
-
-  app.post("/api/rent", authenticateToken, async (req, res) => {
-    try {
-      const rentData = insertRentManagementSchema.parse(req.body);
-      const rent = await storage.createRentManagement(rentData);
-      res.json(rent);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create rent management" });
-    }
-  });
-
-  app.put("/api/rent/:id", authenticateToken, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const rentData = insertRentManagementSchema.parse(req.body);
-      if (!req.user?.tenantId) {
-        return res.status(400).json({ message: 'Tenant context required in token' });
-      }
-      const tenantId = req.user.tenantId;
-      const rent = await storage.updateRentManagement(tenantId, id, rentData);
-      res.json(rent);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update rent management" });
-    }
-  });
-
-  app.delete("/api/rent/:id", authenticateToken, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteRentManagement(id);
-      res.json({ message: "Rent management deleted successfully" });
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete rent management" });
-    }
-  });
 
   // Assets routes
   app.get("/api/assets", authenticateToken, async (req, res) => {
