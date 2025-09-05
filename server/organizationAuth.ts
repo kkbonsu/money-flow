@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { organizations, branches, users, userBranchAccess } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -62,102 +62,108 @@ declare global {
 
 // Generate JWT token with organization context
 export const generateOrganizationToken = async (userId: number): Promise<string> => {
-  // Get user with organization
-  const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  if (!userResult.length) {
+  // Get user with organization using raw SQL to bypass schema issues
+  const userQuery = `SELECT id, username, email, role, organization_id, primary_branch_id, is_super_admin, tenant_id FROM users WHERE id = $1 LIMIT 1`;
+  const userResult = await pool.query(userQuery, [userId]);
+  if (!userResult.rows.length) {
     throw new Error("User not found");
   }
-  const user = userResult[0];
+  const user = userResult.rows[0];
 
   // Get organization details from user's organization ID or fallback to tenant ID
-  const orgId = (user as any).organizationId || (user as any).organization_id || user.tenantId;
-  const orgResult = await db.select().from(organizations)
-    .where(eq(organizations.id, orgId))
-    .limit(1);
-  if (!orgResult.length) {
+  const orgId = user.organization_id || user.tenant_id;
+  const orgQuery = `SELECT id, name, code FROM organizations WHERE id = $1 LIMIT 1`;
+  const orgResult = await pool.query(orgQuery, [orgId]);
+  if (!orgResult.rows.length) {
     throw new Error("Organization not found");
   }
-  const org = orgResult[0];
+  const org = orgResult.rows[0];
 
-  // Get user's accessible branches
-  const branchAccessList = await db.select({
-    branch: branches,
-    access: userBranchAccess
-  })
-  .from(userBranchAccess)
-  .innerJoin(branches, eq(branches.id, userBranchAccess.branchId))
-  .where(and(
-    eq(userBranchAccess.userId, userId),
-    eq(userBranchAccess.isActive, true)
-  ));
-
+  // Get user's accessible branches using raw SQL
+  const branchAccessQuery = `
+    SELECT b.id, b.name, b.code, uba.branch_role, uba.can_view, uba.can_create, uba.can_edit, uba.can_delete, uba.can_approve
+    FROM user_branch_access uba
+    INNER JOIN branches b ON b.id = uba.branch_id
+    WHERE uba.user_id = $1 AND uba.is_active = true
+  `;
+  const branchAccessResult = await pool.query(branchAccessQuery, [userId]);
+  
   // If no specific branch access, get all org branches for admin
-  let userBranches = branchAccessList;
-  if (!branchAccessList.length && user.role === 'admin') {
-    const allBranches = await db.select({
-      branch: branches,
-      access: null as any
-    })
-    .from(branches)
-    .where(eq(branches.organizationId, org.id));
+  let userBranches = branchAccessResult.rows.map(row => ({
+    branch: { id: row.id, name: row.name, code: row.code },
+    access: {
+      branchRole: row.branch_role,
+      canView: row.can_view,
+      canCreate: row.can_create,
+      canEdit: row.can_edit,
+      canDelete: row.can_delete,
+      canApprove: row.can_approve
+    }
+  }));
+  
+  if (!userBranches.length && user.role === 'admin') {
+    const allBranchesQuery = `SELECT id, name, code FROM branches WHERE organization_id = $1`;
+    const allBranchesResult = await pool.query(allBranchesQuery, [org.id]);
     
-    userBranches = allBranches.map(b => ({
-      branch: b.branch,
+    userBranches = allBranchesResult.rows.map(b => ({
+      branch: { id: b.id, name: b.name, code: b.code },
       access: {
-        id: 0,
-        userId: userId,
-        branchId: b.branch.id,
         branchRole: 'admin',
-        permissions: [] as any,
         canView: true,
         canCreate: true,
         canEdit: true,
         canDelete: true,
-        canApprove: true,
-        assignedBy: null,
-        assignedAt: new Date(),
-        isActive: true
+        canApprove: true
       }
     }));
   }
 
   // Use primary branch or first available branch
-  const primaryBranchId = (user as any).primaryBranchId || (user as any).primary_branch_id;
+  const primaryBranchId = user.primary_branch_id;
   const primaryBranch = primaryBranchId 
     ? userBranches.find((b: any) => b.branch.id === primaryBranchId)?.branch
     : userBranches[0]?.branch;
 
   if (!primaryBranch) {
-    // Create access to main branch if no branches assigned
-    const mainBranch = await db.select().from(branches)
-      .where(and(
-        eq(branches.organizationId, org.id),
-        eq(branches.code, 'MAIN')
-      ))
-      .limit(1);
+    // Create access to main branch if no branches assigned using raw SQL
+    const mainBranchQuery = `SELECT id, name, code FROM branches WHERE organization_id = $1 AND (code = 'MAIN' OR code LIKE '%HO%' OR code LIKE '%HEAD%') LIMIT 1`;
+    const mainBranchResult = await pool.query(mainBranchQuery, [org.id]);
     
-    if (!mainBranch.length) {
-      throw new Error("No branches available for user");
-    }
-    
-    userBranches = [{
-      branch: mainBranch[0],
-      access: {
-        id: 0,
-        userId: userId,
-        branchId: mainBranch[0].id,
-        branchRole: user.role,
-        permissions: [] as any,
-        canView: true,
-        canCreate: user.role !== 'viewer',
-        canEdit: user.role !== 'viewer',
-        canDelete: user.role === 'admin',
-        canApprove: user.role === 'admin' || user.role === 'manager',
-        assignedBy: null,
-        assignedAt: new Date(),
-        isActive: true
+    if (!mainBranchResult.rows.length) {
+      // Fallback to any branch in the organization
+      const anyBranchQuery = `SELECT id, name, code FROM branches WHERE organization_id = $1 LIMIT 1`;
+      const anyBranchResult = await pool.query(anyBranchQuery, [org.id]);
+      
+      if (!anyBranchResult.rows.length) {
+        throw new Error("No branches available for user");
       }
-    }];
+      
+      const branch = anyBranchResult.rows[0];
+      userBranches = [{
+        branch: { id: branch.id, name: branch.name, code: branch.code },
+        access: {
+          branchRole: user.role,
+          canView: true,
+          canCreate: user.role !== 'viewer',
+          canEdit: user.role !== 'viewer',
+          canDelete: user.role === 'admin',
+          canApprove: user.role === 'admin' || user.role === 'manager'
+        }
+      }];
+    } else {
+      const branch = mainBranchResult.rows[0];
+      userBranches = [{
+        branch: { id: branch.id, name: branch.name, code: branch.code },
+        access: {
+          branchRole: user.role,
+          canView: true,
+          canCreate: user.role !== 'viewer',
+          canEdit: user.role !== 'viewer',
+          canDelete: user.role === 'admin',
+          canApprove: user.role === 'admin' || user.role === 'manager'
+        }
+      }];
+    }
   }
 
   const currentBranch = primaryBranch || userBranches[0]?.branch;
@@ -191,7 +197,7 @@ export const generateOrganizationToken = async (userId: number): Promise<string>
       permissions: (b.access?.permissions as string[]) || []
     })),
     
-    isSystemAdmin: (user as any).isSystemAdmin || (user as any).isSuperAdmin || false
+    isSystemAdmin: user.is_super_admin || false
   };
 
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });

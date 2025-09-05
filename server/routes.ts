@@ -33,7 +33,7 @@ import {
   tenants
 } from "@shared/schema";
 import { z } from "zod";
-import { db } from "./db";
+import { db, pool } from "./db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
@@ -337,16 +337,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      // Find user by username across all organizations
-      const userResult = await db.select().from(users)
-        .where(eq(users.username, username))
-        .limit(1);
       
-      if (!userResult.length) {
+      // Use raw SQL query to bypass schema issues temporarily
+      const query = `SELECT id, username, password, email, role, organization_id, is_super_admin, is_active FROM users WHERE username = $1 LIMIT 1`;
+      const userResult = await pool.query(query, [username]);
+      
+      if (!userResult.rows.length) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      const user = userResult[0];
+      const user = userResult.rows[0];
       
       if (!await bcrypt.compare(password, user.password)) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -356,10 +356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { generateOrganizationToken } = await import('./organizationAuth');
       const token = await generateOrganizationToken(user.id);
       
-      // Update last login
-      await db.update(users)
-        .set({ lastLogin: new Date() })
-        .where(eq(users.id, user.id));
+      // Update last login using raw SQL to avoid schema issues
+      await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
       
       res.json({ 
         user: { 
@@ -367,8 +365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           email: user.email, 
           role: user.role,
-          organizationId: user.organizationId,
-          isSystemAdmin: user.isSystemAdmin || false
+          organizationId: user.organization_id,
+          isSystemAdmin: user.is_super_admin || false
         }, 
         token 
       });

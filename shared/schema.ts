@@ -155,7 +155,7 @@ export const users = pgTable("users", {
   phone: text("phone"),
   lastLogin: timestamp("last_login"),
   isActive: boolean("is_active").default(true),
-  isSystemAdmin: boolean("is_super_admin").default(false), // System-wide admin
+  isSuperAdmin: boolean("is_super_admin").default(false), // System-wide admin
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
