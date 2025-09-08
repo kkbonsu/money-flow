@@ -4,7 +4,7 @@ import { multiTenantStorage } from "./multiTenantStorage";
 import type { JwtPayload } from "@shared/schema";
 import type { SimpleTenantContext } from "@shared/tenantSchema";
 
-const JWT_SECRET = process.env.JWT_SECRET || "moneyflow-development-secret-2025";
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 // Extend Express Request to include tenant context
 declare global {
@@ -202,7 +202,15 @@ export const createTenantWithAdmin = async (tenantData: {
     // Create tenant
     const tenant = await multiTenantStorage.createTenant({
       name: tenantData.name,
-      slug: tenantData.slug
+      slug: tenantData.slug,
+      settings: {
+        theme: 'light',
+        features: ['loans', 'payments', 'analytics'],
+        branding: {
+          primaryColor: '#3B82F6',
+          logoUrl: null
+        }
+      }
     });
 
     // Create admin user for the tenant

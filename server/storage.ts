@@ -20,7 +20,7 @@ import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 
 // Default tenant ID for backward compatibility
-const DEFAULT_TENANT_ID = "84ec4c01-4b24-475c-8c2e-303e1e7b38be"; // CediSolution MFI tenant ID
+const DEFAULT_TENANT_ID = "default-tenant-001";
 
 export interface IStorage {
   // User methods
@@ -929,32 +929,26 @@ export class DatabaseStorage implements IStorage {
     const [overdue7Days] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(paymentSchedules)
-      .where(
-        and(
-          eq(paymentSchedules.status, 'pending'),
-          sql`${paymentSchedules.dueDate} < ${sevenDaysAgo.toISOString()}`
-        )
-      );
+      .where(sql`
+        ${paymentSchedules.status} = 'pending' 
+        AND ${paymentSchedules.dueDate} < ${sevenDaysAgo}
+      `);
 
     const [overdue30Days] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(paymentSchedules)
-      .where(
-        and(
-          eq(paymentSchedules.status, 'pending'),
-          sql`${paymentSchedules.dueDate} < ${thirtyDaysAgo.toISOString()}`
-        )
-      );
+      .where(sql`
+        ${paymentSchedules.status} = 'pending' 
+        AND ${paymentSchedules.dueDate} < ${thirtyDaysAgo}
+      `);
 
     const [overdue90Days] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(paymentSchedules)
-      .where(
-        and(
-          eq(paymentSchedules.status, 'pending'),
-          sql`${paymentSchedules.dueDate} < ${ninetyDaysAgo.toISOString()}`
-        )
-      );
+      .where(sql`
+        ${paymentSchedules.status} = 'pending' 
+        AND ${paymentSchedules.dueDate} < ${ninetyDaysAgo}
+      `);
 
     const totalOverdue = overdue7Days?.count || 0;
     const totalPending = pendingPayments?.count || 0;
@@ -974,23 +968,24 @@ export class DatabaseStorage implements IStorage {
   async getLoanPortfolioData(): Promise<any> {
     const currentYear = new Date().getFullYear();
     
-    // Single optimized query to get all monthly data at once using raw SQL
+    // Single optimized query to get all monthly data at once
     const monthlyData = await db
-      .execute(sql`
-        SELECT 
-          EXTRACT(MONTH FROM created_at) as month,
-          COALESCE(SUM(loan_amount), 0) as total,
-          COUNT(*) as count
-        FROM ${loanBooks}
-        WHERE status IN ('approved', 'disbursed') 
-          AND EXTRACT(YEAR FROM created_at) = ${currentYear}
-        GROUP BY EXTRACT(MONTH FROM created_at)
-        ORDER BY EXTRACT(MONTH FROM created_at)
-      `);
+      .select({
+        month: sql<number>`EXTRACT(MONTH FROM ${loanBooks.createdAt})`,
+        total: sql<number>`COALESCE(SUM(${loanBooks.loanAmount}), 0)`,
+        count: sql<number>`COUNT(*)`
+      })
+      .from(loanBooks)
+      .where(sql`
+        ${loanBooks.status} IN ('approved', 'disbursed') 
+        AND EXTRACT(YEAR FROM ${loanBooks.createdAt}) = ${currentYear}
+      `)
+      .groupBy(sql`EXTRACT(MONTH FROM ${loanBooks.createdAt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${loanBooks.createdAt})`);
     
     // Create a map for quick lookup
     const dataMap = new Map();
-    monthlyData.rows.forEach((row: any) => {
+    monthlyData.forEach(row => {
       dataMap.set(row.month, { total: row.total, count: row.count });
     });
     

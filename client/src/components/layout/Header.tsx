@@ -6,7 +6,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import { BranchSwitcher } from '@/components/BranchSwitcher';
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -26,8 +25,6 @@ export default function Header() {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="w-5 h-5" />
           </Button>
-          {/* Branch Switcher - Only show when user is authenticated */}
-          {authUser && <BranchSwitcher />}
         </div>
 
         <div className="flex items-center space-x-4">

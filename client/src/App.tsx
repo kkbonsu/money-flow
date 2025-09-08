@@ -22,6 +22,7 @@ import Staff from "@/pages/Staff";
 import Income from "@/pages/Income";
 import Expenses from "@/pages/Expenses";
 import DebtManagement from "@/pages/DebtManagement";
+import BankManagement from "@/pages/BankManagement";
 
 import Inventory from "@/pages/Inventory";
 import Assets from "@/pages/Assets";
@@ -46,7 +47,6 @@ import CustomerHelp from "@/pages/customer/CustomerHelp";
 import CustomerProfile from "@/pages/customer/CustomerProfile";
 import SupportTickets from "@/pages/SupportTickets";
 import CustomerCreditStatus from "@/pages/customer/CustomerCreditStatus";
-import OrganizationOnboarding from "@/pages/OrganizationOnboarding";
 
 function Router() {
   return (
@@ -68,7 +68,6 @@ function Router() {
 
       {/* Staff Portal Routes */}
       <Route path="/login" component={Login} />
-      <Route path="/onboard" component={OrganizationOnboarding} />
       <Route path="/super-admin" component={SuperAdminDashboard} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
@@ -84,6 +83,7 @@ function Router() {
       <Route path="/income" component={Income} />
       <Route path="/expenses" component={Expenses} />
       <Route path="/debt-management" component={DebtManagement} />
+      <Route path="/bank-management" component={BankManagement} />
 
       <Route path="/inventory" component={Inventory} />
       <Route path="/assets" component={Assets} />
