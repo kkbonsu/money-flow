@@ -1,51 +1,64 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useTenantContext } from "@/contexts/TenantContext";
 
 /**
  * Optimized query hooks for Money Flow application
  * Implements intelligent caching and batching strategies
  */
 
-// Dashboard metrics with smart caching
+// Dashboard metrics with smart caching (tenant-aware)
 export function useDashboardMetrics() {
+  const { currentTenant } = useTenantContext();
+  
   return useQuery({
-    queryKey: ["/api/dashboard/metrics"],
+    queryKey: ['tenant', currentTenant?.slug || 'default', "/api/dashboard/metrics"],
     staleTime: 2 * 60 * 1000, // 2 minutes for real-time financial data
     gcTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
+    enabled: !!currentTenant, // Only fetch when tenant is loaded
   });
 }
 
-// Recent payments with pagination support
+// Recent payments with pagination support (tenant-aware)
 export function useRecentPayments(limit: number = 10) {
+  const { currentTenant } = useTenantContext();
+  
   return useQuery({
-    queryKey: ["/api/payments/recent", { limit }],
+    queryKey: ['tenant', currentTenant?.slug || 'default', "/api/payments/recent", { limit }],
     staleTime: 1 * 60 * 1000, // 1 minute for payment data
     gcTime: 3 * 60 * 1000,
+    enabled: !!currentTenant, // Only fetch when tenant is loaded
   });
 }
 
-// Customer list with search and pagination
+// Customer list with search and pagination (tenant-aware)
 export function useCustomers(search?: string, page: number = 1, limit: number = 20) {
+  const { currentTenant } = useTenantContext();
+  
   return useQuery({
-    queryKey: ["/api/customers", { search, page, limit }],
+    queryKey: ['tenant', currentTenant?.slug || 'default', "/api/customers", { search, page, limit }],
     staleTime: 3 * 60 * 1000, // 3 minutes for customer data
-    enabled: true,
+    enabled: !!currentTenant, // Only fetch when tenant is loaded
   });
 }
 
-// Loan portfolio data with caching
+// Loan portfolio data with caching (tenant-aware)
 export function useLoanPortfolio() {
+  const { currentTenant } = useTenantContext();
+  
   return useQuery({
-    queryKey: ["/api/loans/portfolio"],
+    queryKey: ['tenant', currentTenant?.slug || 'default', "/api/loans/portfolio"],
     staleTime: 5 * 60 * 1000, // 5 minutes for portfolio analysis
     gcTime: 10 * 60 * 1000,
+    enabled: !!currentTenant, // Only fetch when tenant is loaded
   });
 }
 
 // Optimized mutation hooks with cache invalidation
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
+  const { currentTenant } = useTenantContext();
   
   return useMutation({
     mutationFn: async (customerData: any) => {
@@ -53,9 +66,13 @@ export function useCreateCustomer() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate and refetch customer-related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
+      // Invalidate and refetch customer-related queries (tenant-scoped)
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === 'tenant' && key[1] === currentTenant?.slug;
+        }
+      });
     },
     onError: (error) => {
       console.error("Failed to create customer:", error);
@@ -65,6 +82,7 @@ export function useCreateCustomer() {
 
 export function useCreateLoan() {
   const queryClient = useQueryClient();
+  const { currentTenant } = useTenantContext();
   
   return useMutation({
     mutationFn: async (loanData: any) => {
@@ -72,17 +90,20 @@ export function useCreateLoan() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate loan and dashboard queries
-      queryClient.invalidateQueries({ queryKey: ["/api/loans"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/loans/portfolio"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/payments"] });
+      // Invalidate loan and dashboard queries (tenant-scoped)
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === 'tenant' && key[1] === currentTenant?.slug;
+        }
+      });
     },
   });
 }
 
 export function useUpdatePaymentStatus() {
   const queryClient = useQueryClient();
+  const { currentTenant } = useTenantContext();
   
   return useMutation({
     mutationFn: async ({ paymentId, status }: { paymentId: number; status: string }) => {
@@ -90,9 +111,13 @@ export function useUpdatePaymentStatus() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate payment and dashboard queries
-      queryClient.invalidateQueries({ queryKey: ["/api/payments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
+      // Invalidate payment and dashboard queries (tenant-scoped)
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === 'tenant' && key[1] === currentTenant?.slug;
+        }
+      });
     },
   });
 }
@@ -117,18 +142,24 @@ export function useBatchDashboardData() {
 export function usePrefetch() {
   const queryClient = useQueryClient();
   
+  const { currentTenant } = useTenantContext();
+  
   const prefetchCustomers = () => {
-    queryClient.prefetchQuery({
-      queryKey: ["/api/customers"],
-      staleTime: 3 * 60 * 1000,
-    });
+    if (currentTenant) {
+      queryClient.prefetchQuery({
+        queryKey: ['tenant', currentTenant.slug, "/api/customers"],
+        staleTime: 3 * 60 * 1000,
+      });
+    }
   };
   
   const prefetchLoans = () => {
-    queryClient.prefetchQuery({
-      queryKey: ["/api/loans"],
-      staleTime: 3 * 60 * 1000,
-    });
+    if (currentTenant) {
+      queryClient.prefetchQuery({
+        queryKey: ['tenant', currentTenant.slug, "/api/loans"],
+        staleTime: 3 * 60 * 1000,
+      });
+    }
   };
   
   return { prefetchCustomers, prefetchLoans };

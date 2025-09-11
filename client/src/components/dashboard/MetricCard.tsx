@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { LucideIcon } from 'lucide-react';
 
 interface MetricCardProps {
@@ -10,6 +11,8 @@ interface MetricCardProps {
     label: string;
   };
   className?: string;
+  tenantSpecific?: boolean;
+  loading?: boolean;
 }
 
 export default function MetricCard({ 
@@ -17,12 +20,33 @@ export default function MetricCard({
   value, 
   icon: Icon, 
   trend, 
-  className = "" 
+  className = "",
+  tenantSpecific = true,
+  loading = false
 }: MetricCardProps) {
   const isPositiveTrend = trend.value > 0;
 
+  if (loading) {
+    return (
+      <Card className={`metric-card ${className}`}>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="h-4 bg-muted rounded-lg w-3/4 mb-2 animate-pulse"></div>
+              <div className="h-8 bg-muted rounded-lg w-1/2 animate-pulse"></div>
+            </div>
+            <div className="w-12 h-12 bg-muted rounded-xl animate-pulse"></div>
+          </div>
+          <div className="mt-4">
+            <div className="h-4 bg-muted rounded-lg w-1/3 animate-pulse"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className={`metric-card hover:scale-105 transition-transform duration-300 ${className}`}>
+    <Card className={`metric-card hover:scale-105 transition-transform duration-300 ${className}`} data-testid={`metric-card-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>

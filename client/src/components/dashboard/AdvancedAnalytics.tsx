@@ -1,15 +1,55 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart, TrendingUp, AlertTriangle, Target, Shield, Activity } from 'lucide-react';
+import { useTenantContext } from '@/contexts/TenantContext';
+import { BarChart, TrendingUp, AlertTriangle, Target, Shield, Activity, Building2, AlertCircle } from 'lucide-react';
+
+interface AdvancedAnalyticsData {
+  // Basic metrics
+  default_rate?: string;
+  at_risk_loans?: number;
+  approval_rate?: number;
+  approved_today?: number;
+  pending_review?: number;
+  total_customers?: number;
+  total_loans?: number;
+  avg_loan_amount?: number;
+  total_collected?: number;
+  
+  // Compliance metrics
+  compliance_score?: number;
+  compliance_status?: string;
+  
+  // Capital adequacy
+  capital_adequacy_ratio?: number;
+  current_capital?: number;
+  required_capital?: number;
+  capital_status?: string;
+  
+  // Portfolio performance
+  portfolio_return?: string;
+  portfolio_value?: number;
+  portfolio_status?: string;
+  
+  // AML monitoring
+  flagged_transactions?: number;
+  transactions_today?: number;
+  aml_status?: string;
+}
 
 export default function AdvancedAnalytics() {
-  // Fetch advanced analytics data
-  const { data: analytics, isLoading } = useQuery({
-    queryKey: ['/api/dashboard/advanced-analytics'],
+  const { currentTenant, tenantName, isLoading: tenantLoading } = useTenantContext();
+  
+  // Fetch advanced analytics data with proper tenant isolation
+  const { data: analytics, isLoading: dataLoading, error } = useQuery<AdvancedAnalyticsData>({
+    queryKey: ['tenant', currentTenant?.slug || 'default', '/api/dashboard/advanced-analytics'],
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!currentTenant, // Only fetch when tenant is loaded
   });
+  
+  const isLoading = tenantLoading || dataLoading;
 
   if (isLoading) {
     return (
@@ -26,14 +66,45 @@ export default function AdvancedAnalytics() {
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Advanced Analytics & Compliance</h2>
+          {currentTenant && (
+            <Badge variant="outline">
+              <Building2 className="w-3 h-3 mr-1" />
+              {tenantName}
+            </Badge>
+          )}
+        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load analytics data: {error.message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="section-advanced-analytics">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Advanced Analytics & Compliance</h2>
-        <Badge variant="outline" className="text-green-600 border-green-200">
-          <Activity className="w-3 h-3 mr-1" />
-          Live Data
-        </Badge>
+        <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="text-green-600 border-green-200">
+            <Activity className="w-3 h-3 mr-1" />
+            Live Data
+          </Badge>
+          {currentTenant && (
+            <Badge variant="secondary">
+              <Building2 className="w-3 h-3 mr-1" />
+              {tenantName}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -48,13 +119,18 @@ export default function AdvancedAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">98%</div>
+                <div className="text-3xl font-bold text-green-600">
+                  {isLoading ? '---' : `${analytics?.compliance_score || 0}%`}
+                </div>
                 <p className="text-sm text-muted-foreground">Overall Compliance</p>
               </div>
-              <Progress value={98} className="h-2" />
+              <Progress value={isLoading ? 0 : (analytics?.compliance_score || 0)} className="h-2" />
               <div className="flex justify-between text-xs">
                 <span>BoG Requirements</span>
-                <span className="text-green-600">Compliant</span>
+                <span className={`font-medium ${
+                  (analytics?.compliance_score || 0) >= 95 ? 'text-green-600' : 
+                  (analytics?.compliance_score || 0) >= 85 ? 'text-yellow-600' : 'text-red-600'
+                }`}>{isLoading ? '---' : analytics?.compliance_status || 'Unknown'}</span>
               </div>
             </div>
           </CardContent>
@@ -72,18 +148,18 @@ export default function AdvancedAnalytics() {
             <div className="space-y-4">
               <div className="text-center">
                 <div className="text-3xl font-bold text-orange-600">
-                  {analytics?.default_rate === "0.0" ? "Low" : parseFloat(analytics?.default_rate) < 5 ? "Medium" : "High"}
+                  {isLoading ? '---' : analytics?.default_rate === "0.0" ? "Low" : parseFloat(analytics?.default_rate || "0") < 5 ? "Medium" : "High"}
                 </div>
                 <p className="text-sm text-muted-foreground">Portfolio Risk</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Default Rate:</span>
-                  <span className="font-medium">{analytics?.default_rate}%</span>
+                  <span className="font-medium">{isLoading ? '---' : analytics?.default_rate}%</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>At Risk Loans:</span>
-                  <span className="font-medium">{analytics?.at_risk_loans}</span>
+                  <span className="font-medium">{isLoading ? '---' : analytics?.at_risk_loans || '0'}</span>
                 </div>
               </div>
             </div>
@@ -101,17 +177,19 @@ export default function AdvancedAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">125%</div>
-                <p className="text-sm text-muted-foreground">Above Minimum</p>
+                <div className="text-3xl font-bold text-blue-600">
+                  {isLoading ? '---' : `${analytics?.capital_adequacy_ratio || 0}%`}
+                </div>
+                <p className="text-sm text-muted-foreground">{isLoading ? 'Loading...' : analytics?.capital_status || 'Unknown'}</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Current Capital:</span>
-                  <span className="font-medium">GHS 2.5M</span>
+                  <span className="font-medium">{isLoading ? '---' : `GHS ${((analytics?.current_capital || 0) / 1000000).toFixed(1)}M`}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Required:</span>
-                  <span className="font-medium">GHS 2.0M</span>
+                  <span className="font-medium">{isLoading ? '---' : `GHS ${((analytics?.required_capital || 0) / 1000000).toFixed(1)}M`}</span>
                 </div>
               </div>
             </div>
@@ -129,17 +207,19 @@ export default function AdvancedAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">15.2%</div>
-                <p className="text-sm text-muted-foreground">Annual Return</p>
+                <div className="text-3xl font-bold text-purple-600">
+                  {isLoading ? '---' : `${analytics?.portfolio_return || '0.0'}%`}
+                </div>
+                <p className="text-sm text-muted-foreground">{isLoading ? 'Loading...' : analytics?.portfolio_status || 'Annual Return'}</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Active Loans:</span>
-                  <span className="font-medium">145</span>
+                  <span className="font-medium">{isLoading ? '---' : analytics?.total_loans || '0'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Avg. Loan Size:</span>
-                  <span className="font-medium">GHS 23,310</span>
+                  <span className="font-medium">{isLoading ? '---' : `GHS ${(analytics?.avg_loan_amount || 0).toLocaleString()}`}</span>
                 </div>
               </div>
             </div>
@@ -157,17 +237,22 @@ export default function AdvancedAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-red-600">0</div>
+                <div className="text-3xl font-bold text-red-600">
+                  {isLoading ? '---' : analytics?.flagged_transactions || 0}
+                </div>
                 <p className="text-sm text-muted-foreground">Flagged Transactions</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Transactions Today:</span>
-                  <span className="font-medium">47</span>
+                  <span className="font-medium">{isLoading ? '---' : analytics?.transactions_today || 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Status:</span>
-                  <span className="font-medium text-green-600">Clean</span>
+                  <span className={`font-medium ${
+                    analytics?.aml_status === 'Clean' ? 'text-green-600' :
+                    analytics?.aml_status === 'Monitoring' ? 'text-yellow-600' : 'text-red-600'
+                  }`}>{isLoading ? '---' : analytics?.aml_status || 'Unknown'}</span>
                 </div>
               </div>
             </div>
@@ -185,17 +270,19 @@ export default function AdvancedAnalytics() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600">{analytics?.approval_rate}%</div>
+                <div className="text-3xl font-bold text-indigo-600">
+                  {isLoading ? '---' : `${analytics?.approval_rate || 0}%`}
+                </div>
                 <p className="text-sm text-muted-foreground">Approval Rate</p>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Approved Today:</span>
-                  <span className="font-medium">{analytics?.approved_today}</span>
+                  <span className="font-medium">{isLoading ? '---' : analytics?.approved_today || '0'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Pending Review:</span>
-                  <span className="font-medium">{analytics?.pending_review}</span>
+                  <span className="font-medium">{isLoading ? '---' : analytics?.pending_review || '0'}</span>
                 </div>
               </div>
             </div>

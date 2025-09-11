@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTenantContext } from '@/contexts/TenantContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Clock, AlertTriangle, CheckCircle, Building2, AlertCircle } from 'lucide-react';
 
 interface PaymentStatusData {
   onTime: number;
@@ -13,10 +16,15 @@ interface PaymentStatusData {
 }
 
 export default function PaymentStatusCard() {
-  const { data: paymentData, isLoading } = useQuery<PaymentStatusData>({
-    queryKey: ['/api/dashboard/payment-status'],
+  const { currentTenant, tenantName, isLoading: tenantLoading } = useTenantContext();
+  
+  const { data: paymentData, isLoading: dataLoading, error } = useQuery<PaymentStatusData>({
+    queryKey: ['tenant', currentTenant?.slug || 'default', '/api/dashboard/payment-status'],
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!currentTenant, // Only fetch when tenant is loaded
   });
+  
+  const isLoading = tenantLoading || dataLoading;
 
   if (isLoading) {
     return (
@@ -44,10 +52,42 @@ export default function PaymentStatusCard() {
   const overdue30Percentage = total > 0 ? Math.round((paymentData?.overdue30Days || 0) / total * 100) : 0;
   const overdue90Percentage = total > 0 ? Math.round((paymentData?.overdue90Days || 0) / total * 100) : 0;
 
+  // Error state
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Building2 className="w-5 h-5" />
+            Payment Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load payment status data: {error.message}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card data-testid="card-payment-status">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Payment Status</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Building2 className="w-5 h-5" />
+            Payment Status
+          </CardTitle>
+          {currentTenant && (
+            <Badge variant="outline" className="text-xs">
+              {tenantName}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

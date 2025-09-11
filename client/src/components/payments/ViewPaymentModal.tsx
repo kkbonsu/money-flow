@@ -8,6 +8,7 @@ import { PaymentSchedule, LoanBook, Customer } from '@shared/schema';
 import { apiClient } from '@/lib/api';
 import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTenantContext } from '@/contexts/TenantContext';
 
 interface ViewPaymentModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface ViewPaymentModalProps {
 export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: ViewPaymentModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentTenant } = useTenantContext();
   
   const { data: customers = [] } = useQuery({
     queryKey: ['/api/customers'],
@@ -48,9 +50,13 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
       return apiClient.put(`/payment-schedules/${paymentId}`, updateData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/payment-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/income'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
+      // Invalidate tenant-scoped queries only
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === 'tenant' && key[1] === currentTenant?.slug;
+        }
+      });
       toast({
         title: "Payment Updated",
         description: "Payment has been marked as paid successfully.",
@@ -87,9 +93,13 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
       return apiClient.put(`/payment-schedules/${paymentId}`, updateData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/payment-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/income'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
+      // Invalidate tenant-scoped queries only
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === 'tenant' && key[1] === currentTenant?.slug;
+        }
+      });
       toast({
         title: "Payment Updated",
         description: "Payment has been marked as unpaid successfully.",
