@@ -55,7 +55,14 @@ import {
   UserCheck, 
   UserX,
   Mail,
-  Shield
+  Shield,
+  Globe,
+  Building2,
+  Key,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  ArrowLeftRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
@@ -76,12 +83,40 @@ interface User {
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  tenantAccess?: TenantAccessInfo[];
+  isSuperAdmin?: boolean;
+}
+
+interface TenantAccessInfo {
+  tenantId: string;
+  tenantName: string;
+  tenantSlug: string;
+  role: string;
+  permissions: string[];
+  isDefault: boolean;
+  createdAt: string;
+}
+
+interface TenantAccessRequest {
+  id: string;
+  userId: string;
+  tenantId: string;
+  requestedRole: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
 }
 
 export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersModalProps) {
   const [showAddUser, setShowAddUser] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showMultiTenantAccess, setShowMultiTenantAccess] = useState(false);
+  const [showAccessRequests, setShowAccessRequests] = useState(false);
+  const [activeTab, setActiveTab] = useState<'users' | 'access-requests' | 'cross-tenant'>('users');
   const [newUser, setNewUser] = useState({
     firstName: '',
     lastName: '',
@@ -97,6 +132,22 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ['/api/admin/tenant-users', tenantId],
     enabled: !!tenantId && open,
+  });
+
+  // New queries for multi-tenant access management
+  const { data: accessRequests = [], isLoading: requestsLoading } = useQuery<TenantAccessRequest[]>({
+    queryKey: ['/api/admin/tenant-access-requests', tenantId],
+    enabled: !!tenantId && open,
+  });
+
+  const { data: allTenants = [], isLoading: tenantsLoading } = useQuery<any[]>({
+    queryKey: ['/api/admin/tenants'],
+    enabled: open,
+  });
+
+  const { data: userTenantAccess, isLoading: userAccessLoading } = useQuery<TenantAccessInfo[]>({
+    queryKey: ['/api/admin/user-tenant-access', selectedUserId],
+    enabled: !!selectedUserId && showMultiTenantAccess,
   });
 
   const addUserMutation = useMutation({
@@ -194,6 +245,89 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
     }
   };
 
+  // New mutations for multi-tenant access management
+  const grantTenantAccessMutation = useMutation({
+    mutationFn: async ({ userId, targetTenantId, role, permissions }: { 
+      userId: string; 
+      targetTenantId: string; 
+      role: string; 
+      permissions: string[] 
+    }) => {
+      return await apiRequest('POST', `/api/admin/grant-tenant-access`, {
+        userId,
+        tenantId: targetTenantId,
+        role,
+        permissions
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/user-tenant-access'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users'] });
+      toast({
+        title: "Success",
+        description: "Tenant access granted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to grant tenant access",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const revokeTenantAccessMutation = useMutation({
+    mutationFn: async ({ userId, targetTenantId }: { userId: string; targetTenantId: string }) => {
+      return await apiRequest('DELETE', `/api/admin/revoke-tenant-access`, {
+        userId,
+        tenantId: targetTenantId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/user-tenant-access'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-users'] });
+      toast({
+        title: "Success",
+        description: "Tenant access revoked successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to revoke tenant access",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const reviewAccessRequestMutation = useMutation({
+    mutationFn: async ({ requestId, action, reason }: { 
+      requestId: string; 
+      action: 'approve' | 'reject'; 
+      reason?: string 
+    }) => {
+      return await apiRequest('POST', `/api/admin/review-access-request/${requestId}`, {
+        action,
+        reason
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tenant-access-requests'] });
+      toast({
+        title: "Success",
+        description: "Access request reviewed successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to review access request",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!tenantId) return null;
 
   return (
@@ -202,18 +336,62 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Tenant Users Management
+              <Building2 className="h-5 w-5" />
+              Multi-Tenant User Management
             </DialogTitle>
             <DialogDescription>
-              Manage users and their roles for this tenant
+              Manage users, tenant access, and approval workflows
             </DialogDescription>
           </DialogHeader>
 
+          {/* Navigation Tabs */}
+          <div className="flex border-b">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'users'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+              data-testid="tab-users"
+            >
+              <Users className="h-4 w-4 inline mr-2" />
+              Users ({users.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('access-requests')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'access-requests'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+              data-testid="tab-access-requests"
+            >
+              <Clock className="h-4 w-4 inline mr-2" />
+              Access Requests ({accessRequests.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('cross-tenant')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'cross-tenant'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+              data-testid="tab-cross-tenant"
+            >
+              <Globe className="h-4 w-4 inline mr-2" />
+              Cross-Tenant Access
+            </button>
+          </div>
+
+          {/* Tab Content */}
           <div className="space-y-6">
-            {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <Card>
+            {/* Users Tab */}
+            {activeTab === 'users' && (
+              <>
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Card>
                 <CardContent className="p-4">
                   <div className="text-center">
                     <p className="text-2xl font-bold">{users.length}</p>
@@ -231,17 +409,17 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">
-                      {users.filter((u) => u.role === 'admin').length}
-                    </p>
-                    <p className="text-sm text-gray-500">Administrators</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {users.filter((u) => u.role === 'admin').length}
+                        </p>
+                        <p className="text-sm text-gray-500">Administrators</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
             {/* Add User Button */}
             <div className="flex justify-end">
@@ -359,6 +537,8 @@ export function TenantUsersModal({ open, onOpenChange, tenantId }: TenantUsersMo
                   </TableBody>
                 </Table>
               </div>
+            )}
+              </>
             )}
           </div>
         </DialogContent>
