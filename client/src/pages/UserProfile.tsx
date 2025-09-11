@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload, Users, Trash2, Building, ArrowLeftRight, Globe, ArrowRightLeft, Crown, UserCheck } from 'lucide-react';
+import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { MfiRegistration } from '@/components/MfiRegistration';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -53,7 +54,8 @@ export default function UserProfile() {
     enabled: user?.role === 'admin',
   });
 
-  // New queries for tenant access functionality
+  // Legacy queries - now handled by TenantContext
+  // Keeping for backwards compatibility with other parts of the profile
   const { data: accessibleTenants, isLoading: tenantsLoading } = useQuery<any>({
     queryKey: ['/api/user/accessible-tenants'],
   });
@@ -586,140 +588,8 @@ export default function UserProfile() {
 
         <TabsContent value="tenant-access">
           <div className="space-y-6">
-            {/* Current Tenant Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Current Tenant
-                </CardTitle>
-                <CardDescription>
-                  Your currently active tenant workspace
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                      {currentTenantInfo?.tenantName?.[0]?.toUpperCase() || 'T'}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{currentTenantInfo?.tenantName || 'Default Tenant'}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Slug: {currentTenantInfo?.tenantSlug || 'default'}
-                      </p>
-                      {currentTenantInfo?.switchedTenant && (
-                        <Badge variant="outline" className="mt-1">
-                          <ArrowRightLeft className="h-3 w-3 mr-1" />
-                          Switched Tenant
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                      <UserCheck className="h-3 w-3 mr-1" />
-                      Active
-                    </Badge>
-                    {user?.isSuperAdmin && (
-                      <Badge variant="destructive">
-                        <Crown className="h-3 w-3 mr-1" />
-                        Super Admin
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Accessible Tenants */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Your Tenant Access
-                </CardTitle>
-                <CardDescription>
-                  All tenants you have access to and your roles within each
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {tenantsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                    <span className="ml-2 text-sm text-muted-foreground">Loading tenant access...</span>
-                  </div>
-                ) : accessibleTenants?.tenants?.length > 0 ? (
-                  <div className="space-y-3">
-                    {accessibleTenants.tenants.map((tenantAccess: any) => (
-                      <div 
-                        key={tenantAccess.tenant.id} 
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold">
-                            {tenantAccess.tenant.name?.[0]?.toUpperCase() || 'T'}
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{tenantAccess.tenant.name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Slug: {tenantAccess.tenant.slug}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge 
-                                variant={tenantAccess.access.role === 'admin' ? 'destructive' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {tenantAccess.access.role}
-                              </Badge>
-                              {tenantAccess.access.isDefault && (
-                                <Badge variant="outline" className="text-xs">
-                                  Default
-                                </Badge>
-                              )}
-                              {tenantAccess.access.permissions && tenantAccess.access.permissions.length > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  {tenantAccess.access.permissions.length} permissions
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {currentTenantInfo?.tenantSlug === tenantAccess.tenant.slug ? (
-                            <Badge variant="default">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Current
-                            </Badge>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSwitchTenant(tenantAccess.tenant.slug)}
-                              disabled={switchTenantMutation.isPending}
-                              data-testid={`button-switch-tenant-${tenantAccess.tenant.slug}`}
-                            >
-                              {switchTenantMutation.isPending ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1"></div>
-                              ) : (
-                                <ArrowLeftRight className="h-3 w-3 mr-1" />
-                              )}
-                              Switch
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>You only have access to the current tenant</p>
-                    <p className="text-sm">Contact an administrator to request access to additional tenants</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* New Comprehensive Tenant Switcher */}
+            <TenantSwitcher />
 
             {/* Tenant Access Summary */}
             {accessibleTenants?.tenants?.length > 0 && (

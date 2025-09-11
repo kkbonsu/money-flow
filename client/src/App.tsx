@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
+import { TenantProvider } from "@/contexts/TenantContext";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -105,12 +106,14 @@ function App() {
     <QueryClientProvider client={client}>
       <ThemeProvider>
         <AuthProvider>
-          <CustomerAuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <AppLayoutSelector />
-            </TooltipProvider>
-          </CustomerAuthProvider>
+          <TenantProvider>
+            <CustomerAuthProvider>
+              <TooltipProvider>
+                <Toaster />
+                <AppLayoutSelector />
+              </TooltipProvider>
+            </CustomerAuthProvider>
+          </TenantProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
