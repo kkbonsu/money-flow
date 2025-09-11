@@ -1,60 +1,77 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { multiTenantStorage } from "./multiTenantStorage";
-import type { JwtPayload } from "@shared/schema";
+import type { JwtPayload, UserTenantAccess } from "@shared/schema";
 import type { SimpleTenantContext } from "@shared/tenantSchema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-// Extend Express Request to include tenant context
+// Enhanced tenant context interface
+interface EnhancedTenantContext extends SimpleTenantContext {
+  userAccess?: UserTenantAccess;
+  isAuthorized: boolean;
+  switchedTenant?: boolean; // Indicates if user switched to a different tenant
+}
+
+// Extend Express Request to include enhanced tenant context
 declare global {
   namespace Express {
     interface Request {
       user?: any;
       customer?: any;
-      tenantContext?: SimpleTenantContext;
+      tenantContext?: EnhancedTenantContext;
     }
   }
 }
 
-// Extract tenant from subdomain or header
+// Enhanced tenant context extraction with access validation
 export const extractTenantContext = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    let tenantSlug = 'default'; // Default tenant slug
+    let requestedTenantSlug = 'default';
     
-    // Try to extract tenant from subdomain (tenant.domain.com)
-    const host = req.get('host');
-    if (host && host.includes('.')) {
-      const subdomain = host.split('.')[0];
-      if (subdomain && subdomain !== 'www' && subdomain !== 'api') {
-        tenantSlug = subdomain;
+    // Multiple sources for tenant identification (in order of priority):
+    
+    // 1. Route parameter (highest priority for explicit tenant switching)
+    if (req.params.tenantSlug) {
+      requestedTenantSlug = req.params.tenantSlug;
+    }
+    // 2. Custom header (for API requests and tenant switching)
+    else if (req.get('X-Tenant-Slug')) {
+      requestedTenantSlug = req.get('X-Tenant-Slug')!;
+    }
+    // 3. Subdomain extraction (tenant.domain.com)
+    else {
+      const host = req.get('host');
+      if (host && host.includes('.')) {
+        const subdomain = host.split('.')[0];
+        if (subdomain && subdomain !== 'www' && subdomain !== 'api') {
+          requestedTenantSlug = subdomain;
+        }
       }
     }
     
-    // Try to extract tenant from custom header
-    const tenantHeader = req.get('X-Tenant-Slug');
-    if (tenantHeader) {
-      tenantSlug = tenantHeader;
-    }
-    
-    // Get tenant from database
-    const tenant = await multiTenantStorage.getTenantBySlug(tenantSlug);
-    if (!tenant) {
-      // If tenant doesn't exist, use default tenant
+    // Get requested tenant from database
+    const requestedTenant = await multiTenantStorage.getTenantBySlug(requestedTenantSlug);
+    if (!requestedTenant) {
+      // If requested tenant doesn't exist, try default tenant
       const defaultTenant = await multiTenantStorage.getTenantBySlug('default');
       if (!defaultTenant) {
         return res.status(404).json({ message: "Tenant not found" });
       }
+      
+      // Set basic tenant context (authorization will be checked later)
       req.tenantContext = {
         tenant: defaultTenant,
         tenantId: defaultTenant.id,
-        slug: defaultTenant.slug
+        slug: defaultTenant.slug,
+        isAuthorized: false // Will be validated during authentication
       };
     } else {
       req.tenantContext = {
-        tenant,
-        tenantId: tenant.id,
-        slug: tenant.slug
+        tenant: requestedTenant,
+        tenantId: requestedTenant.id,
+        slug: requestedTenant.slug,
+        isAuthorized: false // Will be validated during authentication
       };
     }
     
@@ -65,7 +82,44 @@ export const extractTenantContext = async (req: Request, res: Response, next: Ne
   }
 };
 
-// Tenant-aware JWT authentication middleware
+// Validate user access to the current tenant context
+export const validateTenantAccess = async (userId: number, tenantId: string, isSuperAdmin = false): Promise<{
+  hasAccess: boolean;
+  userAccess?: UserTenantAccess;
+  switchedTenant?: boolean;
+}> => {
+  try {
+    // Super admins have access to all tenants
+    if (isSuperAdmin) {
+      return { hasAccess: true, switchedTenant: false };
+    }
+    
+    // Get user's tenant access rights
+    const userTenantAccess = await multiTenantStorage.getUserTenantAccess(userId);
+    
+    // Find access to the requested tenant
+    const tenantAccess = userTenantAccess.find(access => access.tenantId === tenantId);
+    
+    if (!tenantAccess) {
+      return { hasAccess: false };
+    }
+    
+    // Check if user switched from their default tenant
+    const defaultAccess = userTenantAccess.find(access => access.isDefault);
+    const switchedTenant = defaultAccess && defaultAccess.tenantId !== tenantId;
+    
+    return {
+      hasAccess: true,
+      userAccess: tenantAccess,
+      switchedTenant
+    };
+  } catch (error) {
+    console.error("Error validating tenant access:", error);
+    return { hasAccess: false };
+  }
+};
+
+// Enhanced JWT authentication middleware with tenant access validation
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -74,31 +128,56 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ message: 'Access token required' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) {
-      console.error('Admin JWT verification error:', err.message, 'Token:', token?.substring(0, 20) + '...');
+      console.error('JWT verification error:', err.message, 'Token:', token?.substring(0, 20) + '...');
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
     const payload = decoded as JwtPayload;
     
-    // Verify tenant context matches token (allow fallback for migration)
-    // Skip tenant mismatch check for super admin users accessing cross-tenant data
-    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId && !payload.isSuperAdmin) {
-      return res.status(403).json({ message: 'Token tenant mismatch' });
-    }
-    
-    // For tokens without tenantId, inject the current tenant context
-    if (!payload.tenantId && req.tenantContext) {
-      payload.tenantId = req.tenantContext.tenantId;
+    if (!req.tenantContext) {
+      return res.status(500).json({ message: 'Tenant context not initialized' });
     }
 
-    req.user = payload;
-    next();
+    try {
+      // Validate user access to the requested tenant
+      const accessValidation = await validateTenantAccess(
+        payload.id,
+        req.tenantContext.tenantId,
+        payload.isSuperAdmin
+      );
+
+      if (!accessValidation.hasAccess) {
+        return res.status(403).json({ 
+          message: 'Access denied: You do not have permission to access this tenant',
+          tenantSlug: req.tenantContext.slug
+        });
+      }
+
+      // Update tenant context with validated access information
+      req.tenantContext.isAuthorized = true;
+      req.tenantContext.userAccess = accessValidation.userAccess;
+      req.tenantContext.switchedTenant = accessValidation.switchedTenant;
+
+      // Update payload with current tenant context (for consistent token data)
+      payload.tenantId = req.tenantContext.tenantId;
+      req.user = payload;
+
+      // Log tenant switching for audit purposes
+      if (accessValidation.switchedTenant) {
+        console.log(`User ${payload.username} (${payload.id}) switched to tenant ${req.tenantContext.slug} (${req.tenantContext.tenantId})`);
+      }
+
+      next();
+    } catch (error) {
+      console.error('Error during tenant access validation:', error);
+      return res.status(500).json({ message: 'Internal server error during tenant validation' });
+    }
   });
 };
 
-// Tenant-aware customer authentication middleware
+// Enhanced customer authentication middleware with tenant validation
 export const authenticateCustomerToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -107,7 +186,7 @@ export const authenticateCustomerToken = (req: Request, res: Response, next: Nex
     return res.status(401).json({ message: 'Access token required' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) {
       console.error('Customer JWT verification error:', err.message, 'Token:', token?.substring(0, 20) + '...');
       return res.status(403).json({ message: 'Invalid or expired token' });
@@ -115,19 +194,42 @@ export const authenticateCustomerToken = (req: Request, res: Response, next: Nex
 
     const payload = decoded as any; // Customer token payload
     
-    // Verify tenant context matches token (allow fallback for migration)
-    // Skip tenant mismatch check for super admin users accessing cross-tenant data
-    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId && !payload.isSuperAdmin) {
-      return res.status(403).json({ message: 'Token tenant mismatch' });
-    }
-    
-    // For tokens without tenantId, inject the current tenant context
-    if (!payload.tenantId && req.tenantContext) {
-      payload.tenantId = req.tenantContext.tenantId;
+    if (!req.tenantContext) {
+      return res.status(500).json({ message: 'Tenant context not initialized' });
     }
 
-    req.customer = payload;
-    next();
+    try {
+      // For customers, validate that token tenant matches the current tenant context
+      // Customers typically don't have multi-tenant access like admin users
+      if (payload.tenantId && payload.tenantId !== req.tenantContext.tenantId) {
+        return res.status(403).json({ 
+          message: 'Access denied: Customer account does not belong to this tenant',
+          tenantSlug: req.tenantContext.slug
+        });
+      }
+
+      // For tokens without tenantId, inject the current tenant context
+      if (!payload.tenantId && req.tenantContext) {
+        payload.tenantId = req.tenantContext.tenantId;
+      }
+
+      // Additional validation: ensure customer exists in the current tenant
+      if (req.tenantContext.tenantId) {
+        const customer = await multiTenantStorage.getCustomer(req.tenantContext.tenantId, payload.id);
+        if (!customer || !customer.isPortalActive) {
+          return res.status(403).json({ message: 'Customer account not found or inactive in this tenant' });
+        }
+      }
+
+      // Mark tenant context as authorized for customer
+      req.tenantContext.isAuthorized = true;
+      req.customer = payload;
+
+      next();
+    } catch (error) {
+      console.error('Error during customer tenant validation:', error);
+      return res.status(500).json({ message: 'Internal server error during customer validation' });
+    }
   });
 };
 
@@ -186,6 +288,65 @@ export const generateCustomerToken = (customer: any, tenantId: string): string =
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 };
 
+// Get user's accessible tenants
+export const getUserAccessibleTenants = async (userId: number): Promise<Array<{
+  tenant: any;
+  access: UserTenantAccess;
+}>> => {
+  try {
+    const userAccess = await multiTenantStorage.getUserTenantAccess(userId);
+    const accessibleTenants = [];
+    
+    for (const access of userAccess) {
+      const tenant = await multiTenantStorage.getTenant(access.tenantId);
+      if (tenant) {
+        accessibleTenants.push({ tenant, access });
+      }
+    }
+    
+    return accessibleTenants;
+  } catch (error) {
+    console.error("Error getting user accessible tenants:", error);
+    return [];
+  }
+};
+
+// Get user's default tenant
+export const getUserDefaultTenant = async (userId: number): Promise<{
+  tenant?: any;
+  access?: UserTenantAccess;
+}> => {
+  try {
+    const userAccess = await multiTenantStorage.getUserTenantAccess(userId);
+    const defaultAccess = userAccess.find(access => access.isDefault);
+    
+    if (!defaultAccess) {
+      return {};
+    }
+    
+    const tenant = await multiTenantStorage.getTenant(defaultAccess.tenantId);
+    return { tenant, access: defaultAccess };
+  } catch (error) {
+    console.error("Error getting user default tenant:", error);
+    return {};
+  }
+};
+
+// Middleware to require tenant context authorization
+export const requireTenantAccess = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.tenantContext?.isAuthorized) {
+    return res.status(403).json({ 
+      message: 'Tenant access not authorized',
+      tenantSlug: req.tenantContext?.slug 
+    });
+  }
+  next();
+};
+
+// Combined middleware that extracts tenant context and validates access
+export const tenantContextWithAuth = [extractTenantContext, authenticateToken, requireTenantAccess];
+export const customerTenantContextWithAuth = [extractTenantContext, authenticateCustomerToken, requireTenantAccess];
+
 // Tenant management utilities
 export const createTenantWithAdmin = async (tenantData: {
   name: string;
@@ -203,13 +364,11 @@ export const createTenantWithAdmin = async (tenantData: {
     const tenant = await multiTenantStorage.createTenant({
       name: tenantData.name,
       slug: tenantData.slug,
-      settings: {
-        theme: 'light',
-        features: ['loans', 'payments', 'analytics'],
-        branding: {
-          primaryColor: '#3B82F6',
-          logoUrl: null
-        }
+      branding: {
+        logo: null,
+        primaryColor: '#3B82F6',
+        secondaryColor: '#64748b',
+        companyName: tenantData.name
       }
     });
 

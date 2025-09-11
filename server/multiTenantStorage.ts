@@ -172,6 +172,82 @@ export interface IMultiTenantStorage {
   updateBankAccount(tenantId: string, id: number, account: Partial<InsertBankManagement>): Promise<BankManagement>;
   deleteBankAccount(tenantId: string, id: number): Promise<void>;
 
+  // Tenant-aware petty cash methods
+  getPettyCash(tenantId: string): Promise<PettyCash[]>;
+  createPettyCash(tenantId: string, pettyCash: InsertPettyCash): Promise<PettyCash>;
+  updatePettyCash(tenantId: string, id: number, pettyCash: Partial<InsertPettyCash>): Promise<PettyCash>;
+  deletePettyCash(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware inventory methods
+  getInventory(tenantId: string): Promise<Inventory[]>;
+  createInventory(tenantId: string, inventory: InsertInventory): Promise<Inventory>;
+  updateInventory(tenantId: string, id: number, inventory: Partial<InsertInventory>): Promise<Inventory>;
+  deleteInventory(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware rent management methods
+  getRentManagement(tenantId: string): Promise<RentManagement[]>;
+  createRentManagement(tenantId: string, rent: InsertRentManagement): Promise<RentManagement>;
+  updateRentManagement(tenantId: string, id: number, rent: Partial<InsertRentManagement>): Promise<RentManagement>;
+  deleteRentManagement(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware asset methods
+  getAssets(tenantId: string): Promise<Asset[]>;
+  createAsset(tenantId: string, asset: InsertAsset): Promise<Asset>;
+  updateAsset(tenantId: string, id: number, asset: Partial<InsertAsset>): Promise<Asset>;
+  deleteAsset(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware liability methods
+  getLiabilities(tenantId: string): Promise<Liability[]>;
+  createLiability(tenantId: string, liability: InsertLiability): Promise<Liability>;
+  updateLiability(tenantId: string, id: number, liability: Partial<InsertLiability>): Promise<Liability>;
+  deleteLiability(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware equity methods
+  getEquity(tenantId: string): Promise<Equity[]>;
+  createEquity(tenantId: string, equity: InsertEquity): Promise<Equity>;
+  updateEquity(tenantId: string, id: number, equity: Partial<InsertEquity>): Promise<Equity>;
+  deleteEquity(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware report methods
+  getReports(tenantId: string): Promise<Report[]>;
+  createReport(tenantId: string, report: InsertReport): Promise<Report>;
+  updateReport(tenantId: string, id: number, report: Partial<InsertReport>): Promise<Report>;
+  deleteReport(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware MFI registration methods
+  getMfiRegistration(tenantId: string): Promise<MfiRegistration[]>;
+  createMfiRegistration(tenantId: string, mfi: InsertMfiRegistration): Promise<MfiRegistration>;
+  updateMfiRegistration(tenantId: string, id: number, mfi: Partial<InsertMfiRegistration>): Promise<MfiRegistration>;
+  deleteMfiRegistration(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware shareholder methods
+  getShareholders(tenantId: string): Promise<Shareholder[]>;
+  getShareholder(tenantId: string, id: number): Promise<Shareholder | undefined>;
+  createShareholder(tenantId: string, shareholder: InsertShareholder): Promise<Shareholder>;
+  updateShareholder(tenantId: string, id: number, shareholder: Partial<InsertShareholder>): Promise<Shareholder>;
+  deleteShareholder(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware support ticket methods
+  getSupportTickets(tenantId: string): Promise<SupportTicket[]>;
+  getSupportTicket(tenantId: string, id: number): Promise<SupportTicket | undefined>;
+  createSupportTicket(tenantId: string, ticket: InsertSupportTicket): Promise<SupportTicket>;
+  updateSupportTicket(tenantId: string, id: number, ticket: Partial<InsertSupportTicket>): Promise<SupportTicket>;
+  deleteSupportTicket(tenantId: string, id: number): Promise<void>;
+
+  // Tenant-aware support message methods
+  getSupportMessages(tenantId: string, ticketId: number): Promise<SupportMessage[]>;
+  createSupportMessage(tenantId: string, message: InsertSupportMessage): Promise<SupportMessage>;
+
+  // Tenant-aware audit log methods
+  getUserAuditLogs(tenantId: string, userId: number): Promise<UserAuditLog[]>;
+  createUserAuditLog(tenantId: string, log: InsertUserAuditLog): Promise<UserAuditLog>;
+
+  // Additional analytics methods
+  getLoanPortfolio(tenantId: string): Promise<any>;
+  getPaymentStatus(tenantId: string): Promise<any>;
+  getAdvancedAnalytics(tenantId: string): Promise<any>;
+  backfillInterestPayments(tenantId: string): Promise<void>;
+
   // Dashboard metrics (tenant-aware)
   getDashboardMetrics(tenantId: string): Promise<any>;
   
