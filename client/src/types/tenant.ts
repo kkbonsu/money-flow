@@ -70,6 +70,10 @@ export interface TenantContextType {
   // Error state
   error: string | null;
   clearError: () => void;
+  
+  // Enhanced cache management
+  invalidateCurrentTenantCache: () => void;
+  clearCurrentTenantCache: () => void;
 }
 
 export interface TenantContext {
