@@ -213,7 +213,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return tenant || undefined;
   }
 
-  async createTenant(insertTenant: any): Promise<any> {
+  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
     const [tenant] = await db
       .insert(simpleTenants)
       .values(insertTenant)
@@ -221,7 +221,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return tenant;
   }
 
-  async updateTenant(tenantId: string, updateTenant: any): Promise<any> {
+  async updateTenant(tenantId: string, updateTenant: Partial<InsertTenant>): Promise<Tenant> {
     const [tenant] = await db
       .update(simpleTenants)
       .set({ ...updateTenant, updatedAt: new Date() })
@@ -254,15 +254,15 @@ export class MultiTenantStorage implements IMultiTenantStorage {
       
       // 5. Delete financial records
       console.log(`[TENANT_DELETE] Deleting financial records...`);
-      await db.delete(income).where(eq(income.tenantId, tenantId));
+      await db.delete(incomeManagement).where(eq(incomeManagement.tenantId, tenantId));
       await db.delete(expenses).where(eq(expenses.tenantId, tenantId));
-      await db.delete(bankAccounts).where(eq(bankAccounts.tenantId, tenantId));
+      await db.delete(bankManagement).where(eq(bankManagement.tenantId, tenantId));
       await db.delete(pettyCash).where(eq(pettyCash.tenantId, tenantId));
       
       // 6. Delete inventory and rent
       console.log(`[TENANT_DELETE] Deleting inventory and rent...`);
       await db.delete(inventory).where(eq(inventory.tenantId, tenantId));
-      await db.delete(rent).where(eq(rent.tenantId, tenantId));
+      await db.delete(rentManagement).where(eq(rentManagement.tenantId, tenantId));
       
       // 7. Delete balance sheet items
       console.log(`[TENANT_DELETE] Deleting assets, liabilities, and equity...`);
@@ -971,11 +971,11 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     `);
     
     const data = result.rows[0];
-    const totalLoans = parseInt(data?.total_loans) || 0;
-    const defaultedLoans = parseInt(data?.defaulted_loans) || 0;
-    const approvedLoans = parseInt(data?.approved_loans) || 0;
-    const rejectedLoans = parseInt(data?.rejected_loans) || 0;
-    const totalApplications = approvedLoans + rejectedLoans + parseInt(data?.pending_loans || 0);
+    const totalLoans = parseInt(String(data?.total_loans || 0)) || 0;
+    const defaultedLoans = parseInt(String(data?.defaulted_loans || 0)) || 0;
+    const approvedLoans = parseInt(String(data?.approved_loans || 0)) || 0;
+    const rejectedLoans = parseInt(String(data?.rejected_loans || 0)) || 0;
+    const totalApplications = approvedLoans + rejectedLoans + parseInt(String(data?.pending_loans || 0));
     
     // Calculate approval rate: Since disbursed loans are approved loans,
     // if we have disbursed loans but no rejected/pending, treat disbursed loans as approved applications
@@ -993,12 +993,12 @@ export class MultiTenantStorage implements IMultiTenantStorage {
       
       // Approval Analytics
       approval_rate: approvalRate,
-      approved_today: parseInt(data?.loans_today) || 0,
-      pending_review: parseInt(data?.pending_loans) || 0,
+      approved_today: parseInt(String(data?.loans_today || 0)) || 0,
+      pending_review: parseInt(String(data?.pending_loans || 0)) || 0,
       
       // Risk Assessment  
       default_rate: defaultRate,
-      at_risk_loans: parseInt(data?.at_risk_loans) || 0
+      at_risk_loans: parseInt(String(data?.at_risk_loans || 0)) || 0
     };
   }
 
@@ -1007,10 +1007,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
   }
 
-  async createEquity(insertEquity: InsertEquity): Promise<Equity> {
+  async createEquity(tenantId: string, insertEquity: InsertEquity): Promise<Equity> {
     const [equityItem] = await db
       .insert(equity)
-      .values({ ...insertEquity, tenantId: this.defaultTenantId })
+      .values({ ...insertEquity, tenantId })
       .returning();
     return equityItem;
   }
@@ -1024,8 +1024,8 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return equityItem;
   }
 
-  async deleteEquity(id: number): Promise<void> {
-    await db.delete(equity).where(and(eq(equity.tenantId, this.defaultTenantId), eq(equity.id, id)));
+  async deleteEquity(tenantId: string, id: number): Promise<void> {
+    await db.delete(equity).where(and(eq(equity.tenantId, tenantId), eq(equity.id, id)));
   }
 
   // Report methods
@@ -1033,10 +1033,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return await db.select().from(reports).where(eq(reports.tenantId, tenantId));
   }
 
-  async createReport(insertReport: InsertReport): Promise<Report> {
+  async createReport(tenantId: string, insertReport: InsertReport): Promise<Report> {
     const [report] = await db
       .insert(reports)
-      .values({ ...insertReport, tenantId: this.defaultTenantId })
+      .values({ ...insertReport, tenantId })
       .returning();
     return report;
   }
@@ -1050,8 +1050,8 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return report;
   }
 
-  async deleteReport(id: number): Promise<void> {
-    await db.delete(reports).where(and(eq(reports.tenantId, this.defaultTenantId), eq(reports.id, id)));
+  async deleteReport(tenantId: string, id: number): Promise<void> {
+    await db.delete(reports).where(and(eq(reports.tenantId, tenantId), eq(reports.id, id)));
   }
 
   // MFI Registration methods
@@ -1060,17 +1060,17 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return registration || undefined;
   }
 
-  async createMfiRegistration(insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
+  async createMfiRegistration(tenantId: string, insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
     const [registration] = await db
       .insert(mfiRegistration)
-      .values({ ...insertMfiRegistration, tenantId: this.defaultTenantId } as any)
+      .values({ ...insertMfiRegistration, tenantId })
       .returning();
     return registration;
   }
 
-  async updateMfiRegistration(id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
+  async updateMfiRegistration(tenantId: string, id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
     // Handle Date conversion for licenseExpiryDate if present
-    const updateData: any = { ...updateMfiRegistration, updatedAt: new Date() };
+    const updateData = { ...updateMfiRegistration, updatedAt: new Date() };
     if (updateData.licenseExpiryDate instanceof Date) {
       updateData.licenseExpiryDate = updateData.licenseExpiryDate.toISOString().split('T')[0];
     }
@@ -1078,7 +1078,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     const [registration] = await db
       .update(mfiRegistration)
       .set(updateData)
-      .where(and(eq(mfiRegistration.tenantId, this.defaultTenantId), eq(mfiRegistration.id, id)))
+      .where(and(eq(mfiRegistration.tenantId, tenantId), eq(mfiRegistration.id, id)))
       .returning();
     return registration;
   }
@@ -1093,10 +1093,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return shareholder || undefined;
   }
 
-  async createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder> {
+  async createShareholder(tenantId: string, insertShareholder: InsertShareholder): Promise<Shareholder> {
     const [shareholder] = await db
       .insert(shareholders)
-      .values({ ...insertShareholder, tenantId: this.defaultTenantId })
+      .values({ ...insertShareholder, tenantId })
       .returning();
     return shareholder;
   }
@@ -1120,10 +1120,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return await db.select().from(inventory).where(eq(inventory.tenantId, tenantId));
   }
 
-  async createInventory(insertInventory: InsertInventory): Promise<Inventory> {
+  async createInventory(tenantId: string, insertInventory: InsertInventory): Promise<Inventory> {
     const [inventoryItem] = await db
       .insert(inventory)
-      .values({ ...insertInventory, tenantId: this.defaultTenantId })
+      .values({ ...insertInventory, tenantId })
       .returning();
     return inventoryItem;
   }
@@ -1137,8 +1137,8 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return inventoryItem;
   }
 
-  async deleteInventory(id: number): Promise<void> {
-    await db.delete(inventory).where(and(eq(inventory.tenantId, this.defaultTenantId), eq(inventory.id, id)));
+  async deleteInventory(tenantId: string, id: number): Promise<void> {
+    await db.delete(inventory).where(and(eq(inventory.tenantId, tenantId), eq(inventory.id, id)));
   }
 
   // Asset methods
@@ -1146,10 +1146,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return await db.select().from(assets).where(eq(assets.tenantId, tenantId));
   }
 
-  async createAsset(insertAsset: InsertAsset): Promise<Asset> {
+  async createAsset(tenantId: string, insertAsset: InsertAsset): Promise<Asset> {
     const [asset] = await db
       .insert(assets)
-      .values({ ...insertAsset, tenantId: this.defaultTenantId })
+      .values({ ...insertAsset, tenantId })
       .returning();
     return asset;
   }
@@ -1163,8 +1163,8 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return asset;
   }
 
-  async deleteAsset(id: number): Promise<void> {
-    await db.delete(assets).where(and(eq(assets.tenantId, this.defaultTenantId), eq(assets.id, id)));
+  async deleteAsset(tenantId: string, id: number): Promise<void> {
+    await db.delete(assets).where(and(eq(assets.tenantId, tenantId), eq(assets.id, id)));
   }
 
   // Liabilities methods
@@ -1172,10 +1172,10 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return await db.select().from(liabilities).where(eq(liabilities.tenantId, tenantId));
   }
 
-  async createLiability(insertLiability: InsertLiability): Promise<Liability> {
+  async createLiability(tenantId: string, insertLiability: InsertLiability): Promise<Liability> {
     const [liability] = await db
       .insert(liabilities)
-      .values({ ...insertLiability, tenantId: this.defaultTenantId })
+      .values({ ...insertLiability, tenantId })
       .returning();
     return liability;
   }
@@ -1189,8 +1189,8 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return liability;
   }
 
-  async deleteLiability(id: number): Promise<void> {
-    await db.delete(liabilities).where(and(eq(liabilities.tenantId, this.defaultTenantId), eq(liabilities.id, id)));
+  async deleteLiability(tenantId: string, id: number): Promise<void> {
+    await db.delete(liabilities).where(and(eq(liabilities.tenantId, tenantId), eq(liabilities.id, id)));
   }
 }
 
@@ -1523,10 +1523,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(inventory).where(eq(inventory.tenantId, this.defaultTenantId));
   }
 
-  async createInventory(insertInventory: InsertInventory): Promise<Inventory> {
+  async createInventory(tenantId: string, insertInventory: InsertInventory): Promise<Inventory> {
     const [item] = await db
       .insert(inventory)
-      .values({ ...insertInventory, tenantId: this.defaultTenantId })
+      .values({ ...insertInventory, tenantId })
       .returning();
     return item;
   }
@@ -1540,8 +1540,8 @@ export class BackwardCompatibilityStorage {
     return item;
   }
 
-  async deleteInventory(id: number): Promise<void> {
-    await db.delete(inventory).where(and(eq(inventory.tenantId, this.defaultTenantId), eq(inventory.id, id)));
+  async deleteInventory(tenantId: string, id: number): Promise<void> {
+    await db.delete(inventory).where(and(eq(inventory.tenantId, tenantId), eq(inventory.id, id)));
   }
 
   // Rent Management methods
@@ -1575,10 +1575,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(assets).where(eq(assets.tenantId, this.defaultTenantId));
   }
 
-  async createAsset(insertAsset: InsertAsset): Promise<Asset> {
+  async createAsset(tenantId: string, insertAsset: InsertAsset): Promise<Asset> {
     const [asset] = await db
       .insert(assets)
-      .values({ ...insertAsset, tenantId: this.defaultTenantId })
+      .values({ ...insertAsset, tenantId })
       .returning();
     return asset;
   }
@@ -1592,8 +1592,8 @@ export class BackwardCompatibilityStorage {
     return asset;
   }
 
-  async deleteAsset(id: number): Promise<void> {
-    await db.delete(assets).where(and(eq(assets.tenantId, this.defaultTenantId), eq(assets.id, id)));
+  async deleteAsset(tenantId: string, id: number): Promise<void> {
+    await db.delete(assets).where(and(eq(assets.tenantId, tenantId), eq(assets.id, id)));
   }
 
   // Liabilities methods
@@ -1601,10 +1601,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(liabilities).where(eq(liabilities.tenantId, this.defaultTenantId));
   }
 
-  async createLiability(insertLiability: InsertLiability): Promise<Liability> {
+  async createLiability(tenantId: string, insertLiability: InsertLiability): Promise<Liability> {
     const [liability] = await db
       .insert(liabilities)
-      .values({ ...insertLiability, tenantId: this.defaultTenantId })
+      .values({ ...insertLiability, tenantId })
       .returning();
     return liability;
   }
@@ -1618,8 +1618,8 @@ export class BackwardCompatibilityStorage {
     return liability;
   }
 
-  async deleteLiability(id: number): Promise<void> {
-    await db.delete(liabilities).where(and(eq(liabilities.tenantId, this.defaultTenantId), eq(liabilities.id, id)));
+  async deleteLiability(tenantId: string, id: number): Promise<void> {
+    await db.delete(liabilities).where(and(eq(liabilities.tenantId, tenantId), eq(liabilities.id, id)));
   }
 
   // Equity methods
@@ -1627,10 +1627,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
   }
 
-  async createEquity(insertEquity: InsertEquity): Promise<Equity> {
+  async createEquity(tenantId: string, insertEquity: InsertEquity): Promise<Equity> {
     const [equityItem] = await db
       .insert(equity)
-      .values({ ...insertEquity, tenantId: this.defaultTenantId })
+      .values({ ...insertEquity, tenantId })
       .returning();
     return equityItem;
   }
@@ -1644,8 +1644,8 @@ export class BackwardCompatibilityStorage {
     return equityItem;
   }
 
-  async deleteEquity(id: number): Promise<void> {
-    await db.delete(equity).where(and(eq(equity.tenantId, this.defaultTenantId), eq(equity.id, id)));
+  async deleteEquity(tenantId: string, id: number): Promise<void> {
+    await db.delete(equity).where(and(eq(equity.tenantId, tenantId), eq(equity.id, id)));
   }
 
   // Report methods
@@ -1653,10 +1653,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(reports).where(eq(reports.tenantId, tenantId));
   }
 
-  async createReport(insertReport: InsertReport): Promise<Report> {
+  async createReport(tenantId: string, insertReport: InsertReport): Promise<Report> {
     const [report] = await db
       .insert(reports)
-      .values({ ...insertReport, tenantId: this.defaultTenantId })
+      .values({ ...insertReport, tenantId })
       .returning();
     return report;
   }
@@ -1670,8 +1670,8 @@ export class BackwardCompatibilityStorage {
     return report;
   }
 
-  async deleteReport(id: number): Promise<void> {
-    await db.delete(reports).where(and(eq(reports.tenantId, this.defaultTenantId), eq(reports.id, id)));
+  async deleteReport(tenantId: string, id: number): Promise<void> {
+    await db.delete(reports).where(and(eq(reports.tenantId, tenantId), eq(reports.id, id)));
   }
 
   // MFI Registration methods
@@ -1680,17 +1680,17 @@ export class BackwardCompatibilityStorage {
     return registration || undefined;
   }
 
-  async createMfiRegistration(insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
+  async createMfiRegistration(tenantId: string, insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
     const [registration] = await db
       .insert(mfiRegistration)
-      .values({ ...insertMfiRegistration, tenantId: this.defaultTenantId } as any)
+      .values({ ...insertMfiRegistration, tenantId })
       .returning();
     return registration;
   }
 
-  async updateMfiRegistration(id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
+  async updateMfiRegistration(tenantId: string, id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
     // Handle Date conversion for licenseExpiryDate if present
-    const updateData: any = { ...updateMfiRegistration, updatedAt: new Date() };
+    const updateData = { ...updateMfiRegistration, updatedAt: new Date() };
     if (updateData.licenseExpiryDate instanceof Date) {
       updateData.licenseExpiryDate = updateData.licenseExpiryDate.toISOString().split('T')[0];
     }
@@ -1698,7 +1698,7 @@ export class BackwardCompatibilityStorage {
     const [registration] = await db
       .update(mfiRegistration)
       .set(updateData)
-      .where(and(eq(mfiRegistration.tenantId, this.defaultTenantId), eq(mfiRegistration.id, id)))
+      .where(and(eq(mfiRegistration.tenantId, tenantId), eq(mfiRegistration.id, id)))
       .returning();
     return registration;
   }
@@ -1713,10 +1713,10 @@ export class BackwardCompatibilityStorage {
     return shareholder || undefined;
   }
 
-  async createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder> {
+  async createShareholder(tenantId: string, insertShareholder: InsertShareholder): Promise<Shareholder> {
     const [shareholder] = await db
       .insert(shareholders)
-      .values({ ...insertShareholder, tenantId: this.defaultTenantId })
+      .values({ ...insertShareholder, tenantId })
       .returning();
     return shareholder;
   }
