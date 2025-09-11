@@ -16,7 +16,8 @@ import {
   Banknote,
   Shield,
   FileSpreadsheet,
-  MessageSquare
+  MessageSquare,
+  Palette
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -103,6 +104,14 @@ export const navigationConfig: NavigationSection[] = [
         permission: 'users:assign_roles',
         minRoleLevel: 2, // Admin and above
         testId: 'nav-role-management'
+      },
+      {
+        name: 'Tenant Branding',
+        href: '/tenant-branding',
+        icon: Palette,
+        permission: 'tenant:branding_manage',
+        minRoleLevel: 2, // Admin and above
+        testId: 'nav-tenant-branding'
       },
       {
         name: 'Customers',

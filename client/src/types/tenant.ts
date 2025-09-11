@@ -11,9 +11,44 @@ export interface TenantInfo {
   isActive: boolean;
   branding?: {
     logo?: string;
+    favicon?: string;
     primaryColor: string;
     secondaryColor: string;
+    accentColor: string;
+    backgroundColor: string;
+    surfaceColor: string;
+    textColor: string;
+    borderColor: string;
     companyName: string;
+    tagline: string;
+    fontFamily: string;
+    fontSizes: {
+      xs: string;
+      sm: string;
+      base: string;
+      lg: string;
+      xl: string;
+      "2xl": string;
+      "3xl": string;
+      "4xl": string;
+    };
+    borderRadius: {
+      sm: string;
+      base: string;
+      md: string;
+      lg: string;
+      xl: string;
+    };
+    shadows: {
+      sm: string;
+      base: string;
+      md: string;
+      lg: string;
+      xl: string;
+    };
+    customCSS: string;
+    loginBackgroundImage?: string;
+    dashboardBackgroundImage?: string;
   };
   limits?: {
     maxLoans: number;

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useFilteredNavigation, useNavigationContext } from '@/hooks/useNavigationPermissions';
 import { useTenantContext } from '@/contexts/TenantContext';
+import { useTenantBranding } from '@/hooks/useTenantTheming';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 

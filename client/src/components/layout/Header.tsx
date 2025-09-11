@@ -11,6 +11,7 @@ import { useNavigationContext } from '@/hooks/useNavigationPermissions';
 import { useHasPermission, useHasMinimumRole } from '@/hooks/usePermissions';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { useTenantBranding } from '@/hooks/useTenantTheming';
 
 // Role indicator component for header
 function HeaderRoleIndicator({ 
@@ -83,6 +84,7 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const { user: authUser, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const { logo, companyName, primaryColor } = useTenantBranding();
   
   // Get tenant context
   const {
@@ -124,13 +126,17 @@ export default function Header() {
           {/* Tenant Context Display with Enhanced Role Information */}
           {!tenantLoading && currentTenant && (
             <div className="hidden lg:flex items-center space-x-3 px-3 py-2 bg-muted/50 rounded-lg">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-primary" />
+              <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center overflow-hidden">
+                {logo ? (
+                  <img src={logo} alt={companyName || tenantName} className="w-full h-full object-contain" />
+                ) : (
+                  <Building2 className="w-4 h-4 text-primary" />
+                )}
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">
-                    {tenantName}
+                    {companyName || tenantName}
                   </span>
                   {navigationContext.isSuperAdmin && (
                     <Crown className="w-3 h-3 text-yellow-500" title="Super Admin Access" />

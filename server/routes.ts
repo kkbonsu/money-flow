@@ -280,6 +280,192 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tenant Branding Management Routes
+  
+  // Get current tenant branding settings (public endpoint - no auth required)
+  app.get("/api/tenant/branding", extractTenantContext, async (req, res) => {
+    try {
+      const tenantId = req.tenantContext!.tenantId;
+      const tenant = await storage.getTenant(tenantId);
+      
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      res.json({
+        branding: tenant.branding || {},
+        tenantId: tenant.id,
+        tenantSlug: tenant.slug
+      });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch branding settings" });
+    }
+  });
+  
+  // Update tenant branding settings (Admin+ only)
+  app.put("/api/tenant/branding", tenantContextWithAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const tenantId = req.tenantContext!.tenantId;
+      const { branding } = req.body;
+      
+      if (!branding) {
+        return res.status(400).json({ message: "Branding data is required" });
+      }
+      
+      // Validate branding data structure
+      const brandingSchema = z.object({
+        logo: z.string().nullable().optional(),
+        favicon: z.string().nullable().optional(),
+        primaryColor: z.string().optional(),
+        secondaryColor: z.string().optional(),
+        accentColor: z.string().optional(),
+        backgroundColor: z.string().optional(),
+        surfaceColor: z.string().optional(),
+        textColor: z.string().optional(),
+        borderColor: z.string().optional(),
+        companyName: z.string().optional(),
+        tagline: z.string().optional(),
+        fontFamily: z.string().optional(),
+        fontSizes: z.object({
+          xs: z.string(),
+          sm: z.string(),
+          base: z.string(),
+          lg: z.string(),
+          xl: z.string(),
+          "2xl": z.string(),
+          "3xl": z.string(),
+          "4xl": z.string()
+        }).optional(),
+        borderRadius: z.object({
+          sm: z.string(),
+          base: z.string(),
+          md: z.string(),
+          lg: z.string(),
+          xl: z.string()
+        }).optional(),
+        shadows: z.object({
+          sm: z.string(),
+          base: z.string(),
+          md: z.string(),
+          lg: z.string(),
+          xl: z.string()
+        }).optional(),
+        customCSS: z.string().optional(),
+        loginBackgroundImage: z.string().nullable().optional(),
+        dashboardBackgroundImage: z.string().nullable().optional()
+      });
+      
+      const validatedBranding = brandingSchema.parse(branding);
+      
+      const updatedTenant = await storage.updateTenant(tenantId, {
+        branding: validatedBranding
+      });
+      
+      res.json({
+        message: "Branding updated successfully",
+        branding: updatedTenant.branding,
+        tenantId: updatedTenant.id
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid branding data", errors: error.errors });
+      }
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update branding settings" });
+    }
+  });
+  
+  // Upload branding assets (logo, favicon, background images)
+  app.post("/api/tenant/branding/upload", tenantContextWithAuth, requireRole('admin'), upload.single('brandingAsset'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const assetType = req.body.assetType; // 'logo', 'favicon', 'loginBackground', 'dashboardBackground'
+      if (!['logo', 'favicon', 'loginBackground', 'dashboardBackground'].includes(assetType)) {
+        return res.status(400).json({ message: "Invalid asset type" });
+      }
+      
+      const tenantId = req.tenantContext!.tenantId;
+      const tenant = await storage.getTenant(tenantId);
+      
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      // Generate the URL for the uploaded file
+      const assetUrl = `/uploads/${req.file.filename}`;
+      
+      // Update tenant branding with new asset
+      const currentBranding = tenant.branding || {};
+      const updatedBranding = { ...currentBranding };
+      
+      switch (assetType) {
+        case 'logo':
+          updatedBranding.logo = assetUrl;
+          break;
+        case 'favicon':
+          updatedBranding.favicon = assetUrl;
+          break;
+        case 'loginBackground':
+          updatedBranding.loginBackgroundImage = assetUrl;
+          break;
+        case 'dashboardBackground':
+          updatedBranding.dashboardBackgroundImage = assetUrl;
+          break;
+      }
+      
+      await storage.updateTenant(tenantId, {
+        branding: updatedBranding
+      });
+      
+      res.json({
+        message: "Asset uploaded successfully",
+        assetType,
+        assetUrl,
+        filename: req.file.filename
+      });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to upload asset" });
+    }
+  });
+  
+  // Super Admin: Get all tenant branding settings
+  app.get("/api/admin/tenants/branding", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const tenants = await db.select({
+        id: simpleTenants.id,
+        name: simpleTenants.name,
+        slug: simpleTenants.slug,
+        branding: simpleTenants.branding,
+        status: simpleTenants.status
+      }).from(simpleTenants);
+      
+      res.json(tenants);
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenant branding" });
+    }
+  });
+  
+  // Super Admin: Update any tenant's branding
+  app.put("/api/admin/tenants/:tenantId/branding", authenticateToken, requireSuperAdmin, async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const { branding } = req.body;
+      
+      const updatedTenant = await storage.updateTenant(tenantId, {
+        branding
+      });
+      
+      res.json({
+        message: "Tenant branding updated successfully",
+        tenant: updatedTenant
+      });
+    } catch (error) {
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update tenant branding" });
+    }
+  });
+  
   // Tenant management routes (Super Admin only)
   app.post("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
     try {

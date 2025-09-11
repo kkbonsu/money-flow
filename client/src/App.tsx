@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
 import { TenantProvider } from "@/contexts/TenantContext";
+import { TenantThemingProvider } from "@/hooks/useTenantTheming";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -36,6 +37,7 @@ import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import RoleManagementPage from "@/pages/RoleManagementPage";
 import NotFound from "@/pages/not-found";
 import TenantSelection from "@/pages/TenantSelection";
+import TenantBrandingSettings from "@/components/tenant/TenantBrandingSettings";
 
 // Customer Portal Components
 import CustomerLogin from "@/pages/customer/CustomerLogin";
@@ -94,6 +96,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/equity" component={Equity} />
       <Route path="/role-management" component={RoleManagementPage} />
+      <Route path="/tenant-branding" component={TenantBrandingSettings} />
       <Route path="/profile" component={UserProfile} />
       <Route component={NotFound} />
     </Switch>
@@ -109,12 +112,14 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <TenantProvider>
-            <CustomerAuthProvider>
-              <TooltipProvider>
-                <Toaster />
-                <AppLayoutSelector />
-              </TooltipProvider>
-            </CustomerAuthProvider>
+            <TenantThemingProvider>
+              <CustomerAuthProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <AppLayoutSelector />
+                </TooltipProvider>
+              </CustomerAuthProvider>
+            </TenantThemingProvider>
           </TenantProvider>
         </AuthProvider>
       </ThemeProvider>
