@@ -46,7 +46,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return null;
   }
 
-  if (location === '/login') {
+  // Render login and tenant selection screens without main layout
+  if (location === '/login' || location === '/tenant-selection') {
     return (
       <div className="min-h-screen bg-background text-foreground">
         {children}

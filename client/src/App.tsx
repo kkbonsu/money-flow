@@ -35,6 +35,7 @@ import Login from "@/pages/Login";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import RoleManagementPage from "@/pages/RoleManagementPage";
 import NotFound from "@/pages/not-found";
+import TenantSelection from "@/pages/TenantSelection";
 
 // Customer Portal Components
 import CustomerLogin from "@/pages/customer/CustomerLogin";
@@ -69,6 +70,7 @@ function Router() {
 
       {/* Staff Portal Routes */}
       <Route path="/login" component={Login} />
+      <Route path="/tenant-selection" component={TenantSelection} />
       <Route path="/super-admin" component={SuperAdminDashboard} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />

@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 import { BarChart } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -32,10 +33,37 @@ export default function Login() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data);
-      // Small delay to ensure auth state is updated
-      setTimeout(() => {
-        setLocation('/');
-      }, 100);
+      
+      // Small delay to ensure auth state is updated, then check for tenant selection
+      setTimeout(async () => {
+        try {
+          // Check if user has multiple accessible tenants
+          const response = await fetch('/api/user/accessible-tenants', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            },
+          });
+          
+          if (response.ok) {
+            const tenants = await response.json();
+            
+            // If user has multiple tenants, show tenant selection screen
+            if (tenants && tenants.length > 1) {
+              setLocation('/tenant-selection');
+            } else {
+              // Single tenant or no tenants, go to dashboard
+              setLocation('/');
+            }
+          } else {
+            // Fallback to dashboard if tenant check fails
+            setLocation('/');
+          }
+        } catch (error) {
+          console.error('Failed to check accessible tenants:', error);
+          // Fallback to dashboard if tenant check fails
+          setLocation('/');
+        }
+      }, 200); // Slightly longer delay to ensure queries are updated
     } catch (error) {
       // Error is handled by useAuth hook
     }

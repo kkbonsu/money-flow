@@ -1,4 +1,4 @@
-import { Sun, Moon, Menu, User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Sun, Moon, Menu, User, Settings, LogOut, ChevronDown, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -75,6 +75,10 @@ export default function Header() {
               <DropdownMenuItem onClick={() => setLocation('/profile')}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLocation('/tenant-selection')}>
+                <Building2 className="mr-2 h-4 w-4" />
+                <span>Switch Organization</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>
