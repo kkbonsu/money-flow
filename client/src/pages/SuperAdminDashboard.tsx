@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/useAuth';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +15,13 @@ import { TenantDetailsModal } from '@/components/tenant/TenantDetailsModal';
 import { TenantUsersModal } from '@/components/tenant/TenantUsersModal';
 import { TenantSettingsModal } from '@/components/tenant/TenantSettingsModal';
 import { SuperAdminStats } from '@/components/tenant/SuperAdminStats';
+import { SystemAnalytics } from '@/components/tenant/SystemAnalytics';
+import { SystemHealthMonitor } from '@/components/tenant/SystemHealthMonitor';
+import { SystemUserManagement } from '@/components/tenant/SystemUserManagement';
 
 export default function SuperAdminDashboard() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showUsersModal, setShowUsersModal] = useState(false);
@@ -22,12 +29,28 @@ export default function SuperAdminDashboard() {
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Redirect if not authenticated or not super admin
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        setLocation('/login');
+        return;
+      }
+      if (!user?.isSuperAdmin) {
+        setLocation('/');
+        return;
+      }
+    }
+  }, [isAuthenticated, user, authLoading, setLocation]);
+
   const { data: tenants, isLoading } = useQuery({
     queryKey: ['/api/admin/tenants'],
+    enabled: isAuthenticated && user?.isSuperAdmin, // Only run if super admin
   });
 
   const { data: systemStats } = useQuery({
     queryKey: ['/api/admin/stats'],
+    enabled: isAuthenticated && user?.isSuperAdmin, // Only run if super admin
   });
 
   const deleteTenantMutation = useMutation({
@@ -48,6 +71,20 @@ export default function SuperAdminDashboard() {
       });
     },
   });
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-pulse">Checking authentication...</div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated || !user?.isSuperAdmin) {
+    return null;
+  }
 
   if (isLoading) {
     return (
@@ -137,51 +174,15 @@ export default function SuperAdminDashboard() {
           </TabsContent>
 
           <TabsContent value="users">
-            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>System-Wide User Management</CardTitle>
-                <CardDescription>
-                  View and manage users across all tenants
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  User management interface will be loaded here
-                </div>
-              </CardContent>
-            </Card>
+            <SystemUserManagement />
           </TabsContent>
 
           <TabsContent value="settings">
-            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-                <CardDescription>
-                  Configure system-wide settings and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  System settings interface will be loaded here
-                </div>
-              </CardContent>
-            </Card>
+            <SystemHealthMonitor />
           </TabsContent>
 
           <TabsContent value="analytics">
-            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>System Analytics</CardTitle>
-                <CardDescription>
-                  Monitor system performance and usage across all tenants
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  Analytics dashboard will be loaded here
-                </div>
-              </CardContent>
-            </Card>
+            <SystemAnalytics />
           </TabsContent>
         </Tabs>
       </div>
