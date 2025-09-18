@@ -3,92 +3,13 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Tenants collection - Core multi-tenant management
-export const tenants = pgTable("tenants", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(), // "ABC Microfinance Ltd"
-  slug: text("slug").notNull().unique(), // "abc-microfinance"
-  domain: text("domain"), // "abc.moneyflow.app"
-  
-  // Subscription & Limits
-  plan: text("plan").notNull().default("basic"), // 'basic', 'professional', 'enterprise'
-  limits: jsonb("limits").notNull().default({
-    maxLoans: 100,
-    maxUsers: 5,
-    maxStorage: 1024 // MB
-  }),
-  
-  // Branding & Customization
-  branding: jsonb("branding").notNull().default({
-    logo: null,
-    primaryColor: "#2563eb",
-    secondaryColor: "#64748b",
-    companyName: ""
-  }),
-  
-  // Regional Settings
-  currency: text("currency").notNull().default("GHS"), // "GHS", "USD"
-  locale: text("locale").notNull().default("en-GH"), // "en-GH"
-  timezone: text("timezone").notNull().default("Africa/Accra"), // "Africa/Accra"
-  
-  // Status & Metadata
-  status: text("status").notNull().default("active"), // 'active', 'suspended', 'trial'
-  subscriptionEnds: timestamp("subscription_ends"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
 
-// Roles table for hierarchical permission system
-export const roles = pgTable("roles", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  hierarchyLevel: integer("hierarchy_level").notNull(), // 1=Super Admin, 2=Admin, 3=Manager, 4=Staff
-  isSystemRole: boolean("is_system_role").default(true), // Predefined roles
-  tenantId: uuid("tenant_id").references(() => tenants.id), // null for system-wide roles
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  uniqueRoleName: unique().on(table.name, table.tenantId),
-}));
 
-// Permissions table for granular access control
-export const permissions = pgTable("permissions", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(), // e.g., "loans:create"
-  category: text("category").notNull(), // data_access, financial_operations, etc.
-  description: text("description"),
-  resource: text("resource").notNull(), // loans, customers, reports, etc.
-  action: text("action").notNull(), // create, read, update, delete, approve, etc.
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
-// Role-Permission mapping (many-to-many)
-export const rolePermissions = pgTable("role_permissions", {
-  id: serial("id").primaryKey(),
-  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
-  permissionId: integer("permission_id").notNull().references(() => permissions.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  uniqueRolePermission: unique().on(table.roleId, table.permissionId),
-}));
 
-// User-Role assignments (one primary role per user per tenant)
-export const userRoles = pgTable("user_roles", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
-  assignedBy: integer("assigned_by").references(() => users.id),
-  assignedAt: timestamp("assigned_at").defaultNow(),
-  isActive: boolean("is_active").default(true),
-}, (table) => ({
-  uniqueUserTenantRole: unique().on(table.userId, table.tenantId), // One role per user per tenant
-}));
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   username: text("username").notNull(),
   password: text("password").notNull(),
   email: text("email").notNull(),
@@ -99,25 +20,14 @@ export const users = pgTable("users", {
   phone: text("phone"),
   lastLogin: timestamp("last_login"),
   isActive: boolean("is_active").default(true),
-  isSuperAdmin: boolean("is_super_admin").default(false), // Can access all tenants
+  isSuperAdmin: boolean("is_super_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// User-Tenant access relationship (for multi-tenant users)
-export const userTenantAccess = pgTable("user_tenant_access", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
-  role: text("role").notNull().default("user"), // 'admin', 'manager', 'user', 'viewer'
-  permissions: jsonb("permissions").default([]), // granular permissions array
-  isDefault: boolean("is_default").default(false), // default tenant for this user
-  createdAt: timestamp("created_at").defaultNow(),
-});
 
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
@@ -135,7 +45,6 @@ export const customers = pgTable("customers", {
 
 export const loanProducts = pgTable("loan_products", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   name: text("name").notNull(),
   fee: decimal("fee", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
@@ -146,7 +55,6 @@ export const loanProducts = pgTable("loan_products", {
 
 export const loanBooks = pgTable("loan_books", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   loanProductId: integer("loan_product_id").references(() => loanProducts.id),
   loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
@@ -172,7 +80,6 @@ export const loanBooks = pgTable("loan_books", {
 
 export const paymentSchedules = pgTable("payment_schedules", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   dueDate: timestamp("due_date").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
@@ -187,7 +94,6 @@ export const paymentSchedules = pgTable("payment_schedules", {
 
 export const staff = pgTable("staff", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
@@ -202,7 +108,6 @@ export const staff = pgTable("staff", {
 
 export const incomeManagement = pgTable("income_management", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   source: text("source").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -213,7 +118,6 @@ export const incomeManagement = pgTable("income_management", {
 
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   category: text("category").notNull(),
@@ -224,7 +128,6 @@ export const expenses = pgTable("expenses", {
 
 export const bankManagement = pgTable("bank_management", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   accountName: text("account_name").notNull(),
   bankName: text("bank_name").notNull(),
   accountNumber: text("account_number").notNull(),
@@ -236,7 +139,6 @@ export const bankManagement = pgTable("bank_management", {
 
 export const pettyCash = pgTable("petty_cash", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   type: text("type").notNull(),
@@ -247,7 +149,6 @@ export const pettyCash = pgTable("petty_cash", {
 
 export const inventory = pgTable("inventory", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   itemName: text("item_name").notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 15, scale: 2 }).notNull(),
@@ -260,7 +161,6 @@ export const inventory = pgTable("inventory", {
 
 export const rentManagement = pgTable("rent_management", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   propertyName: text("property_name").notNull(),
   tenantName: text("tenant_name").notNull(),
   monthlyRent: decimal("monthly_rent", { precision: 15, scale: 2 }).notNull(),
@@ -272,7 +172,6 @@ export const rentManagement = pgTable("rent_management", {
 
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   assetName: text("asset_name").notNull(),
   category: text("category").notNull(),
   value: decimal("value", { precision: 15, scale: 2 }).notNull(),
@@ -285,7 +184,6 @@ export const assets = pgTable("assets", {
 
 export const liabilities = pgTable("liabilities", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   liabilityName: text("liability_name").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   dueDate: timestamp("due_date"),
@@ -298,7 +196,6 @@ export const liabilities = pgTable("liabilities", {
 
 export const equity = pgTable("equity", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   equityType: text("equity_type").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   date: timestamp("date").notNull(),
@@ -308,7 +205,6 @@ export const equity = pgTable("equity", {
 
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   reportType: text("report_type").notNull(),
   title: text("title").notNull(),
   content: text("content"),
@@ -318,7 +214,6 @@ export const reports = pgTable("reports", {
 
 export const userAuditLogs = pgTable("user_audit_logs", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   action: text("action").notNull(), // login, logout, password_change, profile_update, etc.
   description: text("description"),
@@ -327,10 +222,9 @@ export const userAuditLogs = pgTable("user_audit_logs", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
-// MFI Registration table for BoG compliance (Global-like collection - one per tenant)
+// MFI Registration table for BoG compliance
 export const mfiRegistration = pgTable("mfi_registration", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull().unique(), // One per tenant
   companyName: text("company_name").notNull(),
   registrationNumber: text("registration_number").notNull(),
   certificateOfIncorporation: text("certificate_of_incorporation"), // File path/URL
@@ -351,7 +245,6 @@ export const mfiRegistration = pgTable("mfi_registration", {
 // Shareholder Management table for GIPC compliance
 export const shareholders = pgTable("shareholders", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   shareholderType: text("shareholder_type").notNull(), // 'local', 'foreign'
   name: text("name").notNull(),
   nationality: text("nationality").notNull(),
@@ -373,7 +266,6 @@ export const shareholders = pgTable("shareholders", {
 // Collateral Management table for Security Interest Registration
 export const collateral = pgTable("collateral", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   collateralType: text("collateral_type").notNull(), // 'real_estate', 'vehicle', 'equipment', 'inventory', 'other'
   description: text("description").notNull(),
@@ -393,7 +285,6 @@ export const collateral = pgTable("collateral", {
 // Borrower Education Content table
 export const educationContent = pgTable("education_content", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   contentType: text("content_type").notNull(), // 'article', 'video', 'infographic', 'quiz'
@@ -409,7 +300,6 @@ export const educationContent = pgTable("education_content", {
 // Borrower Feedback table
 export const borrowerFeedback = pgTable("borrower_feedback", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   loanId: integer("loan_id").references(() => loanBooks.id),
   feedbackType: text("feedback_type").notNull(), // 'complaint', 'suggestion', 'clarification', 'compliment'
@@ -427,7 +317,6 @@ export const borrowerFeedback = pgTable("borrower_feedback", {
 // Debt Collection Activities table
 export const debtCollectionActivities = pgTable("debt_collection_activities", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   loanId: integer("loan_id").references(() => loanBooks.id),
   customerId: integer("customer_id").references(() => customers.id),
   activityType: text("activity_type").notNull(), // 'reminder_call', 'email_reminder', 'sms_reminder', 'field_visit', 'payment_plan', 'legal_notice'
@@ -441,132 +330,33 @@ export const debtCollectionActivities = pgTable("debt_collection_activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Multi-tenant Relations
-export const tenantsRelations = relations(tenants, ({ many }) => ({
-  users: many(users),
-  customers: many(customers),
-  loanProducts: many(loanProducts),
-  loanBooks: many(loanBooks),
-  paymentSchedules: many(paymentSchedules),
-  staff: many(staff),
-  incomeManagement: many(incomeManagement),
-  expenses: many(expenses),
-  bankManagement: many(bankManagement),
-  pettyCash: many(pettyCash),
-  inventory: many(inventory),
-  rentManagement: many(rentManagement),
-  assets: many(assets),
-  liabilities: many(liabilities),
-  equity: many(equity),
-  reports: many(reports),
-  userAuditLogs: many(userAuditLogs),
-  mfiRegistration: many(mfiRegistration),
-  shareholders: many(shareholders),
-  userTenantAccess: many(userTenantAccess),
-  roles: many(roles),
-  userRoles: many(userRoles),
-  collateral: many(collateral),
-  educationContent: many(educationContent),
-  borrowerFeedback: many(borrowerFeedback),
-  debtCollectionActivities: many(debtCollectionActivities),
-}));
 
-export const roleRelations = relations(roles, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [roles.tenantId],
-    references: [tenants.id],
-  }),
-  rolePermissions: many(rolePermissions),
-  userRoles: many(userRoles),
-}));
 
-export const permissionRelations = relations(permissions, ({ many }) => ({
-  rolePermissions: many(rolePermissions),
-}));
 
-export const rolePermissionRelations = relations(rolePermissions, ({ one }) => ({
-  role: one(roles, {
-    fields: [rolePermissions.roleId],
-    references: [roles.id],
-  }),
-  permission: one(permissions, {
-    fields: [rolePermissions.permissionId],
-    references: [permissions.id],
-  }),
-}));
 
-export const userRoleRelations = relations(userRoles, ({ one }) => ({
-  user: one(users, {
-    fields: [userRoles.userId],
-    references: [users.id],
-    relationName: "userRoles"
-  }),
-  role: one(roles, {
-    fields: [userRoles.roleId],
-    references: [roles.id],
-  }),
-  tenant: one(tenants, {
-    fields: [userRoles.tenantId],
-    references: [tenants.id],
-  }),
-  assignedByUser: one(users, {
-    fields: [userRoles.assignedBy],
-    references: [users.id],
-    relationName: "assignedByUser"
-  }),
-}));
 
-export const usersRelations = relations(users, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [users.tenantId],
-    references: [tenants.id],
-  }),
-  tenantAccess: many(userTenantAccess),
+export const usersRelations = relations(users, ({ many }) => ({
   assignedLoans: many(loanBooks, { relationName: "assignedOfficer" }),
   approvedLoans: many(loanBooks, { relationName: "approver" }),
   disbursedLoans: many(loanBooks, { relationName: "disburser" }),
   auditLogs: many(userAuditLogs),
-  userRoles: many(userRoles, { relationName: "userRoles" }),
-  assignedUserRoles: many(userRoles, { relationName: "assignedByUser" }),
   generatedReports: many(reports, { relationName: "generatedBy" }),
   assignedFeedback: many(borrowerFeedback, { relationName: "assignedTo" }),
   performedDebtCollection: many(debtCollectionActivities, { relationName: "performedBy" }),
 }));
 
-export const userTenantAccessRelations = relations(userTenantAccess, ({ one }) => ({
-  user: one(users, {
-    fields: [userTenantAccess.userId],
-    references: [users.id],
-  }),
-  tenant: one(tenants, {
-    fields: [userTenantAccess.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const customersRelations = relations(customers, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [customers.tenantId],
-    references: [tenants.id],
-  }),
+export const customersRelations = relations(customers, ({ many }) => ({
   loans: many(loanBooks, { relationName: "customerLoans" }),
   borrowerFeedback: many(borrowerFeedback, { relationName: "customerFeedback" }),
   debtCollectionActivities: many(debtCollectionActivities, { relationName: "customerDebtCollection" }),
 }));
 
-export const loanProductsRelations = relations(loanProducts, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [loanProducts.tenantId],
-    references: [tenants.id],
-  }),
+export const loanProductsRelations = relations(loanProducts, ({ many }) => ({
   loans: many(loanBooks, { relationName: "productLoans" }),
 }));
 
 export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [loanBooks.tenantId],
-    references: [tenants.id],
-  }),
   customer: one(customers, {
     fields: [loanBooks.customerId],
     references: [customers.id],
@@ -599,93 +389,25 @@ export const loanBooksRelations = relations(loanBooks, ({ one, many }) => ({
 }));
 
 export const paymentSchedulesRelations = relations(paymentSchedules, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [paymentSchedules.tenantId],
-    references: [tenants.id],
-  }),
   loan: one(loanBooks, {
     fields: [paymentSchedules.loanId],
     references: [loanBooks.id],
   }),
 }));
 
-export const staffRelations = relations(staff, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [staff.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
 
 
-export const incomeManagementRelations = relations(incomeManagement, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [incomeManagement.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const expensesRelations = relations(expenses, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [expenses.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const bankManagementRelations = relations(bankManagement, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [bankManagement.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const pettyCashRelations = relations(pettyCash, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [pettyCash.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const inventoryRelations = relations(inventory, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [inventory.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const rentManagementRelations = relations(rentManagement, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [rentManagement.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const assetsRelations = relations(assets, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [assets.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const liabilitiesRelations = relations(liabilities, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [liabilities.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const equityRelations = relations(equity, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [equity.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
 export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [userAuditLogs.tenantId],
-    references: [tenants.id],
-  }),
   user: one(users, {
     fields: [userAuditLogs.userId],
     references: [users.id],
@@ -693,10 +415,6 @@ export const userAuditLogsRelations = relations(userAuditLogs, ({ one }) => ({
 }));
 
 export const reportsRelations = relations(reports, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [reports.tenantId],
-    references: [tenants.id],
-  }),
   generatedBy: one(users, {
     fields: [reports.generatedBy],
     references: [users.id],
@@ -704,44 +422,18 @@ export const reportsRelations = relations(reports, ({ one }) => ({
   }),
 }));
 
-export const mfiRegistrationRelations = relations(mfiRegistration, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [mfiRegistration.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
-export const shareholdersRelations = relations(shareholders, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [shareholders.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
 // Add relations for remaining tables that have foreign keys
 export const collateralRelations = relations(collateral, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [collateral.tenantId],
-    references: [tenants.id],
-  }),
   loan: one(loanBooks, {
     fields: [collateral.loanId],
     references: [loanBooks.id],
   }),
 }));
 
-export const educationContentRelations = relations(educationContent, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [educationContent.tenantId],
-    references: [tenants.id],
-  }),
-}));
 
 export const borrowerFeedbackRelations = relations(borrowerFeedback, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [borrowerFeedback.tenantId],
-    references: [tenants.id],
-  }),
   customer: one(customers, {
     fields: [borrowerFeedback.customerId],
     references: [customers.id],
@@ -760,10 +452,6 @@ export const borrowerFeedbackRelations = relations(borrowerFeedback, ({ one }) =
 }));
 
 export const debtCollectionActivitiesRelations = relations(debtCollectionActivities, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [debtCollectionActivities.tenantId],
-    references: [tenants.id],
-  }),
   loan: one(loanBooks, {
     fields: [debtCollectionActivities.loanId],
     references: [loanBooks.id],
@@ -781,35 +469,22 @@ export const debtCollectionActivitiesRelations = relations(debtCollectionActivit
   }),
 }));
 
-// Insert schemas for multi-tenant support
-export const insertTenantSchema = createInsertSchema(tenants).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertUserTenantAccessSchema = createInsertSchema(userTenantAccess).omit({
-  id: true,
-  createdAt: true,
-});
+// Insert schemas for single-tenant support
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -840,7 +515,6 @@ export const insertLoanBookSchema = createInsertSchema(loanBooks).omit({
 
 export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -859,7 +533,6 @@ export const insertPaymentScheduleSchema = createInsertSchema(paymentSchedules).
 
 export const insertStaffSchema = createInsertSchema(staff).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -873,7 +546,6 @@ export const insertStaffSchema = createInsertSchema(staff).omit({
 
 export const insertIncomeManagementSchema = createInsertSchema(incomeManagement).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -881,7 +553,6 @@ export const insertIncomeManagementSchema = createInsertSchema(incomeManagement)
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -889,7 +560,6 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
 
 export const insertBankManagementSchema = createInsertSchema(bankManagement).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -898,7 +568,6 @@ export const insertBankManagementSchema = createInsertSchema(bankManagement).omi
 
 export const insertPettyCashSchema = createInsertSchema(pettyCash).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   amount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -906,7 +575,6 @@ export const insertPettyCashSchema = createInsertSchema(pettyCash).omit({
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 }).extend({
   unitPrice: z.union([z.string(), z.number()]).transform((val) => val.toString()),
@@ -915,45 +583,38 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
 
 export const insertRentManagementSchema = createInsertSchema(rentManagement).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 });
 
 export const insertAssetSchema = createInsertSchema(assets).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertLiabilitySchema = createInsertSchema(liabilities).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertEquitySchema = createInsertSchema(equity).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 });
 
 export const insertReportSchema = createInsertSchema(reports).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
 });
 
 export const insertUserAuditLogSchema = createInsertSchema(userAuditLogs).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   timestamp: true,
 });
 
 export const insertMfiRegistrationSchema = createInsertSchema(mfiRegistration).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -975,41 +636,18 @@ export const insertShareholderSchema = createInsertSchema(shareholders, {
   investmentAmount: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 }).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 });
 
 export const insertLoanProductSchema = createInsertSchema(loanProducts).omit({
   id: true,
-  tenantId: true, // Injected by middleware
   createdAt: true,
   updatedAt: true,
 }).extend({
   fee: z.union([z.string(), z.number()]).transform((val) => val.toString()),
 });
 
-// Permission System Insert Schemas
-export const insertRoleSchema = createInsertSchema(roles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertPermissionSchema = createInsertSchema(permissions).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
-  id: true,
-  assignedAt: true,
-});
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -1069,52 +707,18 @@ export type InsertShareholder = z.infer<typeof insertShareholderSchema>;
 export type LoanProduct = typeof loanProducts.$inferSelect;
 export type InsertLoanProduct = z.infer<typeof insertLoanProductSchema>;
 
-// Multi-tenant Types  
-export type Tenant = typeof tenants.$inferSelect;
-export type InsertTenant = z.infer<typeof insertTenantSchema>;
-
-export type UserTenantAccess = typeof userTenantAccess.$inferSelect;
-export type InsertUserTenantAccess = z.infer<typeof insertUserTenantAccessSchema>;
-
-// Removed duplicate type definitions - already defined above
-
-// Permission System Types
-export type Role = typeof roles.$inferSelect;
-export type InsertRole = typeof roles.$inferInsert;
-
-export type Permission = typeof permissions.$inferSelect;
-export type InsertPermission = typeof permissions.$inferInsert;
-
-export type RolePermission = typeof rolePermissions.$inferSelect;
-export type InsertRolePermission = typeof rolePermissions.$inferInsert;
-
-export type UserRole = typeof userRoles.$inferSelect;
-export type InsertUserRole = typeof userRoles.$inferInsert;
-
-// Tenant Context Types for Multi-tenant Operations
-export type TenantContext = {
-  tenant: Tenant;
-  tenantId: string;
-  slug: string;
-};
-
-// Extended JWT payload for multi-tenant authentication
+// Simplified JWT payload for single-tenant authentication
 export type JwtPayload = {
   id: number;
   username: string;
   email: string;
   role: string;
-  tenantId: string;
   isSuperAdmin?: boolean;
-  roleId?: number;
-  hierarchyLevel?: number;
-  permissions?: string[];
 };
 
 // Support Ticket system for customer support
 export const supportTickets = pgTable("support_tickets", {
   id: serial("id").primaryKey(),
-  tenantId: text("tenant_id").notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -1132,7 +736,6 @@ export const supportTickets = pgTable("support_tickets", {
 
 export const supportMessages = pgTable("support_messages", {
   id: serial("id").primaryKey(),
-  tenantId: text("tenant_id").notNull(),
   ticketId: integer("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
   senderId: integer("sender_id"), // Could be customer or staff user
   senderType: text("sender_type").notNull(), // "customer" or "staff"

@@ -6,11 +6,12 @@ import {
   getOptimizedRecentPayments,
   createPerformanceIndexes 
 } from "./performanceOptimization";
-import { extractTenantContext, authenticateToken } from "./tenantAuth";
+import { authenticateToken } from "./tenantAuth";
 
-interface AuthenticatedRequest extends Request {
-  tenantId?: string;
-}
+// Simplified for single-tenant mode - tenantId interface no longer needed
+// interface AuthenticatedRequest extends Request {
+//   tenantId?: string;
+// }
 
 /**
  * Optimized API routes for better performance
@@ -23,10 +24,9 @@ export function registerOptimizedRoutes(app: Express) {
   createPerformanceIndexes().catch(console.error);
   
   // Optimized dashboard metrics endpoint
-  app.get("/api/dashboard/metrics", authenticateToken, extractTenantContext, async (req: AuthenticatedRequest, res: Response) => {
+  app.get("/api/dashboard/metrics", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const tenantId = req.tenantId as string;
-      const metrics = await getOptimizedDashboardMetrics(tenantId);
+      const metrics = await getOptimizedDashboardMetrics();
       
       // Add cache headers for better client-side caching
       res.set({
@@ -42,11 +42,10 @@ export function registerOptimizedRoutes(app: Express) {
   });
   
   // Optimized recent payments endpoint with pagination
-  app.get("/api/payments/recent", authenticateToken, extractTenantContext, async (req: AuthenticatedRequest, res: Response) => {
+  app.get("/api/payments/recent", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const tenantId = req.tenantId as string;
       const limit = parseInt(req.query.limit as string) || 10;
-      const payments = await getOptimizedRecentPayments(tenantId, limit);
+      const payments = await getOptimizedRecentPayments(limit);
       
       res.set({
         'Cache-Control': 'private, max-age=60', // 1 minute
@@ -60,15 +59,13 @@ export function registerOptimizedRoutes(app: Express) {
   });
   
   // Batch endpoint for multiple dashboard data
-  app.get("/api/dashboard/batch", authenticateToken, extractTenantContext, async (req: AuthenticatedRequest, res: Response) => {
+  app.get("/api/dashboard/batch", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const tenantId = req.tenantId as string;
-      
       // Execute multiple queries in parallel
       const [metrics, recentPayments, portfolioData] = await Promise.all([
-        getOptimizedDashboardMetrics(tenantId),
-        getOptimizedRecentPayments(tenantId, 5),
-        getPortfolioSummary(tenantId)
+        getOptimizedDashboardMetrics(),
+        getOptimizedRecentPayments(5),
+        getPortfolioSummary()
       ]);
       
       res.set({
@@ -87,9 +84,8 @@ export function registerOptimizedRoutes(app: Express) {
   });
   
   // Optimized customers endpoint with search and pagination
-  app.get("/api/customers/optimized", authenticateToken, extractTenantContext, async (req: AuthenticatedRequest, res: Response) => {
+  app.get("/api/customers/optimized", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const tenantId = req.tenantId as string;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       const search = req.query.search as string;
@@ -100,8 +96,7 @@ export function registerOptimizedRoutes(app: Express) {
           id, first_name, last_name, email, phone, created_at,
           (SELECT COUNT(*) FROM loan_books WHERE customer_id = customers.id) as loan_count,
           (SELECT COALESCE(SUM(CAST(loan_amount AS NUMERIC)), 0) FROM loan_books WHERE customer_id = customers.id AND status = 'disbursed') as total_borrowed
-        FROM customers 
-        WHERE tenant_id = ${tenantId}
+        FROM customers
       `;
       
       if (search) {
@@ -115,8 +110,8 @@ export function registerOptimizedRoutes(app: Express) {
       
       // Get total count for pagination
       const countQuery = search 
-        ? sql`SELECT COUNT(*) as total FROM customers WHERE tenant_id = ${tenantId} AND (first_name ILIKE ${'%' + search + '%'} OR last_name ILIKE ${'%' + search + '%'} OR email ILIKE ${'%' + search + '%'})`
-        : sql`SELECT COUNT(*) as total FROM customers WHERE tenant_id = ${tenantId}`;
+        ? sql`SELECT COUNT(*) as total FROM customers WHERE (first_name ILIKE ${'%' + search + '%'} OR last_name ILIKE ${'%' + search + '%'} OR email ILIKE ${'%' + search + '%'})`
+        : sql`SELECT COUNT(*) as total FROM customers`;
       
       const countResult = await db.execute(countQuery);
       const totalCount = countResult.rows?.[0]?.total || 0;
@@ -142,7 +137,7 @@ export function registerOptimizedRoutes(app: Express) {
 }
 
 // Helper function for portfolio summary
-async function getPortfolioSummary(tenantId: string) {
+async function getPortfolioSummary() {
   const result = await db.execute(sql`
     SELECT 
       COUNT(*) as total_loans,
@@ -150,9 +145,8 @@ async function getPortfolioSummary(tenantId: string) {
       AVG(CASE WHEN status = 'disbursed' THEN CAST(loan_amount AS NUMERIC) END) as avg_loan_size,
       (SELECT COUNT(*) FROM payment_schedules ps 
        INNER JOIN loan_books lb ON ps.loan_id = lb.id 
-       WHERE lb.tenant_id = ${tenantId} AND ps.status = 'overdue') as overdue_payments
-    FROM loan_books 
-    WHERE tenant_id = ${tenantId}
+       WHERE ps.status = 'overdue') as overdue_payments
+    FROM loan_books
   `);
   
   return result.rows?.[0] || null;

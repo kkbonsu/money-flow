@@ -32,12 +32,11 @@ import {
   insertSupportMessageSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { simpleTenants } from "@shared/tenantSchema";
+// import { simpleTenants } from "@shared/tenantSchema"; // Removed for single-tenant mode
 import { db } from "./db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { 
-  extractTenantContext, 
   authenticateToken, 
   authenticateCustomerToken, 
   requireRole, 
@@ -47,11 +46,18 @@ import {
   createTenantWithAdmin
 } from "./tenantAuth";
 import { eq, and, sql } from "drizzle-orm";
-import { users, tenants } from "@shared/schema";
-import roleRoutes from "./roleRoutes";
+import { users } from "@shared/schema";
+// import roleRoutes from "./roleRoutes"; // Disabled for single-tenant mode
 import { registerOptimizedRoutes } from "./optimizedRoutes";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required!');
+  console.error('Please set JWT_SECRET to a strong, randomly generated secret.');
+  console.error('Example: JWT_SECRET="your-secure-random-secret-here" npm run dev');
+  process.exit(1);
+}
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -87,25 +93,23 @@ const upload = multer({
 // Legacy middleware removed, using new tenant-aware authentication
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Apply tenant context extraction to all routes
-  app.use(extractTenantContext);
+  // Simplified routing for single-tenant mode (tenant context extraction removed)
   
   // Serve static files from uploads directory
   app.use('/uploads', express.static(uploadsDir));
   
-  // Tenant-aware auth routes
+  // Simplified auth routes (single-tenant mode)
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       const hashedPassword = await bcrypt.hash(userData.password, 10);
-      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
       
       const user = await storage.createUser({
         ...userData,
         password: hashedPassword,
       });
       
-      const token = generateUserToken(user, tenantId);
+      const token = generateUserToken(user);
       
       res.json({ 
         user: { 
@@ -113,7 +117,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           email: user.email, 
           role: user.role,
-          tenantId,
           isSuperAdmin: user.isSuperAdmin || false
         }, 
         token 
@@ -126,17 +129,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
-      const user = await storage.getUserByUsername(username);
+      
+      // Try to find user by username first, then by email
+      let user = await storage.getUserByUsername('default-tenant', username);
+      if (!user) {
+        user = await storage.getUserByEmail('default-tenant', username); // username field might contain email
+      }
       
       if (!user || !await bcrypt.compare(password, user.password)) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      const token = generateUserToken(user, tenantId);
+      const token = generateUserToken(user);
       
       // Update last login and log the login
-      await storage.updateUserLastLogin(tenantId, user.id);
+      await storage.updateUserLastLogin('default-tenant', user.id);
       await storage.createUserAuditLog({
         userId: user.id,
         action: 'login',
@@ -151,7 +158,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username, 
           email: user.email, 
           role: user.role,
-          tenantId,
           isSuperAdmin: user.isSuperAdmin || false
         }, 
         token 
@@ -161,11 +167,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Optimized customer authentication endpoint
+  // Simplified customer authentication endpoint (single-tenant mode)
   app.post("/api/customer/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const tenantId = req.tenantContext?.tenantId || 'default-tenant-001';
       const customer = await storage.getCustomerByEmail(email);
       
       // Combined validation check
@@ -178,10 +183,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      const token = generateCustomerToken(customer, tenantId);
+      const token = generateCustomerToken(customer);
       
       // Async last login update (non-blocking)
-      storage.updateCustomerLastLogin(tenantId, customer.id).catch(console.error);
+      storage.updateCustomerLastLogin(customer.id).catch(console.error);
       
       res.json({ 
         customer: { 
@@ -192,8 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: customer.phone,
           address: customer.address,
           creditScore: customer.creditScore,
-          isPortalActive: customer.isPortalActive,
-          tenantId
+          isPortalActive: customer.isPortalActive
         }, 
         token 
       });
@@ -202,50 +206,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Tenant management routes (Super Admin only)
-  app.post("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
-    try {
-      const { name, slug, adminUser } = req.body;
-      
-      // Create tenant with admin user
-      const result = await createTenantWithAdmin({
-        name,
-        slug,
-        adminUser
-      });
-      
-      res.json(result);
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create tenant" });
-    }
-  });
+  // DISABLED: Tenant management routes removed for single-tenant mode
+  // These routes are no longer needed since the system operates in single-tenant mode
 
-  app.get("/api/admin/tenants", authenticateToken, requireSuperAdmin, async (req, res) => {
-    try {
-      const tenants = await db.select().from(simpleTenants);
-      res.json(tenants);
-    } catch (error) {
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenants" });
-    }
-  });
-
-  // Super admin stats endpoint
+  // Simplified admin stats endpoint (single-tenant mode)
   app.get("/api/admin/stats", authenticateToken, requireSuperAdmin, async (req, res) => {
     try {
       const [
-        totalTenantsResult,
-        activeTenantsResult,
-        totalUsersResult
+        totalUsersResult,
+        totalCustomersResult,
+        totalLoansResult
       ] = await Promise.all([
-        db.select({ count: sql<number>`count(*)` }).from(simpleTenants),
-        db.select({ count: sql<number>`count(*)` }).from(simpleTenants),
-        db.select({ count: sql<number>`count(*)` }).from(users)
+        db.select({ count: sql<number>`count(*)` }).from(users),
+        storage.getCustomers().then(customers => ({ count: customers.length })),
+        storage.getLoanBooks().then(loans => ({ count: loans.length }))
       ]);
 
       res.json({
-        totalTenants: totalTenantsResult[0]?.count || 0,
-        activeTenants: activeTenantsResult[0]?.count || 0,
         totalUsers: totalUsersResult[0]?.count || 0,
+        totalCustomers: totalCustomersResult.count || 0,
+        totalLoans: totalLoansResult.count || 0,
         systemRevenue: "$0" // Placeholder for future implementation
       });
     } catch (error) {
@@ -253,31 +233,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete tenant endpoint
-  app.delete("/api/admin/tenants/:tenantId", authenticateToken, requireSuperAdmin, async (req, res) => {
-    try {
-      const { tenantId } = req.params;
-      
-      // Note: In production, you might want to soft-delete or archive instead
-      await db.delete(simpleTenants).where(eq(simpleTenants.id, tenantId));
-      
-      res.json({ message: "Tenant deleted successfully" });
-    } catch (error) {
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to delete tenant" });
-    }
-  });
+  // DISABLED: Delete tenant endpoint removed for single-tenant mode
 
-  app.get("/api/tenant/info", async (req, res) => {
-    try {
-      const tenantInfo = req.tenantContext?.tenant;
-      if (!tenantInfo) {
-        return res.status(404).json({ message: "Tenant not found" });
-      }
-      res.json(tenantInfo);
-    } catch (error) {
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch tenant info" });
-    }
-  });
+  // REMOVED: Tenant info route not needed in single-tenant mode
+  // app.get("/api/tenant/info", async (req, res) => {
+  //   // Single-tenant mode: tenant info route disabled
+  // });
 
   // Customer profile routes
   app.get("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
@@ -299,8 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
       const updateData = req.body;
-      const tenantId = req.customer?.tenantId || 'default-tenant-001';
-      const customer = await storage.updateCustomer(tenantId, req.customer.id, updateData);
+      const customer = await storage.updateCustomer(req.customer.id, updateData);
       const { password, ...customerProfile } = customer;
       res.json(customerProfile);
     } catch (error) {
@@ -318,8 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      const tenantId = req.customer?.tenantId || 'default-tenant-001';
-      await storage.updateCustomerPassword(tenantId, req.customer.id, hashedPassword);
+      await storage.updateCustomerPassword(req.customer.id, hashedPassword);
       
       res.json({ message: "Password updated successfully" });
     } catch (error) {
@@ -396,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User account management routes
   app.get("/api/users/profile", authenticateToken, async (req, res) => {
     try {
-      const user = await storage.getUser(req.user.id);
+      const user = await storage.getUser('default-tenant', req.user.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -414,8 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove password from update data - password should be updated separately
       const { password, ...safeUpdateData } = updateData;
       
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const user = await storage.updateUser(tenantId, req.user.id, safeUpdateData);
+      const user = await storage.updateUser(req.user.id, safeUpdateData);
       
       // Log profile update
       await storage.createUserAuditLog({
@@ -439,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { currentPassword, newPassword } = req.body;
       
       // Verify current password
-      const user = await storage.getUser(req.user.id);
+      const user = await storage.getUser('default-tenant', req.user.id);
       if (!user || !await bcrypt.compare(currentPassword, user.password)) {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
@@ -448,8 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       
       // Update password
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      await storage.updateUserPassword(tenantId, req.user.id, hashedPassword);
+      await storage.updateUserPassword(req.user.id, hashedPassword);
       
       // Log password change
       await storage.createUserAuditLog({
@@ -484,8 +441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profilePictureUrl = `/uploads/${req.file.filename}`;
       
       // Update user profile picture
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      await storage.updateUser(tenantId, req.user.id, { profilePicture: profilePictureUrl });
+      await storage.updateUser(req.user.id, { profilePicture: profilePictureUrl });
       
       // Log profile picture update
       await storage.createUserAuditLog({
@@ -574,8 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot change your own account status" });
       }
 
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      await storage.updateUser(tenantId, userId, { isActive });
+      await storage.updateUser(userId, { isActive });
       
       // Log user status change
       await storage.createUserAuditLog({
@@ -613,8 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid role. Must be 'user', 'manager', or 'admin'" });
       }
 
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      await storage.updateUser(tenantId, userId, { role });
+      await storage.updateUser(userId, { role });
       
       // Log user role change
       await storage.createUserAuditLog({
@@ -676,8 +630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const customerData = insertCustomerSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const customer = await storage.updateCustomer(tenantId, id, customerData);
+      const customer = await storage.updateCustomer(id, customerData);
       res.json(customer);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update customer" });
@@ -828,8 +781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanData = insertLoanBookSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const loan = await storage.updateLoan(tenantId, id, loanData);
+      const loan = await storage.updateLoan(id, loanData);
       res.json(loan);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update loan" });
@@ -964,8 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanProductData = insertLoanProductSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const loanProduct = await storage.updateLoanProduct(tenantId, id, loanProductData);
+      const loanProduct = await storage.updateLoanProduct(id, loanProductData);
       res.json(loanProduct);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update loan product" });
@@ -985,8 +936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment Schedule routes
   app.get("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const schedules = await storage.getPaymentSchedules(tenantId);
+      const schedules = await storage.getPaymentSchedules();
       res.json(schedules);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment schedules" });
@@ -996,8 +946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payment-schedules/loan/:loanId", authenticateToken, async (req, res) => {
     try {
       const loanId = parseInt(req.params.loanId);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const schedules = await storage.getPaymentSchedulesByLoan(tenantId, loanId);
+      const schedules = await storage.getPaymentSchedulesByLoan(loanId);
       res.json(schedules);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment schedules for loan" });
@@ -1007,8 +956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payment-schedules", authenticateToken, async (req, res) => {
     try {
       const scheduleData = insertPaymentScheduleSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const schedule = await storage.createPaymentSchedule(tenantId, scheduleData);
+      const schedule = await storage.createPaymentSchedule(scheduleData);
       res.json(schedule);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create payment schedule" });
@@ -1023,8 +971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Parsed schedule data:', JSON.stringify(scheduleData, null, 2));
       console.log(`🔄 About to update payment schedule ${id} with status: ${scheduleData.status}`);
       console.log(`🔄 Calling storage.updatePaymentSchedule with data:`, scheduleData);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const schedule = await storage.updatePaymentSchedule(tenantId, id, scheduleData);
+      const schedule = await storage.updatePaymentSchedule(id, scheduleData);
       console.log(`✅ Updated payment schedule ${id}, result:`, schedule);
       console.log(`🔍 Method completed, returning to client`);
       res.json(schedule);
@@ -1037,8 +984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/payment-schedules/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      await storage.deletePaymentSchedule(tenantId, id);
+      await storage.deletePaymentSchedule(id);
       res.json({ message: "Payment schedule deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete payment schedule" });
@@ -1069,8 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const staffData = insertStaffSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const staff = await storage.updateStaff(tenantId, id, staffData);
+      const staff = await storage.updateStaff(id, staffData);
       res.json(staff);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update staff" });
@@ -1111,8 +1056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const incomeData = insertIncomeManagementSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const income = await storage.updateIncome(tenantId, id, incomeData);
+      const income = await storage.updateIncome(id, incomeData);
       res.json(income);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update income" });
@@ -1267,8 +1211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const expenseData = insertExpenseSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const expense = await storage.updateExpense(tenantId, id, expenseData);
+      const expense = await storage.updateExpense(id, expenseData);
       res.json(expense);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update expense" });
@@ -1309,8 +1252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const accountData = insertBankManagementSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const account = await storage.updateBankAccount(tenantId, id, accountData);
+      const account = await storage.updateBankAccount(id, accountData);
       res.json(account);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update bank account" });
@@ -1351,8 +1293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const pettyCashData = insertPettyCashSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const pettyCash = await storage.updatePettyCash(tenantId, id, pettyCashData);
+      const pettyCash = await storage.updatePettyCash(id, pettyCashData);
       res.json(pettyCash);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update petty cash" });
@@ -1393,8 +1334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const inventoryData = insertInventorySchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const inventory = await storage.updateInventory(tenantId, id, inventoryData);
+      const inventory = await storage.updateInventory(id, inventoryData);
       res.json(inventory);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update inventory" });
@@ -1435,8 +1375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const rentData = insertRentManagementSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const rent = await storage.updateRentManagement(tenantId, id, rentData);
+      const rent = await storage.updateRentManagement(id, rentData);
       res.json(rent);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update rent management" });
@@ -1477,8 +1416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const assetData = insertAssetSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const asset = await storage.updateAsset(tenantId, id, assetData);
+      const asset = await storage.updateAsset(id, assetData);
       res.json(asset);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update asset" });
@@ -1594,8 +1532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const liabilityData = insertLiabilitySchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const liability = await storage.updateLiability(tenantId, id, liabilityData);
+      const liability = await storage.updateLiability(id, liabilityData);
       res.json(liability);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update liability" });
@@ -1713,8 +1650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const equityData = insertEquitySchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const equity = await storage.updateEquity(tenantId, id, equityData);
+      const equity = await storage.updateEquity(id, equityData);
       res.json(equity);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update equity" });
@@ -1755,8 +1691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const reportData = insertReportSchema.parse(req.body);
-      const tenantId = req.user?.tenantId || 'default-tenant-001';
-      const report = await storage.updateReport(tenantId, id, reportData);
+      const report = await storage.updateReport(id, reportData);
       res.json(report);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update report" });
@@ -1786,7 +1721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan portfolio data
   app.get("/api/dashboard/loan-portfolio", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getLoanPortfolio();
+      const data = await storage.getLoanPortfolioData();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loan portfolio data" });
@@ -1796,7 +1731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment status data
   app.get("/api/dashboard/payment-status", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getPaymentStatus();
+      const data = await storage.getPaymentStatusData();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment status data" });
@@ -1806,7 +1741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advanced analytics data
   app.get("/api/dashboard/advanced-analytics", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getAdvancedAnalytics();
+      const data = await storage.getAdvancedAnalyticsData();
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch advanced analytics data" });
@@ -2124,8 +2059,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add role management routes
-  app.use('/api/roles', extractTenantContext, roleRoutes);
+  // Add role management routes (disabled for single-tenant mode)
+  // app.use('/api/roles', roleRoutes);
 
   // Register optimized performance routes
   registerOptimizedRoutes(app);

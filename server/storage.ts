@@ -26,6 +26,7 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
@@ -42,8 +43,8 @@ export interface IStorage {
   getCustomer(id: number): Promise<Customer | undefined>;
   getCustomerByEmail(email: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  updateCustomer(tenantId: string, id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
-  updateCustomerPassword(tenantId: string, id: number, hashedPassword: string): Promise<Customer>;
+  updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer>;
+  updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer>;
   updateCustomerLastLogin(id: number): Promise<Customer>;
   deleteCustomer(id: number): Promise<void>;
   
@@ -69,7 +70,7 @@ export interface IStorage {
   // Payment Schedule methods
   getPaymentSchedules(): Promise<PaymentSchedule[]>;
   getPaymentSchedule(id: number): Promise<PaymentSchedule | undefined>;
-  getPaymentSchedulesByLoan(tenantId: string, loanId: number): Promise<PaymentSchedule[]>;
+  getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]>;
   createPaymentSchedule(schedule: InsertPaymentSchedule): Promise<PaymentSchedule>;
   updatePaymentSchedule(id: number, schedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule>;
   deletePaymentSchedule(id: number): Promise<void>;
@@ -181,6 +182,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async getAllUsers(): Promise<User[]> {
     const allUsers = await db.select().from(users);
     return allUsers;
@@ -264,20 +270,20 @@ export class DatabaseStorage implements IStorage {
     return customer;
   }
 
-  async updateCustomer(tenantId: string, id: number, updateCustomer: Partial<InsertCustomer>): Promise<Customer> {
+  async updateCustomer(id: number, updateCustomer: Partial<InsertCustomer>): Promise<Customer> {
     const [customer] = await db
       .update(customers)
       .set({ ...updateCustomer, updatedAt: new Date() })
-      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
+      .where(eq(customers.id, id))
       .returning();
     return customer;
   }
 
-  async updateCustomerPassword(tenantId: string, id: number, hashedPassword: string): Promise<Customer> {
+  async updateCustomerPassword(id: number, hashedPassword: string): Promise<Customer> {
     const [customer] = await db
       .update(customers)
       .set({ password: hashedPassword, updatedAt: new Date() })
-      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
+      .where(eq(customers.id, id))
       .returning();
     return customer;
   }
@@ -515,9 +521,9 @@ export class DatabaseStorage implements IStorage {
     return schedule || undefined;
   }
 
-  async getPaymentSchedulesByLoan(tenantId: string, loanId: number): Promise<PaymentSchedule[]> {
+  async getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]> {
     return await db.select().from(paymentSchedules)
-      .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.loanId, loanId)))
+      .where(eq(paymentSchedules.loanId, loanId))
       .orderBy(paymentSchedules.dueDate);
   }
 
@@ -1401,7 +1407,3 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
-
-// Import and export the multi-tenant storage for tenant-aware operations
-import { BackwardCompatibilityStorage } from "./multiTenantStorage";
-export const multiTenantStorage = new BackwardCompatibilityStorage();

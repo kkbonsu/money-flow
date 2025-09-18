@@ -1,0 +1,2 @@
+Generated hash for password: $2b$10$U3hmJD61Z5HAZ7EB28HdeuIJFdZtyZ83BrqHGDHB6/SYgWTuGIi4W
+Verification test: true

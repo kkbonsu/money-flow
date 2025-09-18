@@ -80,3 +80,15 @@ Money Flow employs a modern full-stack monorepo architecture, ensuring clear sep
 - **Performance**: 44+ strategic indexes for optimal query performance across all tenant operations
 - **Compliance**: 7-year data retention policies for audit logs and regulatory compliance
 - **Production Readiness**: Automated deployment checklists and migration tracking systems
+
+## Security Requirements (September 2025)
+
+### Critical Security Updates
+
+- **JWT Secret Security**: Hardcoded JWT secret fallbacks have been removed. The application now requires the `JWT_SECRET` environment variable to be set at startup and will fail fast if missing to prevent weak token generation.
+- **Superadmin Password Security**: 
+  - **⚠️ CRITICAL**: The default superadmin password `"admin123"` is used during database seeding for initial setup
+  - **MANDATORY**: This password MUST be changed immediately after first login for production security
+  - The default password provides initial access but poses a security risk if not rotated
+  - Change the superadmin password through the user profile or admin interface immediately upon deployment
+  - Consider implementing a forced password change on first login for additional security

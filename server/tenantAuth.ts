@@ -1,10 +1,17 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import { multiTenantStorage } from "./multiTenantStorage";
+// import { multiTenantStorage } from "./multiTenantStorage"; // Disabled for single-tenant mode
 import type { JwtPayload } from "@shared/schema";
 import type { SimpleTenantContext } from "@shared/tenantSchema";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required!');
+  console.error('Please set JWT_SECRET to a strong, randomly generated secret.');
+  console.error('Example: JWT_SECRET="your-secure-random-secret-here" npm run dev');
+  process.exit(1);
+}
 
 // Extend Express Request to include tenant context
 declare global {
@@ -17,55 +24,14 @@ declare global {
   }
 }
 
-// Extract tenant from subdomain or header
+// DISABLED: Extract tenant from subdomain or header (simplified for single-tenant mode)
+// No-op function for backward compatibility with existing imports
 export const extractTenantContext = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    let tenantSlug = 'default'; // Default tenant slug
-    
-    // Try to extract tenant from subdomain (tenant.domain.com)
-    const host = req.get('host');
-    if (host && host.includes('.')) {
-      const subdomain = host.split('.')[0];
-      if (subdomain && subdomain !== 'www' && subdomain !== 'api') {
-        tenantSlug = subdomain;
-      }
-    }
-    
-    // Try to extract tenant from custom header
-    const tenantHeader = req.get('X-Tenant-Slug');
-    if (tenantHeader) {
-      tenantSlug = tenantHeader;
-    }
-    
-    // Get tenant from database
-    const tenant = await multiTenantStorage.getTenantBySlug(tenantSlug);
-    if (!tenant) {
-      // If tenant doesn't exist, use default tenant
-      const defaultTenant = await multiTenantStorage.getTenantBySlug('default');
-      if (!defaultTenant) {
-        return res.status(404).json({ message: "Tenant not found" });
-      }
-      req.tenantContext = {
-        tenant: defaultTenant,
-        tenantId: defaultTenant.id,
-        slug: defaultTenant.slug
-      };
-    } else {
-      req.tenantContext = {
-        tenant,
-        tenantId: tenant.id,
-        slug: tenant.slug
-      };
-    }
-    
-    next();
-  } catch (error) {
-    console.error("Error extracting tenant context:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
+  // Single-tenant mode: no tenant context extraction needed
+  next();
 };
 
-// Tenant-aware JWT authentication middleware
+// Simplified JWT authentication middleware (single-tenant mode)
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -81,23 +47,12 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     }
 
     const payload = decoded as JwtPayload;
-    
-    // Verify tenant context matches token (allow fallback for migration)
-    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId) {
-      return res.status(403).json({ message: 'Token tenant mismatch' });
-    }
-    
-    // For tokens without tenantId, inject the current tenant context
-    if (!payload.tenantId && req.tenantContext) {
-      payload.tenantId = req.tenantContext.tenantId;
-    }
-
     req.user = payload;
     next();
   });
 };
 
-// Tenant-aware customer authentication middleware
+// Simplified customer authentication middleware (single-tenant mode)
 export const authenticateCustomerToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -113,17 +68,6 @@ export const authenticateCustomerToken = (req: Request, res: Response, next: Nex
     }
 
     const payload = decoded as any; // Customer token payload
-    
-    // Verify tenant context matches token (allow fallback for migration)
-    if (req.tenantContext && payload.tenantId && payload.tenantId !== req.tenantContext.tenantId) {
-      return res.status(403).json({ message: 'Token tenant mismatch' });
-    }
-    
-    // For tokens without tenantId, inject the current tenant context
-    if (!payload.tenantId && req.tenantContext) {
-      payload.tenantId = req.tenantContext.tenantId;
-    }
-
     req.customer = payload;
     next();
   });
@@ -157,34 +101,32 @@ export const requireSuperAdmin = (req: Request, res: Response, next: NextFunctio
   next();
 };
 
-// Generate tenant-aware JWT tokens
-export const generateUserToken = (user: any, tenantId: string): string => {
+// Simplified JWT token generation (single-tenant mode)
+export const generateUserToken = (user: any): string => {
   const payload: JwtPayload = {
     id: user.id,
     username: user.username,
     email: user.email,
     role: user.role,
-    tenantId: tenantId,
     isSuperAdmin: user.isSuperAdmin || user.is_super_admin || false
   };
   
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 };
 
-export const generateCustomerToken = (customer: any, tenantId: string): string => {
+export const generateCustomerToken = (customer: any): string => {
   const payload = {
     id: customer.id,
     email: customer.email,
     firstName: customer.firstName,
     lastName: customer.lastName,
-    tenantId: tenantId,
     type: 'customer'
   };
   
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 };
 
-// Tenant management utilities
+// Tenant management utilities (DISABLED for single-tenant mode)
 export const createTenantWithAdmin = async (tenantData: {
   name: string;
   slug: string;
@@ -196,48 +138,5 @@ export const createTenantWithAdmin = async (tenantData: {
     lastName?: string;
   };
 }) => {
-  try {
-    // Create tenant
-    const tenant = await multiTenantStorage.createTenant({
-      name: tenantData.name,
-      slug: tenantData.slug,
-      settings: {
-        theme: 'light',
-        features: ['loans', 'payments', 'analytics'],
-        branding: {
-          primaryColor: '#3B82F6',
-          logoUrl: null
-        }
-      }
-    });
-
-    // Create admin user for the tenant
-    const hashedPassword = await import('bcryptjs').then(bcrypt => 
-      bcrypt.hash(tenantData.adminUser.password, 10)
-    );
-
-    const adminUser = await multiTenantStorage.createUser(tenant.id, {
-      username: tenantData.adminUser.username,
-      email: tenantData.adminUser.email,
-      password: hashedPassword,
-      firstName: tenantData.adminUser.firstName,
-      lastName: tenantData.adminUser.lastName,
-      role: 'admin',
-      isActive: true,
-      isSuperAdmin: false
-    });
-
-    // Create user tenant access record
-    await multiTenantStorage.createUserTenantAccess({
-      userId: adminUser.id,
-      tenantId: tenant.id,
-      role: 'admin',
-      permissions: ['all']
-    });
-
-    return { tenant, adminUser };
-  } catch (error) {
-    console.error("Error creating tenant with admin:", error);
-    throw error;
-  }
+  throw new Error('Tenant creation disabled in single-tenant mode');
 };

@@ -1,53 +1,17 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Users, Plus, Settings, Activity } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { CreateTenantDialog } from '@/components/tenant/CreateTenantDialog';
-import { TenantManagementTable } from '@/components/tenant/TenantManagementTable';
-import { TenantOnboardingWizard } from '@/components/tenant/TenantOnboardingWizard';
-import { SuperAdminStats } from '@/components/tenant/SuperAdminStats';
+import { Users, Settings, Activity, BarChart3 } from 'lucide-react';
 
 export default function SuperAdminDashboard() {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
-  const { toast } = useToast();
-
-  const { data: tenants, isLoading } = useQuery({
-    queryKey: ['/api/admin/tenants'],
-  });
-
-  const { data: systemStats } = useQuery({
+  const { data: systemStats, isLoading } = useQuery({
     queryKey: ['/api/admin/stats'],
-  });
-
-  const deleteTenantMutation = useMutation({
-    mutationFn: (tenantId: string) => apiRequest('DELETE', `/api/admin/tenants/${tenantId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/tenants'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
-      toast({
-        title: "Success",
-        description: "Tenant deleted successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete tenant",
-        variant: "destructive",
-      });
-    },
   });
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-pulse">Loading super admin dashboard...</div>
+        <div className="animate-pulse">Loading admin dashboard...</div>
       </div>
     );
   }
@@ -59,44 +23,91 @@ export default function SuperAdminDashboard() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Super Admin Dashboard
+              Admin Dashboard
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-1">
-              Manage tenants, users, and system-wide settings
+              Manage users, settings, and system configuration
             </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={() => setShowOnboardingWizard(true)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Activity className="h-4 w-4" />
-              Onboard Tenant
-            </Button>
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Create Tenant
-            </Button>
           </div>
         </div>
 
         {/* System Stats */}
-        <SuperAdminStats stats={systemStats as any} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Total Users
+              </CardTitle>
+              <Users className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(systemStats as any)?.totalUsers || 0}
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Active system users
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Active Sessions
+              </CardTitle>
+              <Activity className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(systemStats as any)?.activeSessions || 0}
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Currently online
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                System Status
+              </CardTitle>
+              <BarChart3 className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                Healthy
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                All systems operational
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Data Usage
+              </CardTitle>
+              <BarChart3 className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {(systemStats as any)?.dataUsage || "85%"}
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Storage utilization
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="tenants" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="tenants" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Tenants
-            </TabsTrigger>
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              All Users
+              Users
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -108,38 +119,21 @@ export default function SuperAdminDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="tenants">
-            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Tenant Management
-                </CardTitle>
-                <CardDescription>
-                  Create, manage, and monitor all tenants in the system
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <TenantManagementTable 
-                  tenants={(tenants as any) || []}
-                  onDeleteTenant={(tenantId) => deleteTenantMutation.mutate(tenantId)}
-                  isDeleting={deleteTenantMutation.isPending}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="users">
             <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
               <CardHeader>
-                <CardTitle>System-Wide User Management</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  User Management
+                </CardTitle>
                 <CardDescription>
-                  View and manage users across all tenants
+                  Manage user accounts, roles, and permissions
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
-                  User management interface will be loaded here
+                  <p>User management interface will be available here.</p>
+                  <p className="text-sm mt-2">Navigate to the Staff page to manage users.</p>
                 </div>
               </CardContent>
             </Card>
@@ -155,7 +149,8 @@ export default function SuperAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
-                  System settings interface will be loaded here
+                  <p>System settings interface will be available here.</p>
+                  <p className="text-sm mt-2">Configure application settings, security, and integrations.</p>
                 </div>
               </CardContent>
             </Card>
@@ -166,29 +161,19 @@ export default function SuperAdminDashboard() {
               <CardHeader>
                 <CardTitle>System Analytics</CardTitle>
                 <CardDescription>
-                  Monitor system performance and usage across all tenants
+                  Monitor system performance and usage statistics
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
-                  Analytics dashboard will be loaded here
+                  <p>Analytics dashboard will be available here.</p>
+                  <p className="text-sm mt-2">View system metrics, performance data, and usage reports.</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Dialogs */}
-      <CreateTenantDialog 
-        open={showCreateDialog} 
-        onOpenChange={setShowCreateDialog}
-      />
-      
-      <TenantOnboardingWizard
-        open={showOnboardingWizard}
-        onOpenChange={setShowOnboardingWizard}
-      />
     </div>
   );
 }

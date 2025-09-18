@@ -1,9 +1,11 @@
 import { db } from "./db";
-import { users, roles, permissions, rolePermissions, userRoles } from "@shared/schema";
+import { users } from "@shared/schema";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "@shared/schema";
+
+// Note: This permissions system is no longer used in single-tenant mode
 
 // Permission cache for performance
 const permissionCache = new Map<string, string[]>();

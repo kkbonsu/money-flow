@@ -10,13 +10,13 @@ export async function createPerformanceIndexes() {
   console.log("🚀 Creating performance indexes...");
   
   try {
-    // Tenant-based indexes (most critical for multi-tenant performance)
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_tenant_id ON users(tenant_id)`);
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_customers_tenant_id ON customers(tenant_id)`);
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loan_books_tenant_id ON loan_books(tenant_id)`);
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_schedules_tenant_id ON payment_schedules(tenant_id)`);
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_income_management_tenant_id ON income_management(tenant_id)`);
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_expenses_tenant_id ON expenses(tenant_id)`);
+    // Tenant-based indexes removed for single-tenant mode
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_tenant_id ON users(tenant_id)`);
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_customers_tenant_id ON customers(tenant_id)`);
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loan_books_tenant_id ON loan_books(tenant_id)`);
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_schedules_tenant_id ON payment_schedules(tenant_id)`);
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_income_management_tenant_id ON income_management(tenant_id)`);
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_expenses_tenant_id ON expenses(tenant_id)`);
     
     // Date-based indexes for financial analytics
     await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loan_books_created_at ON loan_books(created_at DESC)`);
@@ -29,9 +29,9 @@ export async function createPerformanceIndexes() {
     await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loan_books_status ON loan_books(status)`);
     await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_schedules_status ON payment_schedules(status)`);
     
-    // Composite indexes for complex queries
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loan_books_tenant_status ON loan_books(tenant_id, status)`);
-    await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_schedules_tenant_status ON payment_schedules(tenant_id, status)`);
+    // Composite indexes for complex queries (tenant-aware ones removed)
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loan_books_tenant_status ON loan_books(tenant_id, status)`);
+    // await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_schedules_tenant_status ON payment_schedules(tenant_id, status)`);
     await db.execute(sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_schedules_loan_id_status ON payment_schedules(loan_id, status)`);
     
     // Foreign key indexes for joins
@@ -54,7 +54,7 @@ export async function createPerformanceIndexes() {
  * Optimized Dashboard Query
  * Combines multiple metrics into a single query to reduce round trips
  */
-export async function getOptimizedDashboardMetrics(tenantId: string) {
+export async function getOptimizedDashboardMetrics() {
   const result = await db.execute(sql`
     WITH loan_metrics AS (
       SELECT 
@@ -62,8 +62,7 @@ export async function getOptimizedDashboardMetrics(tenantId: string) {
         SUM(CASE WHEN status IN ('approved', 'disbursed') THEN CAST(loan_amount AS NUMERIC) ELSE 0 END) as portfolio_value,
         SUM(CASE WHEN status = 'disbursed' THEN 1 ELSE 0 END) as active_loans,
         AVG(CASE WHEN status IN ('approved', 'disbursed') THEN CAST(loan_amount AS NUMERIC) END) as avg_loan_size
-      FROM loan_books 
-      WHERE tenant_id = ${tenantId}
+      FROM loan_books
     ),
     payment_metrics AS (
       SELECT 
@@ -71,19 +70,16 @@ export async function getOptimizedDashboardMetrics(tenantId: string) {
         SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_payments,
         SUM(CASE WHEN status = 'overdue' THEN 1 ELSE 0 END) as overdue_payments,
         SUM(CASE WHEN status = 'paid' THEN CAST(amount AS NUMERIC) ELSE 0 END) as total_collected
-      FROM payment_schedules 
-      WHERE tenant_id = ${tenantId}
+      FROM payment_schedules
     ),
     customer_metrics AS (
       SELECT COUNT(*) as total_customers
-      FROM customers 
-      WHERE tenant_id = ${tenantId}
+      FROM customers
     ),
     monthly_income AS (
       SELECT COALESCE(SUM(CAST(amount AS NUMERIC)), 0) as monthly_income
-      FROM income_management 
-      WHERE tenant_id = ${tenantId}
-      AND date >= DATE_TRUNC('month', CURRENT_DATE)
+      FROM income_management
+      WHERE date >= DATE_TRUNC('month', CURRENT_DATE)
     )
     SELECT 
       lm.total_loans,
@@ -114,7 +110,7 @@ export async function getOptimizedDashboardMetrics(tenantId: string) {
  * Optimized Recent Payments Query
  * Uses proper indexing and limits data transfer
  */
-export async function getOptimizedRecentPayments(tenantId: string, limit: number = 10) {
+export async function getOptimizedRecentPayments(limit: number = 10) {
   return await db.execute(sql`
     SELECT 
       ps.id,
@@ -126,8 +122,7 @@ export async function getOptimizedRecentPayments(tenantId: string, limit: number
     FROM payment_schedules ps
     INNER JOIN loan_books lb ON ps.loan_id = lb.id
     INNER JOIN customers c ON lb.customer_id = c.id
-    WHERE ps.tenant_id = ${tenantId}
-    AND ps.status = 'paid'
+    WHERE ps.status = 'paid'
     ORDER BY ps.paid_date DESC
     LIMIT ${limit}
   `);
