@@ -21,44 +21,9 @@ export const tenants = pgTable("tenants", {
   // Branding & Customization
   branding: jsonb("branding").notNull().default({
     logo: null,
-    favicon: null,
     primaryColor: "#2563eb",
-    secondaryColor: "#64748b", 
-    accentColor: "#0ea5e9",
-    backgroundColor: "#ffffff",
-    surfaceColor: "#f8fafc",
-    textColor: "#0f172a",
-    borderColor: "#e2e8f0",
-    companyName: "",
-    tagline: "",
-    fontFamily: "Inter",
-    fontSizes: {
-      xs: "0.75rem",
-      sm: "0.875rem", 
-      base: "1rem",
-      lg: "1.125rem",
-      xl: "1.25rem",
-      "2xl": "1.5rem",
-      "3xl": "1.875rem",
-      "4xl": "2.25rem"
-    },
-    borderRadius: {
-      sm: "0.125rem",
-      base: "0.375rem", 
-      md: "0.5rem",
-      lg: "0.75rem",
-      xl: "1rem"
-    },
-    shadows: {
-      sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-      base: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-      md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-      lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-      xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
-    },
-    customCSS: "",
-    loginBackgroundImage: null,
-    dashboardBackgroundImage: null
+    secondaryColor: "#64748b",
+    companyName: ""
   }),
   
   // Regional Settings
@@ -504,8 +469,6 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   educationContent: many(educationContent),
   borrowerFeedback: many(borrowerFeedback),
   debtCollectionActivities: many(debtCollectionActivities),
-  supportTickets: many(supportTickets),
-  supportMessages: many(supportMessages),
 }));
 
 export const roleRelations = relations(roles, ({ one, many }) => ({
@@ -1151,7 +1114,7 @@ export type JwtPayload = {
 // Support Ticket system for customer support
 export const supportTickets = pgTable("support_tickets", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  tenantId: text("tenant_id").notNull(),
   customerId: integer("customer_id").references(() => customers.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -1169,7 +1132,7 @@ export const supportTickets = pgTable("support_tickets", {
 
 export const supportMessages = pgTable("support_messages", {
   id: serial("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  tenantId: text("tenant_id").notNull(),
   ticketId: integer("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
   senderId: integer("sender_id"), // Could be customer or staff user
   senderType: text("sender_type").notNull(), // "customer" or "staff"

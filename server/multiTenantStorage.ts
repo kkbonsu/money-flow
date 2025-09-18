@@ -172,82 +172,6 @@ export interface IMultiTenantStorage {
   updateBankAccount(tenantId: string, id: number, account: Partial<InsertBankManagement>): Promise<BankManagement>;
   deleteBankAccount(tenantId: string, id: number): Promise<void>;
 
-  // Tenant-aware petty cash methods
-  getPettyCash(tenantId: string): Promise<PettyCash[]>;
-  createPettyCash(tenantId: string, pettyCash: InsertPettyCash): Promise<PettyCash>;
-  updatePettyCash(tenantId: string, id: number, pettyCash: Partial<InsertPettyCash>): Promise<PettyCash>;
-  deletePettyCash(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware inventory methods
-  getInventory(tenantId: string): Promise<Inventory[]>;
-  createInventory(tenantId: string, inventory: InsertInventory): Promise<Inventory>;
-  updateInventory(tenantId: string, id: number, inventory: Partial<InsertInventory>): Promise<Inventory>;
-  deleteInventory(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware rent management methods
-  getRentManagement(tenantId: string): Promise<RentManagement[]>;
-  createRentManagement(tenantId: string, rent: InsertRentManagement): Promise<RentManagement>;
-  updateRentManagement(tenantId: string, id: number, rent: Partial<InsertRentManagement>): Promise<RentManagement>;
-  deleteRentManagement(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware asset methods
-  getAssets(tenantId: string): Promise<Asset[]>;
-  createAsset(tenantId: string, asset: InsertAsset): Promise<Asset>;
-  updateAsset(tenantId: string, id: number, asset: Partial<InsertAsset>): Promise<Asset>;
-  deleteAsset(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware liability methods
-  getLiabilities(tenantId: string): Promise<Liability[]>;
-  createLiability(tenantId: string, liability: InsertLiability): Promise<Liability>;
-  updateLiability(tenantId: string, id: number, liability: Partial<InsertLiability>): Promise<Liability>;
-  deleteLiability(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware equity methods
-  getEquity(tenantId: string): Promise<Equity[]>;
-  createEquity(tenantId: string, equity: InsertEquity): Promise<Equity>;
-  updateEquity(tenantId: string, id: number, equity: Partial<InsertEquity>): Promise<Equity>;
-  deleteEquity(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware report methods
-  getReports(tenantId: string): Promise<Report[]>;
-  createReport(tenantId: string, report: InsertReport): Promise<Report>;
-  updateReport(tenantId: string, id: number, report: Partial<InsertReport>): Promise<Report>;
-  deleteReport(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware MFI registration methods
-  getMfiRegistration(tenantId: string): Promise<MfiRegistration[]>;
-  createMfiRegistration(tenantId: string, mfi: InsertMfiRegistration): Promise<MfiRegistration>;
-  updateMfiRegistration(tenantId: string, id: number, mfi: Partial<InsertMfiRegistration>): Promise<MfiRegistration>;
-  deleteMfiRegistration(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware shareholder methods
-  getShareholders(tenantId: string): Promise<Shareholder[]>;
-  getShareholder(tenantId: string, id: number): Promise<Shareholder | undefined>;
-  createShareholder(tenantId: string, shareholder: InsertShareholder): Promise<Shareholder>;
-  updateShareholder(tenantId: string, id: number, shareholder: Partial<InsertShareholder>): Promise<Shareholder>;
-  deleteShareholder(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware support ticket methods
-  getSupportTickets(tenantId: string): Promise<SupportTicket[]>;
-  getSupportTicket(tenantId: string, id: number): Promise<SupportTicket | undefined>;
-  createSupportTicket(tenantId: string, ticket: InsertSupportTicket): Promise<SupportTicket>;
-  updateSupportTicket(tenantId: string, id: number, ticket: Partial<InsertSupportTicket>): Promise<SupportTicket>;
-  deleteSupportTicket(tenantId: string, id: number): Promise<void>;
-
-  // Tenant-aware support message methods
-  getSupportMessages(tenantId: string, ticketId: number): Promise<SupportMessage[]>;
-  createSupportMessage(tenantId: string, message: InsertSupportMessage): Promise<SupportMessage>;
-
-  // Tenant-aware audit log methods
-  getUserAuditLogs(tenantId: string, userId: number): Promise<UserAuditLog[]>;
-  createUserAuditLog(tenantId: string, log: InsertUserAuditLog): Promise<UserAuditLog>;
-
-  // Additional analytics methods
-  getLoanPortfolio(tenantId: string): Promise<any>;
-  getPaymentStatus(tenantId: string): Promise<any>;
-  getAdvancedAnalytics(tenantId: string): Promise<any>;
-  backfillInterestPayments(tenantId: string): Promise<void>;
-
   // Dashboard metrics (tenant-aware)
   getDashboardMetrics(tenantId: string): Promise<any>;
   
@@ -276,7 +200,6 @@ export interface IMultiTenantStorage {
   removeUserRole(userId: number, tenantId: string): Promise<void>;
 }
 
-// @ts-ignore - Temporarily suppress interface implementation warnings during migration
 export class MultiTenantStorage implements IMultiTenantStorage {
   // Tenant management methods (updated for simple tenant structure)
   async getTenant(tenantId: string): Promise<any | undefined> {
@@ -289,7 +212,7 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return tenant || undefined;
   }
 
-  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
+  async createTenant(insertTenant: any): Promise<any> {
     const [tenant] = await db
       .insert(simpleTenants)
       .values(insertTenant)
@@ -297,75 +220,13 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     return tenant;
   }
 
-  async updateTenant(tenantId: string, updateTenant: Partial<InsertTenant>): Promise<Tenant> {
+  async updateTenant(tenantId: string, updateTenant: any): Promise<any> {
     const [tenant] = await db
       .update(simpleTenants)
       .set({ ...updateTenant, updatedAt: new Date() })
       .where(eq(simpleTenants.id, tenantId))
       .returning();
     return tenant;
-  }
-
-  async deleteTenant(tenantId: string): Promise<void> {
-    console.log(`[TENANT_DELETE] Starting cascade deletion for tenant ${tenantId}`);
-    
-    try {
-      // Delete in order of dependencies (children first, then parents)
-      
-      // 1. Delete payment schedules first (they reference loans)
-      console.log(`[TENANT_DELETE] Deleting payment schedules...`);
-      await db.delete(paymentSchedules).where(eq(paymentSchedules.tenantId, tenantId));
-      
-      // 2. Delete loan books (they reference customers)
-      console.log(`[TENANT_DELETE] Deleting loan books...`);
-      await db.delete(loanBooks).where(eq(loanBooks.tenantId, tenantId));
-      
-      // 3. Delete customers
-      console.log(`[TENANT_DELETE] Deleting customers...`);
-      await db.delete(customers).where(eq(customers.tenantId, tenantId));
-      
-      // 4. Delete users (staff)
-      console.log(`[TENANT_DELETE] Deleting users...`);
-      await db.delete(users).where(eq(users.tenantId, tenantId));
-      
-      // 5. Delete financial records
-      console.log(`[TENANT_DELETE] Deleting financial records...`);
-      await db.delete(incomeManagement).where(eq(incomeManagement.tenantId, tenantId));
-      await db.delete(expenses).where(eq(expenses.tenantId, tenantId));
-      await db.delete(bankManagement).where(eq(bankManagement.tenantId, tenantId));
-      await db.delete(pettyCash).where(eq(pettyCash.tenantId, tenantId));
-      
-      // 6. Delete inventory and rent
-      console.log(`[TENANT_DELETE] Deleting inventory and rent...`);
-      await db.delete(inventory).where(eq(inventory.tenantId, tenantId));
-      await db.delete(rentManagement).where(eq(rentManagement.tenantId, tenantId));
-      
-      // 7. Delete balance sheet items
-      console.log(`[TENANT_DELETE] Deleting assets, liabilities, and equity...`);
-      await db.delete(assets).where(eq(assets.tenantId, tenantId));
-      await db.delete(liabilities).where(eq(liabilities.tenantId, tenantId));
-      await db.delete(equity).where(eq(equity.tenantId, tenantId));
-      
-      // 8. Delete MFI-specific data
-      console.log(`[TENANT_DELETE] Deleting MFI registration and shareholders...`);
-      await db.delete(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
-      await db.delete(shareholders).where(eq(shareholders.tenantId, tenantId));
-      
-      // 9. Delete audit logs and reports
-      console.log(`[TENANT_DELETE] Deleting audit logs and reports...`);
-      await db.delete(userAuditLogs).where(eq(userAuditLogs.tenantId, tenantId));
-      await db.delete(reports).where(eq(reports.tenantId, tenantId));
-      
-      // 10. Finally delete the tenant itself
-      console.log(`[TENANT_DELETE] Deleting tenant record...`);
-      await db.delete(simpleTenants).where(eq(simpleTenants.id, tenantId));
-      
-      console.log(`[TENANT_DELETE] Successfully completed cascade deletion for tenant ${tenantId}`);
-      
-    } catch (error) {
-      console.error(`[TENANT_DELETE] Error during cascade deletion for tenant ${tenantId}:`, error);
-      throw error;
-    }
   }
 
   // User tenant access methods
@@ -445,23 +306,6 @@ export class MultiTenantStorage implements IMultiTenantStorage {
 
   async deleteUser(tenantId: string, id: number): Promise<void> {
     await db.delete(users).where(and(eq(users.tenantId, tenantId), eq(users.id, id)));
-  }
-
-  // User audit log methods (tenant-aware)
-  async createUserAuditLog(tenantId: string, insertLog: InsertUserAuditLog): Promise<UserAuditLog> {
-    const [log] = await db
-      .insert(userAuditLogs)
-      .values({ ...insertLog, tenantId })
-      .returning();
-    return log;
-  }
-
-  async getUserAuditLogs(tenantId: string, userId: number): Promise<UserAuditLog[]> {
-    return await db
-      .select()
-      .from(userAuditLogs)
-      .where(and(eq(userAuditLogs.tenantId, tenantId), eq(userAuditLogs.userId, userId)))
-      .orderBy(desc(userAuditLogs.timestamp));
   }
 
   // Tenant-aware customer methods
@@ -971,878 +815,6 @@ export class MultiTenantStorage implements IMultiTenantStorage {
     
     return result;
   }
-
-  // Dashboard analytics methods (tenant-aware)
-  async getLoanPortfolio(tenantId: string): Promise<any> {
-    const result = await db.execute(sql`
-      SELECT 
-        TO_CHAR(l.created_at, 'Mon') as month,
-        COALESCE(SUM(l.loan_amount::numeric), 0) as "totalLoans",
-        COUNT(l.id) as "loanCount"
-      FROM loan_books l 
-      WHERE l.tenant_id = ${tenantId}
-        AND l.created_at >= (CURRENT_DATE - INTERVAL '12 months')
-      GROUP BY TO_CHAR(l.created_at, 'Mon'), EXTRACT(MONTH FROM l.created_at)
-      ORDER BY EXTRACT(MONTH FROM l.created_at)
-    `);
-    
-    // If no data, return last 6 months with zero values for chart display
-    if (result.rows.length === 0) {
-      const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return months.map(month => ({
-        month,
-        totalLoans: 0,
-        loanCount: 0
-      }));
-    }
-    
-    return result.rows;
-  }
-
-  async getPaymentStatus(tenantId: string): Promise<any> {
-    const result = await db.execute(sql`
-      SELECT 
-        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date >= CURRENT_DATE THEN 1 END) as "onTime",
-        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < CURRENT_DATE AND ps.due_date >= (CURRENT_DATE - INTERVAL '7 days') THEN 1 END) as "overdue7Days",
-        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < (CURRENT_DATE - INTERVAL '7 days') AND ps.due_date >= (CURRENT_DATE - INTERVAL '30 days') THEN 1 END) as "overdue30Days",
-        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < (CURRENT_DATE - INTERVAL '30 days') THEN 1 END) as "overdue90Days",
-        COUNT(CASE WHEN ps.status = 'pending' THEN 1 END) as "totalPending",
-        COUNT(CASE WHEN ps.status = 'pending' AND ps.due_date < CURRENT_DATE THEN 1 END) as "totalOverdue"
-      FROM payment_schedules ps 
-      WHERE ps.tenant_id = ${tenantId}
-    `);
-    
-    return result.rows[0] || {
-      onTime: 0,
-      overdue7Days: 0,
-      overdue30Days: 0,
-      overdue90Days: 0,
-      totalPending: 0,
-      totalOverdue: 0
-    };
-  }
-
-  async getAdvancedAnalytics(tenantId: string): Promise<any> {
-    // Get comprehensive analytics with multiple CTEs for better performance
-    const result = await db.execute(sql`
-      WITH loan_metrics AS (
-        SELECT 
-          COALESCE(COUNT(DISTINCT c.id), 0) as total_customers,
-          COALESCE(COUNT(DISTINCT l.id), 0) as total_loans,
-          COALESCE(AVG(CAST(l.loan_amount AS NUMERIC)), 0) as avg_loan_amount,
-          COALESCE(SUM(CASE WHEN l.status IN ('approved', 'disbursed') THEN CAST(l.loan_amount AS NUMERIC) ELSE 0 END), 0) as portfolio_value,
-          
-          -- Approval Analytics
-          COALESCE(COUNT(CASE WHEN l.status IN ('approved', 'disbursed') THEN 1 END), 0) as approved_loans,
-          COALESCE(COUNT(CASE WHEN l.status = 'pending' THEN 1 END), 0) as pending_loans,
-          COALESCE(COUNT(CASE WHEN l.status = 'rejected' THEN 1 END), 0) as rejected_loans,
-          COALESCE(COUNT(CASE WHEN l.created_at >= CURRENT_DATE AND l.status IN ('approved', 'disbursed') THEN 1 END), 0) as loans_today,
-          
-          -- Risk Assessment
-          COALESCE(COUNT(CASE WHEN l.status = 'defaulted' THEN 1 END), 0) as defaulted_loans,
-          COALESCE(COUNT(CASE WHEN ps.status = 'overdue' AND ps.due_date < (CURRENT_DATE - INTERVAL '30 days') THEN 1 END), 0) as at_risk_loans
-          
-        FROM customers c
-        LEFT JOIN loan_books l ON c.id = l.customer_id AND l.tenant_id = ${tenantId}
-        LEFT JOIN payment_schedules ps ON l.id = ps.loan_id AND ps.tenant_id = ${tenantId}
-        WHERE c.tenant_id = ${tenantId}
-      ),
-      payment_metrics AS (
-        SELECT 
-          COALESCE(SUM(CASE WHEN ps.status = 'paid' THEN CAST(ps.amount AS NUMERIC) ELSE 0 END), 0) as total_collected,
-          COALESCE(SUM(CASE WHEN ps.status = 'paid' THEN CAST(ps.interest_amount AS NUMERIC) ELSE 0 END), 0) as total_interest_earned,
-          COALESCE(COUNT(CASE WHEN ps.paid_date >= CURRENT_DATE THEN 1 END), 0) as transactions_today
-        FROM payment_schedules ps
-        WHERE ps.tenant_id = ${tenantId}
-      ),
-      financial_metrics AS (
-        SELECT 
-          COALESCE(SUM(CASE WHEN a.type = 'current_asset' THEN CAST(a.value AS NUMERIC) ELSE 0 END), 1000000) as total_assets,
-          COALESCE(SUM(CASE WHEN l.type IN ('current_liability', 'long_term_liability') THEN CAST(l.value AS NUMERIC) ELSE 0 END), 0) as total_liabilities,
-          COALESCE(SUM(CAST(e.amount AS NUMERIC)), 0) as total_expenses_ytd,
-          COALESCE(SUM(CAST(i.amount AS NUMERIC)), 0) as total_income_ytd
-        FROM assets a
-        FULL OUTER JOIN liabilities l ON a.tenant_id = l.tenant_id
-        FULL OUTER JOIN expenses e ON a.tenant_id = e.tenant_id AND e.date >= DATE_TRUNC('year', CURRENT_DATE)
-        FULL OUTER JOIN income_management i ON a.tenant_id = i.tenant_id AND i.date >= DATE_TRUNC('year', CURRENT_DATE)
-        WHERE a.tenant_id = ${tenantId} OR l.tenant_id = ${tenantId} OR e.tenant_id = ${tenantId} OR i.tenant_id = ${tenantId}
-      )
-      SELECT 
-        lm.*,
-        pm.*,
-        fm.*
-      FROM loan_metrics lm
-      CROSS JOIN payment_metrics pm  
-      CROSS JOIN financial_metrics fm
-    `);
-    
-    const data = result.rows[0];
-    
-    // Calculate derived metrics
-    const totalLoans = parseInt(String(data?.total_loans || 0)) || 0;
-    const defaultedLoans = parseInt(String(data?.defaulted_loans || 0)) || 0;
-    const approvedLoans = parseInt(String(data?.approved_loans || 0)) || 0;
-    const rejectedLoans = parseInt(String(data?.rejected_loans || 0)) || 0;
-    const pendingLoans = parseInt(String(data?.pending_loans || 0)) || 0;
-    const totalApplications = approvedLoans + rejectedLoans + pendingLoans;
-    
-    // Calculate approval rate
-    const approvalRate = totalApplications > 0 ? Math.round((approvedLoans / totalApplications) * 100) : 
-                        (approvedLoans > 0 ? 100 : 0);
-    
-    // Calculate default rate
-    const defaultRate = totalLoans > 0 ? ((defaultedLoans / totalLoans) * 100).toFixed(1) : "0.0";
-    
-    // Calculate compliance score based on loan book health and regulatory metrics
-    const portfolioValue = parseFloat(String(data?.portfolio_value || 0));
-    const atRiskLoans = parseInt(String(data?.at_risk_loans || 0)) || 0;
-    const complianceBase = 100;
-    const riskPenalty = totalLoans > 0 ? (atRiskLoans / totalLoans) * 10 : 0; // Max 10% penalty for at-risk loans
-    const defaultPenalty = parseFloat(defaultRate) * 0.5; // 0.5% penalty per 1% default rate
-    const complianceScore = Math.max(80, Math.round(complianceBase - riskPenalty - defaultPenalty));
-    
-    // Calculate capital adequacy based on assets vs liabilities
-    const totalAssets = parseFloat(String(data?.total_assets || 1000000));
-    const totalLiabilities = parseFloat(String(data?.total_liabilities || 0));
-    const netCapital = totalAssets - totalLiabilities;
-    const requiredCapital = portfolioValue * 0.08; // 8% of portfolio value as Basel-like requirement
-    const capitalAdequacyRatio = requiredCapital > 0 ? Math.round((netCapital / requiredCapital) * 100) : 150;
-    
-    // Calculate portfolio performance (annual return based on interest earned vs portfolio)
-    const totalInterestEarned = parseFloat(String(data?.total_interest_earned || 0));
-    const portfolioReturn = portfolioValue > 0 ? ((totalInterestEarned / portfolioValue) * 100).toFixed(1) : "0.0";
-    
-    // AML Monitoring metrics
-    const transactionsToday = parseInt(String(data?.transactions_today || 0)) || 0;
-    const flaggedTransactions = 0; // Start with 0 flagged for now - can be enhanced with actual AML rules
-    const amlStatus = flaggedTransactions === 0 ? "Clean" : flaggedTransactions < 3 ? "Monitoring" : "Alert";
-    
-    return {
-      // Basic metrics
-      total_customers: data?.total_customers || 0,
-      total_loans: data?.total_loans || 0,
-      avg_loan_amount: data?.avg_loan_amount || 0,
-      total_collected: data?.total_collected || 0,
-      
-      // Approval Analytics
-      approval_rate: approvalRate,
-      approved_today: parseInt(String(data?.loans_today || 0)) || 0,
-      pending_review: pendingLoans,
-      
-      // Risk Assessment  
-      default_rate: defaultRate,
-      at_risk_loans: atRiskLoans,
-      
-      // Compliance Metrics
-      compliance_score: complianceScore,
-      compliance_status: complianceScore >= 95 ? "Compliant" : complianceScore >= 85 ? "Monitoring" : "Action Required",
-      
-      // Capital Adequacy
-      capital_adequacy_ratio: capitalAdequacyRatio,
-      current_capital: Math.round(netCapital),
-      required_capital: Math.round(requiredCapital),
-      capital_status: capitalAdequacyRatio >= 120 ? "Strong" : capitalAdequacyRatio >= 100 ? "Adequate" : "Below Minimum",
-      
-      // Portfolio Performance
-      portfolio_return: portfolioReturn,
-      portfolio_value: Math.round(portfolioValue),
-      portfolio_status: parseFloat(portfolioReturn) >= 12 ? "Excellent" : parseFloat(portfolioReturn) >= 8 ? "Good" : "Needs Improvement",
-      
-      // AML Monitoring
-      flagged_transactions: flaggedTransactions,
-      transactions_today: transactionsToday,
-      aml_status: amlStatus
-    };
-  }
-
-  // Equity methods
-  async getEquity(tenantId: string): Promise<Equity[]> {
-    return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
-  }
-
-  async createEquity(tenantId: string, insertEquity: InsertEquity): Promise<Equity> {
-    const [equityItem] = await db
-      .insert(equity)
-      .values({ ...insertEquity, tenantId })
-      .returning();
-    return equityItem;
-  }
-
-  async updateEquity(tenantId: string, id: number, updateEquity: Partial<InsertEquity>): Promise<Equity> {
-    const [equityItem] = await db
-      .update(equity)
-      .set(updateEquity)
-      .where(and(eq(equity.tenantId, tenantId), eq(equity.id, id)))
-      .returning();
-    return equityItem;
-  }
-
-  async deleteEquity(tenantId: string, id: number): Promise<void> {
-    await db.delete(equity).where(and(eq(equity.tenantId, tenantId), eq(equity.id, id)));
-  }
-
-  // Report methods
-  async getReports(tenantId: string): Promise<Report[]> {
-    return await db.select().from(reports).where(eq(reports.tenantId, tenantId));
-  }
-
-  async createReport(tenantId: string, insertReport: InsertReport): Promise<Report> {
-    const [report] = await db
-      .insert(reports)
-      .values({ ...insertReport, tenantId })
-      .returning();
-    return report;
-  }
-
-  async updateReport(tenantId: string, id: number, updateReport: Partial<InsertReport>): Promise<Report> {
-    const [report] = await db
-      .update(reports)
-      .set(updateReport)
-      .where(and(eq(reports.tenantId, tenantId), eq(reports.id, id)))
-      .returning();
-    return report;
-  }
-
-  async deleteReport(tenantId: string, id: number): Promise<void> {
-    await db.delete(reports).where(and(eq(reports.tenantId, tenantId), eq(reports.id, id)));
-  }
-
-  // MFI Registration methods
-  async getMfiRegistration(tenantId: string): Promise<MfiRegistration | undefined> {
-    const [registration] = await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
-    return registration || undefined;
-  }
-
-  async createMfiRegistration(tenantId: string, insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
-    const [registration] = await db
-      .insert(mfiRegistration)
-      .values({ ...insertMfiRegistration, tenantId })
-      .returning();
-    return registration;
-  }
-
-  async updateMfiRegistration(tenantId: string, id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
-    // Handle Date conversion for licenseExpiryDate if present
-    const updateData = { ...updateMfiRegistration, updatedAt: new Date() };
-    if (updateData.licenseExpiryDate instanceof Date) {
-      updateData.licenseExpiryDate = updateData.licenseExpiryDate.toISOString().split('T')[0];
-    }
-    
-    const [registration] = await db
-      .update(mfiRegistration)
-      .set(updateData)
-      .where(and(eq(mfiRegistration.tenantId, tenantId), eq(mfiRegistration.id, id)))
-      .returning();
-    return registration;
-  }
-
-  // Shareholder methods
-  async getShareholders(tenantId: string): Promise<Shareholder[]> {
-    return await db.select().from(shareholders).where(eq(shareholders.tenantId, tenantId));
-  }
-
-  async getShareholder(tenantId: string, id: number): Promise<Shareholder | undefined> {
-    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
-    return shareholder || undefined;
-  }
-
-  async createShareholder(tenantId: string, insertShareholder: InsertShareholder): Promise<Shareholder> {
-    const [shareholder] = await db
-      .insert(shareholders)
-      .values({ ...insertShareholder, tenantId })
-      .returning();
-    return shareholder;
-  }
-
-  async updateShareholder(tenantId: string, id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
-    const [shareholder] = await db
-      .update(shareholders)
-      .set(updateShareholder)
-      .where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)))
-      .returning();
-    return shareholder;
-  }
-
-  async deleteShareholder(tenantId: string, id: number): Promise<void> {
-    await db.delete(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
-  }
-
-
-  // Inventory methods
-  async getInventory(tenantId: string): Promise<Inventory[]> {
-    return await db.select().from(inventory).where(eq(inventory.tenantId, tenantId));
-  }
-
-  async createInventory(tenantId: string, insertInventory: InsertInventory): Promise<Inventory> {
-    const [inventoryItem] = await db
-      .insert(inventory)
-      .values({ ...insertInventory, tenantId })
-      .returning();
-    return inventoryItem;
-  }
-
-  async updateInventory(tenantId: string, id: number, updateInventory: Partial<InsertInventory>): Promise<Inventory> {
-    const [inventoryItem] = await db
-      .update(inventory)
-      .set(updateInventory)
-      .where(and(eq(inventory.tenantId, tenantId), eq(inventory.id, id)))
-      .returning();
-    return inventoryItem;
-  }
-
-  async deleteInventory(tenantId: string, id: number): Promise<void> {
-    await db.delete(inventory).where(and(eq(inventory.tenantId, tenantId), eq(inventory.id, id)));
-  }
-
-  // Asset methods
-  async getAssets(tenantId: string): Promise<Asset[]> {
-    return await db.select().from(assets).where(eq(assets.tenantId, tenantId));
-  }
-
-  async createAsset(tenantId: string, insertAsset: InsertAsset): Promise<Asset> {
-    const [asset] = await db
-      .insert(assets)
-      .values({ ...insertAsset, tenantId })
-      .returning();
-    return asset;
-  }
-
-  async updateAsset(tenantId: string, id: number, updateAsset: Partial<InsertAsset>): Promise<Asset> {
-    const [asset] = await db
-      .update(assets)
-      .set(updateAsset)
-      .where(and(eq(assets.tenantId, tenantId), eq(assets.id, id)))
-      .returning();
-    return asset;
-  }
-
-  async deleteAsset(tenantId: string, id: number): Promise<void> {
-    await db.delete(assets).where(and(eq(assets.tenantId, tenantId), eq(assets.id, id)));
-  }
-
-  // Liabilities methods
-  async getLiabilities(tenantId: string): Promise<Liability[]> {
-    return await db.select().from(liabilities).where(eq(liabilities.tenantId, tenantId));
-  }
-
-  async createLiability(tenantId: string, insertLiability: InsertLiability): Promise<Liability> {
-    const [liability] = await db
-      .insert(liabilities)
-      .values({ ...insertLiability, tenantId })
-      .returning();
-    return liability;
-  }
-
-  async updateLiability(tenantId: string, id: number, updateLiability: Partial<InsertLiability>): Promise<Liability> {
-    const [liability] = await db
-      .update(liabilities)
-      .set(updateLiability)
-      .where(and(eq(liabilities.tenantId, tenantId), eq(liabilities.id, id)))
-      .returning();
-    return liability;
-  }
-
-  async deleteLiability(tenantId: string, id: number): Promise<void> {
-    await db.delete(liabilities).where(and(eq(liabilities.tenantId, tenantId), eq(liabilities.id, id)));
-  }
-
-  // Petty Cash methods (tenant-aware)
-  async getPettyCash(tenantId: string): Promise<PettyCash[]> {
-    return await db.select().from(pettyCash).where(eq(pettyCash.tenantId, tenantId));
-  }
-
-  async createPettyCash(tenantId: string, insertPettyCash: InsertPettyCash): Promise<PettyCash> {
-    const [pettyCashItem] = await db
-      .insert(pettyCash)
-      .values({ ...insertPettyCash, tenantId })
-      .returning();
-    return pettyCashItem;
-  }
-
-  async updatePettyCash(tenantId: string, id: number, updatePettyCash: Partial<InsertPettyCash>): Promise<PettyCash> {
-    const [pettyCashItem] = await db
-      .update(pettyCash)
-      .set(updatePettyCash)
-      .where(and(eq(pettyCash.tenantId, tenantId), eq(pettyCash.id, id)))
-      .returning();
-    return pettyCashItem;
-  }
-
-  async deletePettyCash(tenantId: string, id: number): Promise<void> {
-    await db.delete(pettyCash).where(and(eq(pettyCash.tenantId, tenantId), eq(pettyCash.id, id)));
-  }
-
-  // Rent Management methods (tenant-aware)
-  async getRentManagement(tenantId: string): Promise<RentManagement[]> {
-    return await db.select().from(rentManagement).where(eq(rentManagement.tenantId, tenantId));
-  }
-
-  async createRentManagement(tenantId: string, insertRent: InsertRentManagement): Promise<RentManagement> {
-    const [rent] = await db
-      .insert(rentManagement)
-      .values({ ...insertRent, tenantId })
-      .returning();
-    return rent;
-  }
-
-  async updateRentManagement(tenantId: string, id: number, updateRent: Partial<InsertRentManagement>): Promise<RentManagement> {
-    const [rent] = await db
-      .update(rentManagement)
-      .set(updateRent)
-      .where(and(eq(rentManagement.tenantId, tenantId), eq(rentManagement.id, id)))
-      .returning();
-    return rent;
-  }
-
-  async deleteRentManagement(tenantId: string, id: number): Promise<void> {
-    await db.delete(rentManagement).where(and(eq(rentManagement.tenantId, tenantId), eq(rentManagement.id, id)));
-  }
-
-  // Support Ticket methods (tenant-aware)
-  async getSupportTickets(tenantId: string): Promise<SupportTicket[]> {
-    return await db.select().from(supportTickets)
-      .where(eq(supportTickets.tenantId, tenantId))
-      .orderBy(desc(supportTickets.createdAt));
-  }
-
-  async getSupportTicket(tenantId: string, id: number): Promise<SupportTicket | undefined> {
-    const [ticket] = await db.select().from(supportTickets)
-      .where(and(eq(supportTickets.tenantId, tenantId), eq(supportTickets.id, id)));
-    return ticket || undefined;
-  }
-
-  async createSupportTicket(tenantId: string, insertTicket: InsertSupportTicket): Promise<SupportTicket> {
-    const [ticket] = await db
-      .insert(supportTickets)
-      .values({ ...insertTicket, tenantId })
-      .returning();
-    return ticket;
-  }
-
-  async updateSupportTicket(tenantId: string, id: number, updateTicket: Partial<InsertSupportTicket>): Promise<SupportTicket> {
-    const [ticket] = await db
-      .update(supportTickets)
-      .set({ ...updateTicket, updatedAt: new Date() })
-      .where(and(eq(supportTickets.tenantId, tenantId), eq(supportTickets.id, id)))
-      .returning();
-    return ticket;
-  }
-
-  async deleteSupportTicket(tenantId: string, id: number): Promise<void> {
-    await db.delete(supportTickets).where(and(eq(supportTickets.tenantId, tenantId), eq(supportTickets.id, id)));
-  }
-
-  // Support Message methods (tenant-aware)
-  async getSupportMessages(tenantId: string, ticketId: number): Promise<SupportMessage[]> {
-    return await db.select().from(supportMessages)
-      .where(and(eq(supportMessages.tenantId, tenantId), eq(supportMessages.ticketId, ticketId)))
-      .orderBy(supportMessages.createdAt);
-  }
-
-  async createSupportMessage(tenantId: string, insertMessage: InsertSupportMessage): Promise<SupportMessage> {
-    const [message] = await db
-      .insert(supportMessages)
-      .values({ ...insertMessage, tenantId })
-      .returning();
-    return message;
-  }
-
-  // Missing staff methods implementation
-  async getStaff(tenantId: string): Promise<Staff[]> {
-    return await db.select().from(staff).where(eq(staff.tenantId, tenantId));
-  }
-
-  async createStaff(tenantId: string, insertStaff: InsertStaff): Promise<Staff> {
-    const [staffMember] = await db
-      .insert(staff)
-      .values({ ...insertStaff, tenantId })
-      .returning();
-    return staffMember;
-  }
-
-  async updateStaff(tenantId: string, id: number, updateStaff: Partial<InsertStaff>): Promise<Staff> {
-    const [staffMember] = await db
-      .update(staff)
-      .set(updateStaff)
-      .where(and(eq(staff.tenantId, tenantId), eq(staff.id, id)))
-      .returning();
-    return staffMember;
-  }
-
-  async deleteStaff(tenantId: string, id: number): Promise<void> {
-    await db.delete(staff).where(and(eq(staff.tenantId, tenantId), eq(staff.id, id)));
-  }
-
-  // Missing income methods implementation
-  async getIncome(tenantId: string): Promise<IncomeManagement[]> {
-    return await db.select().from(incomeManagement).where(eq(incomeManagement.tenantId, tenantId));
-  }
-
-  async createIncome(tenantId: string, insertIncome: InsertIncomeManagement): Promise<IncomeManagement> {
-    const [income] = await db
-      .insert(incomeManagement)
-      .values({ ...insertIncome, tenantId })
-      .returning();
-    return income;
-  }
-
-  async updateIncome(tenantId: string, id: number, updateIncome: Partial<InsertIncomeManagement>): Promise<IncomeManagement> {
-    const [income] = await db
-      .update(incomeManagement)
-      .set(updateIncome)
-      .where(and(eq(incomeManagement.tenantId, tenantId), eq(incomeManagement.id, id)))
-      .returning();
-    return income;
-  }
-
-  async deleteIncome(tenantId: string, id: number): Promise<void> {
-    await db.delete(incomeManagement).where(and(eq(incomeManagement.tenantId, tenantId), eq(incomeManagement.id, id)));
-  }
-
-  // Missing expense methods implementation
-  async getExpenses(tenantId: string): Promise<Expense[]> {
-    return await db.select().from(expenses).where(eq(expenses.tenantId, tenantId));
-  }
-
-  async createExpense(tenantId: string, insertExpense: InsertExpense): Promise<Expense> {
-    const [expense] = await db
-      .insert(expenses)
-      .values({ ...insertExpense, tenantId })
-      .returning();
-    return expense;
-  }
-
-  async updateExpense(tenantId: string, id: number, updateExpense: Partial<InsertExpense>): Promise<Expense> {
-    const [expense] = await db
-      .update(expenses)
-      .set(updateExpense)
-      .where(and(eq(expenses.tenantId, tenantId), eq(expenses.id, id)))
-      .returning();
-    return expense;
-  }
-
-  async deleteExpense(tenantId: string, id: number): Promise<void> {
-    await db.delete(expenses).where(and(eq(expenses.tenantId, tenantId), eq(expenses.id, id)));
-  }
-
-  // Missing bank account methods implementation
-  async getBankAccounts(tenantId: string): Promise<BankManagement[]> {
-    return await db.select().from(bankManagement).where(eq(bankManagement.tenantId, tenantId));
-  }
-
-  async createBankAccount(tenantId: string, insertAccount: InsertBankManagement): Promise<BankManagement> {
-    const [account] = await db
-      .insert(bankManagement)
-      .values({ ...insertAccount, tenantId })
-      .returning();
-    return account;
-  }
-
-  async updateBankAccount(tenantId: string, id: number, updateAccount: Partial<InsertBankManagement>): Promise<BankManagement> {
-    const [account] = await db
-      .update(bankManagement)
-      .set(updateAccount)
-      .where(and(eq(bankManagement.tenantId, tenantId), eq(bankManagement.id, id)))
-      .returning();
-    return account;
-  }
-
-  async deleteBankAccount(tenantId: string, id: number): Promise<void> {
-    await db.delete(bankManagement).where(and(eq(bankManagement.tenantId, tenantId), eq(bankManagement.id, id)));
-  }
-
-  // Missing loan product methods implementation
-  async getLoanProducts(tenantId: string): Promise<LoanProduct[]> {
-    return await db.select().from(loanProducts).where(eq(loanProducts.tenantId, tenantId));
-  }
-
-  async getLoanProduct(tenantId: string, id: number): Promise<LoanProduct | undefined> {
-    const [product] = await db.select().from(loanProducts)
-      .where(and(eq(loanProducts.tenantId, tenantId), eq(loanProducts.id, id)));
-    return product || undefined;
-  }
-
-  async createLoanProduct(tenantId: string, insertProduct: InsertLoanProduct): Promise<LoanProduct> {
-    const [product] = await db
-      .insert(loanProducts)
-      .values({ ...insertProduct, tenantId })
-      .returning();
-    return product;
-  }
-
-  async updateLoanProduct(tenantId: string, id: number, updateProduct: Partial<InsertLoanProduct>): Promise<LoanProduct> {
-    const [product] = await db
-      .update(loanProducts)
-      .set(updateProduct)
-      .where(and(eq(loanProducts.tenantId, tenantId), eq(loanProducts.id, id)))
-      .returning();
-    return product;
-  }
-
-  async deleteLoanProduct(tenantId: string, id: number): Promise<void> {
-    await db.delete(loanProducts).where(and(eq(loanProducts.tenantId, tenantId), eq(loanProducts.id, id)));
-  }
-
-  // Missing loan methods implementation
-  async getLoans(tenantId: string): Promise<LoanBook[]> {
-    return await db.select().from(loanBooks).where(eq(loanBooks.tenantId, tenantId));
-  }
-
-  async getLoan(tenantId: string, id: number): Promise<LoanBook | undefined> {
-    const [loan] = await db.select().from(loanBooks)
-      .where(and(eq(loanBooks.tenantId, tenantId), eq(loanBooks.id, id)));
-    return loan || undefined;
-  }
-
-  async createLoan(tenantId: string, insertLoan: InsertLoanBook): Promise<LoanBook> {
-    const [loan] = await db
-      .insert(loanBooks)
-      .values({ ...insertLoan, tenantId })
-      .returning();
-    return loan;
-  }
-
-  async updateLoan(tenantId: string, id: number, updateLoan: Partial<InsertLoanBook>): Promise<LoanBook> {
-    const [loan] = await db
-      .update(loanBooks)
-      .set(updateLoan)
-      .where(and(eq(loanBooks.tenantId, tenantId), eq(loanBooks.id, id)))
-      .returning();
-    return loan;
-  }
-
-  async deleteLoan(tenantId: string, id: number): Promise<void> {
-    await db.delete(loanBooks).where(and(eq(loanBooks.tenantId, tenantId), eq(loanBooks.id, id)));
-  }
-
-  // Missing payment schedule methods implementation
-  async getPaymentSchedules(tenantId: string): Promise<PaymentSchedule[]> {
-    return await db.select().from(paymentSchedules).where(eq(paymentSchedules.tenantId, tenantId));
-  }
-
-  async getPaymentSchedule(tenantId: string, id: number): Promise<PaymentSchedule | undefined> {
-    const [schedule] = await db.select().from(paymentSchedules)
-      .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.id, id)));
-    return schedule || undefined;
-  }
-
-  async getPaymentSchedulesByLoan(tenantId: string, loanId: number): Promise<PaymentSchedule[]> {
-    return await db.select().from(paymentSchedules)
-      .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.loanId, loanId)));
-  }
-
-  async createPaymentSchedule(tenantId: string, insertSchedule: InsertPaymentSchedule): Promise<PaymentSchedule> {
-    const [schedule] = await db
-      .insert(paymentSchedules)
-      .values({ ...insertSchedule, tenantId })
-      .returning();
-    return schedule;
-  }
-
-  async updatePaymentSchedule(tenantId: string, id: number, updateSchedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule> {
-    const [schedule] = await db
-      .update(paymentSchedules)
-      .set(updateSchedule)
-      .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.id, id)))
-      .returning();
-    return schedule;
-  }
-
-  async deletePaymentSchedule(tenantId: string, id: number): Promise<void> {
-    await db.delete(paymentSchedules).where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.id, id)));
-  }
-
-  // Customer portal methods (tenant-aware)
-  async getCustomerLoans(tenantId: string, customerId: number): Promise<LoanBook[]> {
-    return await db.select().from(loanBooks)
-      .where(and(eq(loanBooks.tenantId, tenantId), eq(loanBooks.customerId, customerId)));
-  }
-
-  async getCustomerPayments(tenantId: string, customerId: number): Promise<PaymentSchedule[]> {
-    return await db.select().from(paymentSchedules)
-      .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
-      .where(and(
-        eq(paymentSchedules.tenantId, tenantId),
-        eq(loanBooks.customerId, customerId)
-      ));
-  }
-
-  async getCustomerUpcomingPayments(tenantId: string, customerId: number): Promise<PaymentSchedule[]> {
-    return await db.select().from(paymentSchedules)
-      .innerJoin(loanBooks, eq(paymentSchedules.loanId, loanBooks.id))
-      .where(and(
-        eq(paymentSchedules.tenantId, tenantId),
-        eq(loanBooks.customerId, customerId),
-        eq(paymentSchedules.status, 'pending')
-      ));
-  }
-
-  // Missing MFI registration methods return array fix
-  async getMfiRegistration(tenantId: string): Promise<MfiRegistration[]> {
-    return await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
-  }
-
-  async deleteMfiRegistration(tenantId: string, id: number): Promise<void> {
-    await db.delete(mfiRegistration).where(and(eq(mfiRegistration.tenantId, tenantId), eq(mfiRegistration.id, id)));
-  }
-
-  // Analytics methods implementation
-  async backfillInterestPayments(tenantId: string): Promise<void> {
-    // Implementation for backfilling interest payments
-    console.log(`Backfilling interest payments for tenant ${tenantId}`);
-  }
-
-  async getDashboardMetrics(tenantId: string): Promise<any> {
-    const result = await db.execute(sql`
-      SELECT 
-        COALESCE(COUNT(DISTINCT c.id), 0) as total_customers,
-        COALESCE(COUNT(DISTINCT l.id), 0) as total_loans,
-        COALESCE(SUM(l.loan_amount), 0) as total_loan_amount,
-        COALESCE(SUM(ps.paid_amount), 0) as total_payments_received
-      FROM customers c
-      LEFT JOIN loan_books l ON c.id = l.customer_id AND l.tenant_id = ${tenantId}
-      LEFT JOIN payment_schedules ps ON l.id = ps.loan_id AND ps.tenant_id = ${tenantId}
-      WHERE c.tenant_id = ${tenantId}
-    `);
-    
-    return result.rows[0] || {
-      total_customers: 0,
-      total_loans: 0,
-      total_loan_amount: 0,
-      total_payments_received: 0
-    };
-  }
-
-  async getRecentPayments(tenantId: string): Promise<any> {
-    return await db.select().from(paymentSchedules)
-      .where(and(eq(paymentSchedules.tenantId, tenantId), eq(paymentSchedules.status, 'completed')))
-      .orderBy(desc(paymentSchedules.paidDate))
-      .limit(10);
-  }
-
-  async getTodaysPayments(tenantId: string): Promise<any> {
-    const today = new Date().toISOString().split('T')[0];
-    return await db.select().from(paymentSchedules)
-      .where(and(
-        eq(paymentSchedules.tenantId, tenantId),
-        sql`DATE(${paymentSchedules.dueDate}) = ${today}`
-      ));
-  }
-
-  async getMonthlyPayments(tenantId: string): Promise<any> {
-    const result = await db.execute(sql`
-      SELECT 
-        TO_CHAR(ps.due_date, 'YYYY-MM') as month,
-        COALESCE(SUM(ps.amount), 0) as total_amount,
-        COUNT(ps.id) as payment_count
-      FROM payment_schedules ps 
-      WHERE ps.tenant_id = ${tenantId}
-        AND ps.due_date >= (CURRENT_DATE - INTERVAL '12 months')
-      GROUP BY TO_CHAR(ps.due_date, 'YYYY-MM')
-      ORDER BY month
-    `);
-    
-    return result.rows;
-  }
-
-  // Role and Permission Management
-  async getRoles(tenantId?: string): Promise<Role[]> {
-    if (tenantId) {
-      return await db.select().from(roles)
-        .where(and(eq(roles.tenantId, tenantId)));
-    }
-    return await db.select().from(roles).where(eq(roles.isSystemRole, true));
-  }
-
-  async getRole(id: number): Promise<Role | undefined> {
-    const [role] = await db.select().from(roles).where(eq(roles.id, id));
-    return role || undefined;
-  }
-
-  async createRole(insertRole: InsertRole): Promise<Role> {
-    const [role] = await db.insert(roles).values(insertRole).returning();
-    return role;
-  }
-
-  async updateRole(id: number, updateRole: Partial<InsertRole>): Promise<Role> {
-    const [role] = await db.update(roles)
-      .set({ ...updateRole, updatedAt: new Date() })
-      .where(eq(roles.id, id))
-      .returning();
-    return role;
-  }
-
-  async deleteRole(id: number): Promise<void> {
-    await db.delete(roles).where(eq(roles.id, id));
-  }
-
-  async getPermissions(): Promise<Permission[]> {
-    return await db.select().from(permissions);
-  }
-
-  async getPermission(id: number): Promise<Permission | undefined> {
-    const [permission] = await db.select().from(permissions).where(eq(permissions.id, id));
-    return permission || undefined;
-  }
-
-  async getRolePermissions(roleId: number): Promise<Permission[]> {
-    return await db.select({
-      id: permissions.id,
-      name: permissions.name,
-      category: permissions.category,
-      description: permissions.description,
-      resource: permissions.resource,
-      action: permissions.action,
-      createdAt: permissions.createdAt
-    })
-    .from(rolePermissions)
-    .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-    .where(eq(rolePermissions.roleId, roleId));
-  }
-
-  async assignRolePermissions(roleId: number, permissionIds: number[]): Promise<void> {
-    const values = permissionIds.map(permissionId => ({
-      roleId,
-      permissionId
-    }));
-    await db.insert(rolePermissions).values(values);
-  }
-
-  async removeRolePermissions(roleId: number, permissionIds: number[]): Promise<void> {
-    await db.delete(rolePermissions)
-      .where(and(
-        eq(rolePermissions.roleId, roleId),
-        sql`${rolePermissions.permissionId} = ANY(${permissionIds})`
-      ));
-  }
-
-  async getUserRoles(tenantId: string): Promise<UserRole[]> {
-    return await db.select().from(userRoles).where(eq(userRoles.tenantId, tenantId));
-  }
-
-  async getUserRole(userId: number, tenantId: string): Promise<UserRole | undefined> {
-    const [userRole] = await db.select().from(userRoles)
-      .where(and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId)));
-    return userRole || undefined;
-  }
-
-  async assignUserRole(insertUserRole: InsertUserRole): Promise<UserRole> {
-    const [userRole] = await db.insert(userRoles).values(insertUserRole).returning();
-    return userRole;
-  }
-
-  async updateUserRole(userId: number, tenantId: string, roleId: number): Promise<UserRole> {
-    const [userRole] = await db.update(userRoles)
-      .set({ roleId })
-      .where(and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId)))
-      .returning();
-    return userRole;
-  }
-
-  async removeUserRole(userId: number, tenantId: string): Promise<void> {
-    await db.delete(userRoles)
-      .where(and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId)));
-  }
 }
 
 // Export the multi-tenant storage instance
@@ -2132,15 +1104,125 @@ export class BackwardCompatibilityStorage {
 
   // Dashboard analytics methods
   async getLoanPortfolio(): Promise<any> {
-    return new MultiTenantStorage().getLoanPortfolio(this.defaultTenantId);
+    const portfolioData = await db
+      .select({
+        month: sql`TO_CHAR(${loanBooks.createdAt}, 'Mon')`,
+        totalLoans: sql`count(*)`,
+        totalAmount: sql`sum(${loanBooks.loanAmount}::numeric)`
+      })
+      .from(loanBooks)
+      .where(and(
+        eq(loanBooks.tenantId, this.defaultTenantId),
+        sql`${loanBooks.createdAt} >= (CURRENT_DATE - INTERVAL '12 months')`
+      ))
+      .groupBy(sql`TO_CHAR(${loanBooks.createdAt}, 'Mon')`);
+
+    return portfolioData.map(item => ({
+      month: item.month,
+      totalLoans: parseInt(item.totalLoans?.toString() || '0'),
+      totalAmount: parseFloat(item.totalAmount?.toString() || '0')
+    }));
   }
 
   async getAdvancedAnalytics(): Promise<any> {
-    return new MultiTenantStorage().getAdvancedAnalytics(this.defaultTenantId);
+    // Compliance score calculation
+    const totalLoansResult = await db
+      .select({ count: sql`count(*)` })
+      .from(loanBooks)
+      .where(eq(loanBooks.tenantId, this.defaultTenantId));
+    const totalLoans = parseInt(totalLoansResult[0]?.count?.toString() || '0');
+
+    const compliantLoansResult = await db
+      .select({ count: sql`count(*)` })
+      .from(loanBooks)
+      .where(and(
+        eq(loanBooks.tenantId, this.defaultTenantId),
+        sql`${loanBooks.status} IN ('active', 'paid')`
+      ));
+    const compliantLoans = parseInt(compliantLoansResult[0]?.count?.toString() || '0');
+    
+    const complianceScore = totalLoans > 0 ? Math.round((compliantLoans / totalLoans) * 100) : 100;
+
+    // Risk assessment
+    const overdueResult = await db
+      .select({ count: sql`count(*)` })
+      .from(paymentSchedules)
+      .where(and(
+        eq(paymentSchedules.tenantId, this.defaultTenantId),
+        eq(paymentSchedules.status, 'pending'),
+        sql`${paymentSchedules.dueDate} < CURRENT_DATE`
+      ));
+    const overdueCount = parseInt(overdueResult[0]?.count?.toString() || '0');
+    const riskLevel = overdueCount > 10 ? 'High' : overdueCount > 5 ? 'Medium' : 'Low';
+
+    // Portfolio performance
+    const totalPortfolioResult = await db
+      .select({ total: sql`sum(${loanBooks.loanAmount}::numeric)` })
+      .from(loanBooks)
+      .where(eq(loanBooks.tenantId, this.defaultTenantId));
+    const totalPortfolio = parseFloat(totalPortfolioResult[0]?.total?.toString() || '0');
+    
+    const performanceScore = Math.round(75 + Math.random() * 20); // Simulated performance
+
+    return {
+      complianceScore,
+      riskLevel,
+      performanceScore,
+      totalPortfolio: `$${totalPortfolio.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+    };
   }
 
   async getPaymentStatus(): Promise<any> {
-    return new MultiTenantStorage().getPaymentStatus(this.defaultTenantId);
+    // On-time payments (paid on or before due date)
+    const onTimeResult = await db
+      .select({ count: sql`count(*)` })
+      .from(paymentSchedules)
+      .where(and(
+        eq(paymentSchedules.tenantId, this.defaultTenantId),
+        eq(paymentSchedules.status, 'paid'),
+        sql`${paymentSchedules.paidDate} <= ${paymentSchedules.dueDate}`
+      ));
+    const onTime = parseInt(onTimeResult[0]?.count?.toString() || '0');
+
+    // Overdue 7 days
+    const overdue7Result = await db
+      .select({ count: sql`count(*)` })
+      .from(paymentSchedules)
+      .where(and(
+        eq(paymentSchedules.tenantId, this.defaultTenantId),
+        eq(paymentSchedules.status, 'pending'),
+        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '7 days')`
+      ));
+    const overdue7Days = parseInt(overdue7Result[0]?.count?.toString() || '0');
+
+    // Overdue 30 days
+    const overdue30Result = await db
+      .select({ count: sql`count(*)` })
+      .from(paymentSchedules)
+      .where(and(
+        eq(paymentSchedules.tenantId, this.defaultTenantId),
+        eq(paymentSchedules.status, 'pending'),
+        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '30 days')`
+      ));
+    const overdue30Days = parseInt(overdue30Result[0]?.count?.toString() || '0');
+
+    // Default (overdue 90+ days)
+    const defaultResult = await db
+      .select({ count: sql`count(*)` })
+      .from(paymentSchedules)
+      .where(and(
+        eq(paymentSchedules.tenantId, this.defaultTenantId),
+        eq(paymentSchedules.status, 'pending'),
+        sql`${paymentSchedules.dueDate} < (CURRENT_DATE - INTERVAL '90 days')`
+      ));
+    const defaultCount = parseInt(defaultResult[0]?.count?.toString() || '0');
+
+    return {
+      onTime,
+      overdue7Days,
+      overdue30Days,
+      default: defaultCount
+    };
   }
 
   // Additional methods needed by routes
@@ -2174,10 +1256,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(inventory).where(eq(inventory.tenantId, this.defaultTenantId));
   }
 
-  async createInventory(tenantId: string, insertInventory: InsertInventory): Promise<Inventory> {
+  async createInventory(insertInventory: InsertInventory): Promise<Inventory> {
     const [item] = await db
       .insert(inventory)
-      .values({ ...insertInventory, tenantId })
+      .values({ ...insertInventory, tenantId: this.defaultTenantId })
       .returning();
     return item;
   }
@@ -2191,8 +1273,8 @@ export class BackwardCompatibilityStorage {
     return item;
   }
 
-  async deleteInventory(tenantId: string, id: number): Promise<void> {
-    await db.delete(inventory).where(and(eq(inventory.tenantId, tenantId), eq(inventory.id, id)));
+  async deleteInventory(id: number): Promise<void> {
+    await db.delete(inventory).where(and(eq(inventory.tenantId, this.defaultTenantId), eq(inventory.id, id)));
   }
 
   // Rent Management methods
@@ -2226,10 +1308,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(assets).where(eq(assets.tenantId, this.defaultTenantId));
   }
 
-  async createAsset(tenantId: string, insertAsset: InsertAsset): Promise<Asset> {
+  async createAsset(insertAsset: InsertAsset): Promise<Asset> {
     const [asset] = await db
       .insert(assets)
-      .values({ ...insertAsset, tenantId })
+      .values({ ...insertAsset, tenantId: this.defaultTenantId })
       .returning();
     return asset;
   }
@@ -2243,8 +1325,8 @@ export class BackwardCompatibilityStorage {
     return asset;
   }
 
-  async deleteAsset(tenantId: string, id: number): Promise<void> {
-    await db.delete(assets).where(and(eq(assets.tenantId, tenantId), eq(assets.id, id)));
+  async deleteAsset(id: number): Promise<void> {
+    await db.delete(assets).where(and(eq(assets.tenantId, this.defaultTenantId), eq(assets.id, id)));
   }
 
   // Liabilities methods
@@ -2252,10 +1334,10 @@ export class BackwardCompatibilityStorage {
     return await db.select().from(liabilities).where(eq(liabilities.tenantId, this.defaultTenantId));
   }
 
-  async createLiability(tenantId: string, insertLiability: InsertLiability): Promise<Liability> {
+  async createLiability(insertLiability: InsertLiability): Promise<Liability> {
     const [liability] = await db
       .insert(liabilities)
-      .values({ ...insertLiability, tenantId })
+      .values({ ...insertLiability, tenantId: this.defaultTenantId })
       .returning();
     return liability;
   }
@@ -2269,19 +1351,19 @@ export class BackwardCompatibilityStorage {
     return liability;
   }
 
-  async deleteLiability(tenantId: string, id: number): Promise<void> {
-    await db.delete(liabilities).where(and(eq(liabilities.tenantId, tenantId), eq(liabilities.id, id)));
+  async deleteLiability(id: number): Promise<void> {
+    await db.delete(liabilities).where(and(eq(liabilities.tenantId, this.defaultTenantId), eq(liabilities.id, id)));
   }
 
   // Equity methods
-  async getEquity(tenantId: string): Promise<Equity[]> {
-    return await db.select().from(equity).where(eq(equity.tenantId, tenantId));
+  async getEquity(): Promise<Equity[]> {
+    return await db.select().from(equity).where(eq(equity.tenantId, this.defaultTenantId));
   }
 
-  async createEquity(tenantId: string, insertEquity: InsertEquity): Promise<Equity> {
+  async createEquity(insertEquity: InsertEquity): Promise<Equity> {
     const [equityItem] = await db
       .insert(equity)
-      .values({ ...insertEquity, tenantId })
+      .values({ ...insertEquity, tenantId: this.defaultTenantId })
       .returning();
     return equityItem;
   }
@@ -2295,19 +1377,19 @@ export class BackwardCompatibilityStorage {
     return equityItem;
   }
 
-  async deleteEquity(tenantId: string, id: number): Promise<void> {
-    await db.delete(equity).where(and(eq(equity.tenantId, tenantId), eq(equity.id, id)));
+  async deleteEquity(id: number): Promise<void> {
+    await db.delete(equity).where(and(eq(equity.tenantId, this.defaultTenantId), eq(equity.id, id)));
   }
 
   // Report methods
-  async getReports(tenantId: string): Promise<Report[]> {
-    return await db.select().from(reports).where(eq(reports.tenantId, tenantId));
+  async getReports(): Promise<Report[]> {
+    return await db.select().from(reports).where(eq(reports.tenantId, this.defaultTenantId));
   }
 
-  async createReport(tenantId: string, insertReport: InsertReport): Promise<Report> {
+  async createReport(insertReport: InsertReport): Promise<Report> {
     const [report] = await db
       .insert(reports)
-      .values({ ...insertReport, tenantId })
+      .values({ ...insertReport, tenantId: this.defaultTenantId })
       .returning();
     return report;
   }
@@ -2321,27 +1403,27 @@ export class BackwardCompatibilityStorage {
     return report;
   }
 
-  async deleteReport(tenantId: string, id: number): Promise<void> {
-    await db.delete(reports).where(and(eq(reports.tenantId, tenantId), eq(reports.id, id)));
+  async deleteReport(id: number): Promise<void> {
+    await db.delete(reports).where(and(eq(reports.tenantId, this.defaultTenantId), eq(reports.id, id)));
   }
 
   // MFI Registration methods
-  async getMfiRegistration(tenantId: string): Promise<MfiRegistration | undefined> {
-    const [registration] = await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, tenantId));
+  async getMfiRegistration(): Promise<MfiRegistration | undefined> {
+    const [registration] = await db.select().from(mfiRegistration).where(eq(mfiRegistration.tenantId, this.defaultTenantId));
     return registration || undefined;
   }
 
-  async createMfiRegistration(tenantId: string, insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
+  async createMfiRegistration(insertMfiRegistration: InsertMfiRegistration): Promise<MfiRegistration> {
     const [registration] = await db
       .insert(mfiRegistration)
-      .values({ ...insertMfiRegistration, tenantId })
+      .values({ ...insertMfiRegistration, tenantId: this.defaultTenantId })
       .returning();
     return registration;
   }
 
-  async updateMfiRegistration(tenantId: string, id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
+  async updateMfiRegistration(id: number, updateMfiRegistration: Partial<InsertMfiRegistration>): Promise<MfiRegistration> {
     // Handle Date conversion for licenseExpiryDate if present
-    const updateData = { ...updateMfiRegistration, updatedAt: new Date() };
+    const updateData: any = { ...updateMfiRegistration, updatedAt: new Date() };
     if (updateData.licenseExpiryDate instanceof Date) {
       updateData.licenseExpiryDate = updateData.licenseExpiryDate.toISOString().split('T')[0];
     }
@@ -2349,40 +1431,40 @@ export class BackwardCompatibilityStorage {
     const [registration] = await db
       .update(mfiRegistration)
       .set(updateData)
-      .where(and(eq(mfiRegistration.tenantId, tenantId), eq(mfiRegistration.id, id)))
+      .where(and(eq(mfiRegistration.tenantId, this.defaultTenantId), eq(mfiRegistration.id, id)))
       .returning();
     return registration;
   }
 
   // Shareholder methods
-  async getShareholders(tenantId: string): Promise<Shareholder[]> {
-    return await db.select().from(shareholders).where(eq(shareholders.tenantId, tenantId));
+  async getShareholders(): Promise<Shareholder[]> {
+    return await db.select().from(shareholders).where(eq(shareholders.tenantId, this.defaultTenantId));
   }
 
-  async getShareholder(tenantId: string, id: number): Promise<Shareholder | undefined> {
-    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
+  async getShareholder(id: number): Promise<Shareholder | undefined> {
+    const [shareholder] = await db.select().from(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
     return shareholder || undefined;
   }
 
-  async createShareholder(tenantId: string, insertShareholder: InsertShareholder): Promise<Shareholder> {
+  async createShareholder(insertShareholder: InsertShareholder): Promise<Shareholder> {
     const [shareholder] = await db
       .insert(shareholders)
-      .values({ ...insertShareholder, tenantId })
+      .values({ ...insertShareholder, tenantId: this.defaultTenantId })
       .returning();
     return shareholder;
   }
 
-  async updateShareholder(tenantId: string, id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
+  async updateShareholder(id: number, updateShareholder: Partial<InsertShareholder>): Promise<Shareholder> {
     const [shareholder] = await db
       .update(shareholders)
       .set(updateShareholder)
-      .where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)))
+      .where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)))
       .returning();
     return shareholder;
   }
 
-  async deleteShareholder(tenantId: string, id: number): Promise<void> {
-    await db.delete(shareholders).where(and(eq(shareholders.tenantId, tenantId), eq(shareholders.id, id)));
+  async deleteShareholder(id: number): Promise<void> {
+    await db.delete(shareholders).where(and(eq(shareholders.tenantId, this.defaultTenantId), eq(shareholders.id, id)));
   }
 
   // Role and Permission methods to complete interface
@@ -2482,6 +1564,5 @@ export class BackwardCompatibilityStorage {
       and(eq(userRoles.userId, userId), eq(userRoles.tenantId, tenantId))
     );
   }
-
 
 }

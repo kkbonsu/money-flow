@@ -1,51 +1,31 @@
-// Legacy compatibility hook - now uses the comprehensive TenantContext
-import { useTenantContext as useNewTenantContext, useCurrentTenant } from '@/contexts/TenantContext';
-import type { TenantInfo } from '@/types/tenant';
+import { useQuery } from '@tanstack/react-query';
 
-/**
- * @deprecated Use useTenantContext from @/contexts/TenantContext instead
- * This hook is maintained for backwards compatibility
- */
 export function useTenant() {
-  const { currentTenant, isLoading, tenantId, tenantSlug, tenantName } = useNewTenantContext();
+  const { data: tenant, isLoading } = useQuery({
+    queryKey: ['/api/tenant/info'],
+    retry: false,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
 
   return {
-    tenant: currentTenant,
+    tenant,
     isLoading,
-    tenantId,
-    tenantSlug,
-    tenantName,
+    tenantId: tenant?.id,
+    tenantSlug: tenant?.slug,
+    tenantName: tenant?.name,
   };
 }
 
-/**
- * @deprecated Use useTenantContext from @/contexts/TenantContext instead
- * This hook is maintained for backwards compatibility
- */
 export function useTenantContext() {
-  const { 
-    currentTenant, 
-    tenantId, 
-    tenantSlug, 
-    tenantName, 
-    isLoading, 
-    isMultiTenant 
-  } = useNewTenantContext();
+  const { tenant, tenantId, tenantSlug, tenantName, isLoading } = useTenant();
 
   return {
-    tenant: currentTenant,
+    tenant,
     tenantId,
     tenantSlug, 
     tenantName,
     isLoading,
-    isMultiTenant,
+    // Helper to check if we're in a multi-tenant context
+    isMultiTenant: tenantSlug !== 'default',
   };
 }
-
-// Re-export the new comprehensive hooks for convenience
-export { 
-  useTenantContext as useComprehensiveTenantContext,
-  useSwitchTenant,
-  useCurrentTenant,
-  useAccessibleTenants 
-} from '@/contexts/TenantContext';

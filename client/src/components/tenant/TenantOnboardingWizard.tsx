@@ -33,11 +33,7 @@ import {
   ArrowLeft, 
   ArrowRight,
   Palette,
-  Shield,
-  Plus,
-  Minus,
-  Users,
-  DollarSign
+  Shield
 } from 'lucide-react';
 
 const onboardingSchema = z.object({
@@ -53,18 +49,9 @@ const onboardingSchema = z.object({
   adminFirstName: z.string().min(1, 'First name is required'),
   adminLastName: z.string().min(1, 'Last name is required'),
   
-  // Step 3: MFI Registration
-  companyName: z.string().optional(),
-  registrationNumber: z.string().optional(),
-  licenseNumber: z.string().optional(),
-  licenseExpiryDate: z.string().optional(),
-  regulatoryBody: z.string().optional(),
-  businessType: z.string().optional(),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  
-  // Step 6: Configuration
+  // Step 3: Configuration
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, 'Valid hex color required').default('#2563eb'),
+  features: z.array(z.string()).min(1, 'At least one feature must be selected'),
   theme: z.enum(['light', 'dark']).default('light'),
 });
 
@@ -78,11 +65,8 @@ interface TenantOnboardingWizardProps {
 const steps = [
   { id: 1, title: 'Organization Details', icon: Building2 },
   { id: 2, title: 'Admin User', icon: User },
-  { id: 3, title: 'MFI Registration', icon: Shield },
-  { id: 4, title: 'Shareholders', icon: Users },
-  { id: 5, title: 'Equity Structure', icon: DollarSign },
-  { id: 6, title: 'Branding & Features', icon: Palette },
-  { id: 7, title: 'Review & Create', icon: CheckCircle },
+  { id: 3, title: 'Configuration', icon: Settings },
+  { id: 4, title: 'Review & Create', icon: CheckCircle },
 ];
 
 const availableFeatures = [
@@ -92,8 +76,6 @@ const availableFeatures = [
 export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>(['loans', 'payments', 'analytics']);
-  const [shareholders, setShareholders] = useState([{ name: '', shares: 1000, shareType: 'ordinary', nationality: '' }]);
-  const [equityEntries, setEquityEntries] = useState([{ accountName: 'Share Capital', amount: 10000, description: 'Initial share capital' }]);
   const { toast } = useToast();
 
   const form = useForm<OnboardingForm>({
@@ -107,15 +89,8 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
       adminPassword: '',
       adminFirstName: '',
       adminLastName: '',
-      companyName: '',
-      registrationNumber: '',
-      licenseNumber: '',
-      licenseExpiryDate: '',
-      regulatoryBody: '',
-      businessType: '',
-      address: '',
-      phone: '',
       primaryColor: '#2563eb',
+      features: ['loans', 'payments', 'analytics'],
       theme: 'light',
     },
   });
@@ -123,47 +98,39 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
   const onboardTenantMutation = useMutation({
     mutationFn: async (data: OnboardingForm) => {
       // Step 1: Create tenant
-      const tenantResponse = await apiRequest('POST', '/api/admin/tenants', {
-        name: data.orgName,
-        slug: data.orgSlug,
-        adminUser: {
+      const tenant = await apiRequest('/api/admin/tenants', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: data.orgName,
+          slug: data.orgSlug,
+          settings: {
+            theme: data.theme,
+            features: selectedFeatures,
+            branding: {
+              primaryColor: data.primaryColor,
+              description: data.orgDescription,
+            }
+          }
+        }),
+      });
+
+      // Step 2: Create admin user for the tenant
+      const adminUser = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'X-Tenant-ID': tenant.id,
+        },
+        body: JSON.stringify({
           username: data.adminUsername,
           email: data.adminEmail,
           password: data.adminPassword,
           firstName: data.adminFirstName,
           lastName: data.adminLastName,
           role: 'admin',
-        }
-      });
-      const tenant = await tenantResponse.json();
-
-      // Admin user is created in step 1, no need for separate step
-
-      // Step 2: Create MFI Registration
-      const mfiRegistrationResponse = await apiRequest('POST', `/api/admin/mfi-registration/${tenant.tenant.id}`, {
-        companyName: data.companyName || data.orgName,
-        registrationNumber: data.registrationNumber,
-        licenseNumber: data.licenseNumber,
-        licenseExpiryDate: data.licenseExpiryDate,
-        regulatoryBody: data.regulatoryBody,
-        businessType: data.businessType,
-        address: data.address,
-        phone: data.phone,
+        }),
       });
 
-      // Step 3: Create Shareholders
-      const shareholderPromises = shareholders.map(shareholder =>
-        apiRequest('POST', `/api/admin/shareholders/${tenant.tenant.id}`, shareholder)
-      );
-      const createdShareholders = await Promise.all(shareholderPromises);
-
-      // Step 4: Create Equity Entries
-      const equityPromises = equityEntries.map(equity =>
-        apiRequest('POST', `/api/admin/equity/${tenant.tenant.id}`, equity)
-      );
-      const createdEquity = await Promise.all(equityPromises);
-
-      return { tenant, mfiRegistration: mfiRegistrationResponse, shareholders: createdShareholders, equity: createdEquity };
+      return { tenant, adminUser };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tenants'] });
@@ -210,11 +177,11 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
       ? selectedFeatures.filter(f => f !== feature)
       : [...selectedFeatures, feature];
     setSelectedFeatures(newFeatures);
-    // Features are managed separately, not in the form
+    form.setValue('features', newFeatures);
   };
 
   const nextStep = () => {
-    if (currentStep < 7) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -225,68 +192,15 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
     }
   };
 
-  const addShareholder = () => {
-    setShareholders([...shareholders, { name: '', shares: 100, shareType: 'ordinary', nationality: '' }]);
-  };
-
-  const removeShareholder = (index: number) => {
-    if (shareholders.length > 1) {
-      setShareholders(shareholders.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateShareholder = (index: number, field: string, value: any) => {
-    const updated = [...shareholders];
-    updated[index] = { ...updated[index], [field]: value };
-    setShareholders(updated);
-  };
-
-  const addEquityEntry = () => {
-    setEquityEntries([...equityEntries, { accountName: '', amount: 0, description: '' }]);
-  };
-
-  const removeEquityEntry = (index: number) => {
-    if (equityEntries.length > 1) {
-      setEquityEntries(equityEntries.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateEquityEntry = (index: number, field: string, value: any) => {
-    const updated = [...equityEntries];
-    updated[index] = { ...updated[index], [field]: value };
-    setEquityEntries(updated);
-  };
-
   const onSubmit = (data: OnboardingForm) => {
-    if (currentStep === 7) {
-      onboardTenantMutation.mutate(data);
+    if (currentStep === 4) {
+      onboardTenantMutation.mutate({ ...data, features: selectedFeatures });
     } else {
-      // Validate current step before proceeding
-      let isValid = true;
-      
-      if (currentStep === 1) {
-        isValid = !!data.orgName && !!data.orgSlug;
-      } else if (currentStep === 2) {
-        isValid = !!data.adminUsername && !!data.adminEmail && !!data.adminPassword && !!data.adminFirstName && !!data.adminLastName;
-      } else if (currentStep === 4) {
-        isValid = shareholders.every(s => s.name && s.shares > 0 && s.shareType);
-      } else if (currentStep === 5) {
-        isValid = equityEntries.every(e => e.accountName && e.amount >= 0);
-      }
-      
-      if (isValid) {
-        nextStep();
-      } else {
-        toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields before proceeding",
-          variant: "destructive",
-        });
-      }
+      nextStep();
     }
   };
 
-  const progress = (currentStep / 7) * 100;
+  const progress = (currentStep / 4) * 100;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -468,285 +382,8 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
               </div>
             )}
 
-            {/* Step 3: MFI Registration */}
+            {/* Step 3: Configuration */}
             {currentStep === 3 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  MFI Registration
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="companyName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ABC Microfinance Ltd" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="registrationNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Registration Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="REG-123456" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="licenseNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>License Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="LIC-789012" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="licenseExpiryDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>License Expiry Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="regulatoryBody"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Regulatory Body</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Bank of Ghana" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="businessType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Type</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Microfinance Institution" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Complete business address..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+233 XX XXX XXXX" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {/* Step 4: Shareholders */}
-            {currentStep === 4 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Shareholders
-                </h3>
-                
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Add initial shareholders for the microfinance institution
-                </p>
-                
-                {shareholders.map((shareholder, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Shareholder {index + 1}</h4>
-                      {shareholders.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeShareholder(index)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium">Name</label>
-                        <Input
-                          placeholder="Shareholder name"
-                          value={shareholder.name}
-                          onChange={(e) => updateShareholder(index, 'name', e.target.value)}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium">Shares</label>
-                        <Input
-                          type="number"
-                          placeholder="1000"
-                          value={shareholder.shares}
-                          onChange={(e) => updateShareholder(index, 'shares', parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium">Share Type</label>
-                        <Input
-                          placeholder="ordinary"
-                          value={shareholder.shareType}
-                          onChange={(e) => updateShareholder(index, 'shareType', e.target.value)}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium">Nationality</label>
-                        <Input
-                          placeholder="Ghanaian"
-                          value={shareholder.nationality}
-                          onChange={(e) => updateShareholder(index, 'nationality', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addShareholder}
-                  className="w-full"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Shareholder
-                </Button>
-              </div>
-            )}
-
-            {/* Step 5: Equity Structure */}
-            {currentStep === 5 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Equity Structure
-                </h3>
-                
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Set up initial equity accounts and their values
-                </p>
-                
-                {equityEntries.map((equity, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Equity Entry {index + 1}</h4>
-                      {equityEntries.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeEquityEntry(index)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium">Account Name</label>
-                        <Input
-                          placeholder="Share Capital"
-                          value={equity.accountName}
-                          onChange={(e) => updateEquityEntry(index, 'accountName', e.target.value)}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium">Amount</label>
-                        <Input
-                          type="number"
-                          placeholder="10000"
-                          value={equity.amount}
-                          onChange={(e) => updateEquityEntry(index, 'amount', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium">Description</label>
-                      <Textarea
-                        placeholder="Initial equity contribution..."
-                        value={equity.description}
-                        onChange={(e) => updateEquityEntry(index, 'description', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                ))}
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addEquityEntry}
-                  className="w-full"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Equity Entry
-                </Button>
-              </div>
-            )}
-
-            {/* Step 6: Configuration */}
-            {currentStep === 6 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Palette className="h-5 w-5" />
@@ -798,8 +435,8 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
               </div>
             )}
 
-            {/* Step 7: Review */}
-            {currentStep === 7 && (
+            {/* Step 4: Review */}
+            {currentStep === 4 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <CheckCircle className="h-5 w-5" />
@@ -819,27 +456,6 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {form.getValues('adminFirstName')} {form.getValues('adminLastName')} 
                       ({form.getValues('adminEmail')})
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium">MFI Registration</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {form.getValues('companyName')} - {form.getValues('licenseNumber')}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium">Shareholders</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {shareholders.length} shareholders, Total shares: {shareholders.reduce((sum, s) => sum + s.shares, 0)}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium">Equity Structure</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {equityEntries.length} entries, Total value: GHS {equityEntries.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
                     </p>
                   </div>
                   
@@ -883,7 +499,7 @@ export function TenantOnboardingWizard({ open, onOpenChange }: TenantOnboardingW
                   type="submit"
                   disabled={onboardTenantMutation.isPending}
                 >
-                  {currentStep === 7 ? (
+                  {currentStep === 4 ? (
                     onboardTenantMutation.isPending ? 'Creating...' : 'Create Tenant'
                   ) : (
                     <>

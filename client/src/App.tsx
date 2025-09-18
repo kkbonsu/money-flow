@@ -7,8 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CustomerAuthProvider } from "@/hooks/useCustomerAuth";
-import { TenantProvider } from "@/contexts/TenantContext";
-import { TenantThemingProvider } from "@/hooks/useTenantTheming";
 import AppLayout from "@/components/layout/AppLayout";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -36,8 +34,6 @@ import Login from "@/pages/Login";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import RoleManagementPage from "@/pages/RoleManagementPage";
 import NotFound from "@/pages/not-found";
-import TenantSelection from "@/pages/TenantSelection";
-import TenantBrandingSettings from "@/components/tenant/TenantBrandingSettings";
 
 // Customer Portal Components
 import CustomerLogin from "@/pages/customer/CustomerLogin";
@@ -72,7 +68,6 @@ function Router() {
 
       {/* Staff Portal Routes */}
       <Route path="/login" component={Login} />
-      <Route path="/tenant-selection" component={TenantSelection} />
       <Route path="/super-admin" component={SuperAdminDashboard} />
       <Route path="/" component={Dashboard} />
       <Route path="/loan-simulator" component={LoanSimulator} />
@@ -96,7 +91,6 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/equity" component={Equity} />
       <Route path="/role-management" component={RoleManagementPage} />
-      <Route path="/tenant-branding" component={TenantBrandingSettings} />
       <Route path="/profile" component={UserProfile} />
       <Route component={NotFound} />
     </Switch>
@@ -111,16 +105,12 @@ function App() {
     <QueryClientProvider client={client}>
       <ThemeProvider>
         <AuthProvider>
-          <TenantProvider>
-            <TenantThemingProvider>
-              <CustomerAuthProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AppLayoutSelector />
-                </TooltipProvider>
-              </CustomerAuthProvider>
-            </TenantThemingProvider>
-          </TenantProvider>
+          <CustomerAuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <AppLayoutSelector />
+            </TooltipProvider>
+          </CustomerAuthProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

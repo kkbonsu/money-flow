@@ -1,56 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/useAuth';
-import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Users, Plus, Settings, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { CreateTenantDialog } from '@/components/tenant/CreateTenantDialog';
 import { TenantManagementTable } from '@/components/tenant/TenantManagementTable';
 import { TenantOnboardingWizard } from '@/components/tenant/TenantOnboardingWizard';
-import { TenantDetailsModal } from '@/components/tenant/TenantDetailsModal';
-import { TenantUsersModal } from '@/components/tenant/TenantUsersModal';
-import { TenantSettingsModal } from '@/components/tenant/TenantSettingsModal';
 import { SuperAdminStats } from '@/components/tenant/SuperAdminStats';
-import { SystemAnalytics } from '@/components/tenant/SystemAnalytics';
-import { SystemHealthMonitor } from '@/components/tenant/SystemHealthMonitor';
-import { SystemUserManagement } from '@/components/tenant/SystemUserManagement';
 
 export default function SuperAdminDashboard() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showUsersModal, setShowUsersModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const { toast } = useToast();
-
-  // Redirect if not authenticated or not super admin
-  useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        setLocation('/login');
-        return;
-      }
-      if (!user?.isSuperAdmin) {
-        setLocation('/');
-        return;
-      }
-    }
-  }, [isAuthenticated, user, authLoading, setLocation]);
 
   const { data: tenants, isLoading } = useQuery({
     queryKey: ['/api/admin/tenants'],
-    enabled: isAuthenticated && user?.isSuperAdmin, // Only run if super admin
   });
 
   const { data: systemStats } = useQuery({
     queryKey: ['/api/admin/stats'],
-    enabled: isAuthenticated && user?.isSuperAdmin, // Only run if super admin
   });
 
   const deleteTenantMutation = useMutation({
@@ -72,20 +44,6 @@ export default function SuperAdminDashboard() {
     },
   });
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-pulse">Checking authentication...</div>
-      </div>
-    );
-  }
-
-  // Don't render anything if not authenticated (will redirect)
-  if (!isAuthenticated || !user?.isSuperAdmin) {
-    return null;
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -95,7 +53,7 @@ export default function SuperAdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -107,13 +65,23 @@ export default function SuperAdminDashboard() {
               Manage tenants, users, and system-wide settings
             </p>
           </div>
-          <Button
-            onClick={() => setShowOnboardingWizard(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Onboard New Tenant
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setShowOnboardingWizard(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Activity className="h-4 w-4" />
+              Onboard Tenant
+            </Button>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Create Tenant
+            </Button>
+          </div>
         </div>
 
         {/* System Stats */}
@@ -156,60 +124,70 @@ export default function SuperAdminDashboard() {
                   tenants={(tenants as any) || []}
                   onDeleteTenant={(tenantId) => deleteTenantMutation.mutate(tenantId)}
                   isDeleting={deleteTenantMutation.isPending}
-                  onViewDetails={(tenantId) => {
-                    setSelectedTenantId(tenantId);
-                    setShowDetailsModal(true);
-                  }}
-                  onManageUsers={(tenantId) => {
-                    setSelectedTenantId(tenantId);
-                    setShowUsersModal(true);
-                  }}
-                  onEditSettings={(tenantId) => {
-                    setSelectedTenantId(tenantId);
-                    setShowSettingsModal(true);
-                  }}
                 />
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="users">
-            <SystemUserManagement />
+            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle>System-Wide User Management</CardTitle>
+                <CardDescription>
+                  View and manage users across all tenants
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  User management interface will be loaded here
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings">
-            <SystemHealthMonitor />
+            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle>System Settings</CardTitle>
+                <CardDescription>
+                  Configure system-wide settings and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  System settings interface will be loaded here
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="analytics">
-            <SystemAnalytics />
+            <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle>System Analytics</CardTitle>
+                <CardDescription>
+                  Monitor system performance and usage across all tenants
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Analytics dashboard will be loaded here
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
 
       {/* Dialogs */}
+      <CreateTenantDialog 
+        open={showCreateDialog} 
+        onOpenChange={setShowCreateDialog}
+      />
       
       <TenantOnboardingWizard
         open={showOnboardingWizard}
         onOpenChange={setShowOnboardingWizard}
-      />
-      
-      <TenantDetailsModal
-        open={showDetailsModal}
-        onOpenChange={setShowDetailsModal}
-        tenantId={selectedTenantId}
-      />
-      
-      <TenantUsersModal
-        open={showUsersModal}
-        onOpenChange={setShowUsersModal}
-        tenantId={selectedTenantId}
-      />
-      
-      <TenantSettingsModal
-        open={showSettingsModal}
-        onOpenChange={setShowSettingsModal}
-        tenantId={selectedTenantId}
       />
     </div>
   );

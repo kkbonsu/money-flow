@@ -8,8 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload, Users, Trash2, Building, ArrowLeftRight, Globe, ArrowRightLeft, Crown, UserCheck } from 'lucide-react';
-import { TenantSwitcher } from '@/components/TenantSwitcher';
+import { User, Edit3, Shield, Clock, AlertCircle, CheckCircle2, Activity, Settings, Camera, Upload, Users, Trash2, Building } from 'lucide-react';
 import { MfiRegistration } from '@/components/MfiRegistration';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -41,28 +40,17 @@ export default function UserProfile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { data: user, isLoading: userLoading } = useQuery<any>({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['/api/users/profile'],
   });
 
-  const { data: auditLogs, isLoading: logsLoading } = useQuery<any[]>({
+  const { data: auditLogs, isLoading: logsLoading } = useQuery({
     queryKey: ['/api/users/audit-logs'],
   });
 
-  const { data: allUsers, isLoading: usersLoading } = useQuery<any[]>({
+  const { data: allUsers, isLoading: usersLoading } = useQuery({
     queryKey: ['/api/users'],
     enabled: user?.role === 'admin',
-  });
-
-  // Legacy queries - now handled by TenantContext
-  // Keeping for backwards compatibility with other parts of the profile
-  const { data: accessibleTenants, isLoading: tenantsLoading } = useQuery<any>({
-    queryKey: ['/api/user/accessible-tenants'],
-  });
-
-  const { data: currentTenantInfo } = useQuery<any>({
-    queryKey: ['/api/users/profile'],
-    select: (data: any) => data?.tenantInfo,
   });
 
   const profileForm = useForm({
@@ -310,50 +298,6 @@ export default function UserProfile() {
     updateUserRoleMutation.mutate({ userId, role: newRole });
   };
 
-  // Switch tenant mutation
-  const switchTenantMutation = useMutation({
-    mutationFn: async (tenantSlug: string) => {
-      const response = await apiRequest('POST', '/api/user/switch-tenant', { tenantSlug });
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      // Update the local token with the new tenant context
-      localStorage.setItem('auth_token', data.token);
-      
-      // Invalidate queries to refresh data for the new tenant
-      queryClient.invalidateQueries();
-      
-      toast({
-        title: "Tenant switched",
-        description: `Successfully switched to ${data.tenant.name}`,
-      });
-      
-      // Optionally redirect to dashboard or reload page
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1000);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSwitchTenant = (tenantSlug: string) => {
-    if (currentTenantInfo?.tenantSlug === tenantSlug) {
-      toast({
-        title: "Already active",
-        description: "You are already in this tenant",
-        variant: "default",
-      });
-      return;
-    }
-    switchTenantMutation.mutate(tenantSlug);
-  };
-
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'login':
@@ -403,15 +347,9 @@ export default function UserProfile() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-7' : 'grid-cols-6'}`}>
+        <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="tenant-access">
-            <div className="flex items-center gap-1">
-              <Globe className="h-4 w-4" />
-              Tenant Access
-            </div>
-          </TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="mfi">MFI Registration</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -584,53 +522,6 @@ export default function UserProfile() {
               </Form>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="tenant-access">
-          <div className="space-y-6">
-            {/* New Comprehensive Tenant Switcher */}
-            <TenantSwitcher />
-
-            {/* Tenant Access Summary */}
-            {accessibleTenants?.tenants?.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Access Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 border rounded-lg">
-                      <p className="text-2xl font-bold text-primary">
-                        {accessibleTenants.tenants.length}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Total Tenants</p>
-                    </div>
-                    <div className="text-center p-3 border rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">
-                        {accessibleTenants.tenants.filter((t: any) => t.access.role === 'admin').length}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Admin Access</p>
-                    </div>
-                    <div className="text-center p-3 border rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">
-                        {accessibleTenants.tenants.filter((t: any) => t.access.isDefault).length}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Default Tenant</p>
-                    </div>
-                    <div className="text-center p-3 border rounded-lg">
-                      <p className="text-2xl font-bold text-orange-600">
-                        {user?.isSuperAdmin ? 'Unlimited' : accessibleTenants.tenants.length}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Available Access</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
         </TabsContent>
 
         <TabsContent value="security">

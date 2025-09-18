@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { authApi } from '@/lib/auth';
 import { AuthUser, LoginCredentials } from '@/types';
 import { useToast } from './use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -23,7 +22,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -50,13 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authData = await authApi.login(credentials);
       authApi.storeAuth(authData);
       setUser(authData.user);
-      
-      // Refresh tenant-related queries after successful login
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['/api/tenant/info'] }),
-        queryClient.invalidateQueries({ queryKey: ['/api/user/accessible-tenants'] })
-      ]);
-      
       toast({
         title: "Success",
         description: "Logged in successfully",
@@ -83,13 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authData = await authApi.register(userData);
       authApi.storeAuth(authData);
       setUser(authData.user);
-      
-      // Refresh tenant-related queries after successful registration
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['/api/tenant/info'] }),
-        queryClient.invalidateQueries({ queryKey: ['/api/user/accessible-tenants'] })
-      ]);
-      
       toast({
         title: "Success",
         description: "Account created successfully",
@@ -109,10 +93,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     authApi.logout();
     setUser(null);
-    
-    // Clear all cached data including tenant context
-    queryClient.clear();
-    
     toast({
       title: "Success",
       description: "Logged out successfully",

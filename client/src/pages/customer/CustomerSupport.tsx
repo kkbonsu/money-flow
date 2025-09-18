@@ -36,47 +36,6 @@ export default function CustomerSupport() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Frontend validation
-    if (!formData.subject.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Subject is required.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    
-    if (!formData.category) {
-      toast({
-        title: "Validation Error", 
-        description: "Please select a category.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    
-    if (!formData.priority) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a priority level.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    
-    if (!formData.message.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Message is required.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    
     try {
       const response = await fetch('/api/customer/support-tickets', {
         method: 'POST',
@@ -93,8 +52,7 @@ export default function CustomerSupport() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit ticket');
+        throw new Error('Failed to submit ticket');
       }
       
       toast({
@@ -109,10 +67,9 @@ export default function CustomerSupport() {
         message: ''
       });
     } catch (error) {
-      console.error('Support ticket submission error:', error);
       toast({
         title: "Submission failed",
-        description: error instanceof Error ? error.message : "Failed to submit support ticket. Please try again.",
+        description: "Failed to submit support ticket. Please try again.",
         variant: "destructive",
       });
     } finally {
