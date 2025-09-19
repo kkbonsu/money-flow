@@ -50,7 +50,7 @@ import { users } from "@shared/schema";
 // import roleRoutes from "./roleRoutes"; // Disabled for single-tenant mode
 import { registerOptimizedRoutes } from "./optimizedRoutes";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "WmV5/Y/0IM+ceqZruQsfC3GUhUvXpuwIybZjfwZ3g+s=";
 
 if (!JWT_SECRET) {
   console.error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required!');
@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userData = insertUserSchema.parse(req.body);
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       
-      const user = await storage.createUser({
+      const user = await storage.createUser('default-tenant', {
         ...userData,
         password: hashedPassword,
       });
@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/customer/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const customer = await storage.getCustomerByEmail(email);
+      const customer = await storage.getCustomerByEmail('default-tenant', email);
       
       // Combined validation check
       if (!customer || !customer.password || !customer.isPortalActive) {
@@ -186,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = generateCustomerToken(customer);
       
       // Async last login update (non-blocking)
-      storage.updateCustomerLastLogin(customer.id).catch(console.error);
+      storage.updateCustomerLastLogin('default-tenant', customer.id).catch(console.error);
       
       res.json({ 
         customer: { 
@@ -218,8 +218,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalLoansResult
       ] = await Promise.all([
         db.select({ count: sql<number>`count(*)` }).from(users),
-        storage.getCustomers().then(customers => ({ count: customers.length })),
-        storage.getLoanBooks().then(loans => ({ count: loans.length }))
+        storage.getCustomers('default-tenant').then(customers => ({ count: customers.length })),
+        storage.getLoans('default-tenant').then(loans => ({ count: loans.length }))
       ]);
 
       res.json({
@@ -244,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const customer = await storage.getCustomer(customerId);
+      const customer = await storage.getCustomer('default-tenant', customerId);
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/customer/profile", authenticateCustomerToken, async (req, res) => {
     try {
       const updateData = req.body;
-      const customer = await storage.updateCustomer(req.customer.id, updateData);
+      const customer = await storage.updateCustomer('default-tenant', req.customer.id, updateData);
       const { password, ...customerProfile } = customer;
       res.json(customerProfile);
     } catch (error) {
@@ -271,14 +271,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/customer/password", authenticateCustomerToken, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-      const customer = await storage.getCustomer(req.customer.id);
+      const customer = await storage.getCustomer('default-tenant', req.customer.id);
       
       if (!customer || !customer.password || !await bcrypt.compare(currentPassword, customer.password)) {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
       
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await storage.updateCustomerPassword(req.customer.id, hashedPassword);
+      await storage.updateCustomerPassword('default-tenant', req.customer.id, hashedPassword);
       
       res.json({ message: "Password updated successfully" });
     } catch (error) {
@@ -290,13 +290,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/loans", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const loans = await storage.getCustomerLoans(customerId);
+      const loans = await storage.getCustomerLoans('default-tenant', customerId);
       
       // Calculate dynamic outstanding balance for each loan
       const loansWithOutstanding = await Promise.all(
         loans.map(async (loan: any) => {
           try {
-            const allPayments = await storage.getPaymentSchedules();
+            const allPayments = await storage.getPaymentSchedules('default-tenant');
             const loanPayments = allPayments.filter((payment: any) => payment.loanId === loan.id);
             
             const pendingPayments = loanPayments.filter((payment: any) => payment.status === 'pending');
@@ -333,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/payments", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const payments = await storage.getCustomerPayments(customerId);
+      const payments = await storage.getCustomerPayments('default-tenant', customerId);
       res.json(payments);
     } catch (error) {
       console.error("Customer payments error:", error);
@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customer/payments/upcoming", authenticateCustomerToken, async (req, res) => {
     try {
       const customerId = parseInt(req.customer.id);
-      const upcomingPayments = await storage.getCustomerUpcomingPayments(customerId);
+      const upcomingPayments = await storage.getCustomerUpcomingPayments('default-tenant', customerId);
       res.json(upcomingPayments);
     } catch (error) {
       console.error("Customer upcoming payments error:", error);

@@ -1,10 +1,10 @@
+// Set environment variables if not already set - MUST be before any imports
+process.env.NODE_ENV = process.env.NODE_ENV || "development";
+process.env.JWT_SECRET = process.env.JWT_SECRET || "WmV5/Y/0IM+ceqZruQsfC3GUhUvXpuwIybZjfwZ3g+s=";
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-
-// Set environment variables if not already set
-process.env.NODE_ENV = process.env.NODE_ENV || "development";
-process.env.JWT_SECRET = process.env.JWT_SECRET || "financeflow-secret-key-2024";
 
 const app = express();
 app.use(express.json());

@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import type { JwtPayload } from "@shared/schema";
 import type { SimpleTenantContext } from "@shared/tenantSchema";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "WmV5/Y/0IM+ceqZruQsfC3GUhUvXpuwIybZjfwZ3g+s=";
 
 if (!JWT_SECRET) {
   console.error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required!');

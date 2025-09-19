@@ -19,7 +19,7 @@ import type {
 const DEFAULT_TENANT_ID = "default-tenant-001";
 
 // Simplified interface for single-tenant mode - removes tenant parameters
-export interface IMultiTenantStorage extends IStorage {
+export interface IMultiTenantStorage {
   // Backward compatibility methods - these now ignore tenant context
   getUser(tenantId: string, id: number): Promise<User | undefined>;
   getUserByUsername(tenantId: string, username: string): Promise<User | undefined>;
