@@ -90,242 +90,248 @@ export interface IMultiTenantStorage {
 }
 
 // Backward compatibility class that delegates to DatabaseStorage
-export class MultiTenantStorage extends DatabaseStorage implements IMultiTenantStorage {
+export class MultiTenantStorage implements IMultiTenantStorage {
+  private storage: DatabaseStorage;
+  
+  constructor() {
+    this.storage = new DatabaseStorage();
+  }
+  
   // All tenant-aware methods now ignore tenantId and use single-tenant operations
   
   // User methods (tenant parameter ignored)
   async getUser(tenantId: string, id: number): Promise<User | undefined> {
-    return super.getUser(id);
+    return this.storage.getUser(id);
   }
 
   async getUserByUsername(tenantId: string, username: string): Promise<User | undefined> {
-    return super.getUserByUsername(username);
+    return this.storage.getUserByUsername(username);
   }
 
   async getUserByEmail(tenantId: string, email: string): Promise<User | undefined> {
-    return super.getUserByEmail(email);
+    return this.storage.getUserByEmail(email);
   }
 
   async getAllUsers(tenantId: string): Promise<User[]> {
-    return super.getAllUsers();
+    return this.storage.getAllUsers();
   }
 
   async createUser(tenantId: string, user: InsertUser): Promise<User> {
-    return super.createUser(user);
+    return this.storage.createUser(user);
   }
 
   async updateUser(tenantId: string, id: number, user: Partial<InsertUser>): Promise<User> {
-    return super.updateUser(id, user);
+    return this.storage.updateUser(id, user);
   }
 
   async updateUserPassword(tenantId: string, id: number, hashedPassword: string): Promise<User> {
-    return super.updateUserPassword(id, hashedPassword);
+    return this.storage.updateUserPassword(id, hashedPassword);
   }
 
   async updateUserLastLogin(tenantId: string, id: number): Promise<User> {
-    return super.updateUserLastLogin(id);
+    return this.storage.updateUserLastLogin(id);
   }
 
   async deleteUser(tenantId: string, id: number): Promise<void> {
-    return super.deleteUser(id);
+    return this.storage.deleteUser(id);
   }
 
   // Customer methods (tenant parameter ignored)
   async getCustomers(tenantId: string): Promise<Customer[]> {
-    return super.getCustomers();
+    return this.storage.getCustomers();
   }
 
   async getCustomer(tenantId: string, id: number): Promise<Customer | undefined> {
-    return super.getCustomer(id);
+    return this.storage.getCustomer(id);
   }
 
   async getCustomerByEmail(tenantId: string, email: string): Promise<Customer | undefined> {
-    return super.getCustomerByEmail(email);
+    return this.storage.getCustomerByEmail(email);
   }
 
   async createCustomer(tenantId: string, customer: InsertCustomer): Promise<Customer> {
-    return super.createCustomer(customer);
+    return this.storage.createCustomer(customer);
   }
 
   async updateCustomer(tenantId: string, id: number, customer: Partial<InsertCustomer>): Promise<Customer> {
-    return super.updateCustomer(tenantId, id, customer);
+    return this.storage.updateCustomer(id, customer);
   }
 
   async updateCustomerPassword(tenantId: string, id: number, hashedPassword: string): Promise<Customer> {
-    return super.updateCustomerPassword(tenantId, id, hashedPassword);
+    return this.storage.updateCustomerPassword(id, hashedPassword);
   }
 
   async updateCustomerLastLogin(tenantId: string, id: number): Promise<Customer> {
-    return super.updateCustomerLastLogin(id);
+    return this.storage.updateCustomerLastLogin(id);
   }
 
   async deleteCustomer(tenantId: string, id: number): Promise<void> {
-    return super.deleteCustomer(id);
+    return this.storage.deleteCustomer(id);
   }
 
   // Customer portal methods (tenant parameter ignored)
   async getCustomerLoans(tenantId: string, customerId: number): Promise<LoanBook[]> {
-    return super.getCustomerLoans(customerId);
+    return this.storage.getCustomerLoans(customerId);
   }
 
   async getCustomerPayments(tenantId: string, customerId: number): Promise<PaymentSchedule[]> {
-    return super.getCustomerPayments(customerId);
+    return this.storage.getCustomerPayments(customerId);
   }
 
   async getCustomerUpcomingPayments(tenantId: string, customerId: number): Promise<PaymentSchedule[]> {
-    return super.getCustomerUpcomingPayments(customerId);
+    return this.storage.getCustomerUpcomingPayments(customerId);
   }
 
   // Loan product methods (tenant parameter ignored)
   async getLoanProducts(tenantId: string): Promise<LoanProduct[]> {
-    return super.getLoanProducts();
+    return this.storage.getLoanProducts();
   }
 
   async getLoanProduct(tenantId: string, id: number): Promise<LoanProduct | undefined> {
-    return super.getLoanProduct(id);
+    return this.storage.getLoanProduct(id);
   }
 
   async createLoanProduct(tenantId: string, loanProduct: InsertLoanProduct): Promise<LoanProduct> {
-    return super.createLoanProduct(loanProduct);
+    return this.storage.createLoanProduct(loanProduct);
   }
 
   async updateLoanProduct(tenantId: string, id: number, loanProduct: Partial<InsertLoanProduct>): Promise<LoanProduct> {
-    return super.updateLoanProduct(id, loanProduct);
+    return this.storage.updateLoanProduct(id, loanProduct);
   }
 
   async deleteLoanProduct(tenantId: string, id: number): Promise<void> {
-    return super.deleteLoanProduct(id);
+    return this.storage.deleteLoanProduct(id);
   }
 
   // Loan methods (tenant parameter ignored)
   async getLoans(tenantId: string): Promise<LoanBook[]> {
-    return super.getLoans();
+    return this.storage.getLoans();
   }
 
   async getLoan(tenantId: string, id: number): Promise<LoanBook | undefined> {
-    return super.getLoan(id);
+    return this.storage.getLoan(id);
   }
 
   async createLoan(tenantId: string, loan: InsertLoanBook): Promise<LoanBook> {
-    return super.createLoan(loan);
+    return this.storage.createLoan(loan);
   }
 
   async updateLoan(tenantId: string, id: number, loan: Partial<InsertLoanBook>): Promise<LoanBook> {
-    return super.updateLoan(id, loan);
+    return this.storage.updateLoan(id, loan);
   }
 
   async deleteLoan(tenantId: string, id: number): Promise<void> {
-    return super.deleteLoan(id);
+    return this.storage.deleteLoan(id);
   }
 
   // Payment schedule methods (tenant parameter ignored)
   async getPaymentSchedules(tenantId: string): Promise<PaymentSchedule[]> {
-    return super.getPaymentSchedules();
+    return this.storage.getPaymentSchedules();
   }
 
   async getPaymentSchedule(tenantId: string, id: number): Promise<PaymentSchedule | undefined> {
-    return super.getPaymentSchedule(id);
+    return this.storage.getPaymentSchedule(id);
   }
 
   async getPaymentSchedulesByLoan(tenantId: string, loanId: number): Promise<PaymentSchedule[]> {
-    return super.getPaymentSchedulesByLoan(tenantId, loanId);
+    return this.storage.getPaymentSchedulesByLoan(loanId);
   }
 
   async createPaymentSchedule(tenantId: string, schedule: InsertPaymentSchedule): Promise<PaymentSchedule> {
-    return super.createPaymentSchedule(schedule);
+    return this.storage.createPaymentSchedule(schedule);
   }
 
   async updatePaymentSchedule(tenantId: string, id: number, schedule: Partial<InsertPaymentSchedule>): Promise<PaymentSchedule> {
-    return super.updatePaymentSchedule(id, schedule);
+    return this.storage.updatePaymentSchedule(id, schedule);
   }
 
   async deletePaymentSchedule(tenantId: string, id: number): Promise<void> {
-    return super.deletePaymentSchedule(id);
+    return this.storage.deletePaymentSchedule(id);
   }
 
   // Staff methods (tenant parameter ignored)
   async getStaff(tenantId: string): Promise<Staff[]> {
-    return super.getStaff();
+    return this.storage.getStaff();
   }
 
   async createStaff(tenantId: string, staff: InsertStaff): Promise<Staff> {
-    return super.createStaff(staff);
+    return this.storage.createStaff(staff);
   }
 
   async updateStaff(tenantId: string, id: number, staff: Partial<InsertStaff>): Promise<Staff> {
-    return super.updateStaff(id, staff);
+    return this.storage.updateStaff(id, staff);
   }
 
   async deleteStaff(tenantId: string, id: number): Promise<void> {
-    return super.deleteStaff(id);
+    return this.storage.deleteStaff(id);
   }
 
   // Income methods (tenant parameter ignored)
   async getIncome(tenantId: string): Promise<IncomeManagement[]> {
-    return super.getIncome();
+    return this.storage.getIncome();
   }
 
   async createIncome(tenantId: string, income: InsertIncomeManagement): Promise<IncomeManagement> {
-    return super.createIncome(income);
+    return this.storage.createIncome(income);
   }
 
   async updateIncome(tenantId: string, id: number, income: Partial<InsertIncomeManagement>): Promise<IncomeManagement> {
-    return super.updateIncome(id, income);
+    return this.storage.updateIncome(id, income);
   }
 
   async deleteIncome(tenantId: string, id: number): Promise<void> {
-    return super.deleteIncome(id);
+    return this.storage.deleteIncome(id);
   }
 
   // Expense methods (tenant parameter ignored)
   async getExpenses(tenantId: string): Promise<Expense[]> {
-    return super.getExpenses();
+    return this.storage.getExpenses();
   }
 
   async createExpense(tenantId: string, expense: InsertExpense): Promise<Expense> {
-    return super.createExpense(expense);
+    return this.storage.createExpense(expense);
   }
 
   async updateExpense(tenantId: string, id: number, expense: Partial<InsertExpense>): Promise<Expense> {
-    return super.updateExpense(id, expense);
+    return this.storage.updateExpense(id, expense);
   }
 
   async deleteExpense(tenantId: string, id: number): Promise<void> {
-    return super.deleteExpense(id);
+    return this.storage.deleteExpense(id);
   }
 
   // Bank account methods (tenant parameter ignored)
   async getBankAccounts(tenantId: string): Promise<BankManagement[]> {
-    return super.getBankAccounts();
+    return this.storage.getBankAccounts();
   }
 
   async createBankAccount(tenantId: string, account: InsertBankManagement): Promise<BankManagement> {
-    return super.createBankAccount(account);
+    return this.storage.createBankAccount(account);
   }
 
   async updateBankAccount(tenantId: string, id: number, account: Partial<InsertBankManagement>): Promise<BankManagement> {
-    return super.updateBankAccount(id, account);
+    return this.storage.updateBankAccount(id, account);
   }
 
   async deleteBankAccount(tenantId: string, id: number): Promise<void> {
-    return super.deleteBankAccount(id);
+    return this.storage.deleteBankAccount(id);
   }
 
   // Dashboard metrics (tenant parameter ignored)
   async getDashboardMetrics(tenantId: string): Promise<any> {
-    return super.getDashboardMetrics();
+    return this.storage.getDashboardMetrics();
   }
 
   async getRecentPayments(tenantId: string): Promise<any> {
-    return super.getRecentPayments();
+    return this.storage.getRecentPayments();
   }
 
   async getTodaysPayments(tenantId: string): Promise<any> {
-    return super.getTodaysPayments();
+    return this.storage.getTodaysPayments();
   }
 
   async getMonthlyPayments(tenantId: string): Promise<any> {
-    return super.getMonthlyPayments();
+    return this.storage.getMonthlyPayments();
   }
 }
 

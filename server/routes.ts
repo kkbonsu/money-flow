@@ -49,15 +49,9 @@ import { eq, and, sql } from "drizzle-orm";
 import { users } from "@shared/schema";
 // import roleRoutes from "./roleRoutes"; // Disabled for single-tenant mode
 import { registerOptimizedRoutes } from "./optimizedRoutes";
+import { config } from "./config";
 
-const JWT_SECRET = process.env.JWT_SECRET || "WmV5/Y/0IM+ceqZruQsfC3GUhUvXpuwIybZjfwZ3g+s=";
-
-if (!JWT_SECRET) {
-  console.error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required!');
-  console.error('Please set JWT_SECRET to a strong, randomly generated secret.');
-  console.error('Example: JWT_SECRET="your-secure-random-secret-here" npm run dev');
-  process.exit(1);
-}
+const JWT_SECRET = config.JWT_SECRET;
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -373,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove password from update data - password should be updated separately
       const { password, ...safeUpdateData } = updateData;
       
-      const user = await storage.updateUser(req.user.id, safeUpdateData);
+      const user = await storage.updateUser('default-tenant', req.user.id, safeUpdateData);
       
       // Log profile update
       await storage.createUserAuditLog({
@@ -441,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profilePictureUrl = `/uploads/${req.file.filename}`;
       
       // Update user profile picture
-      await storage.updateUser(req.user.id, { profilePicture: profilePictureUrl });
+      await storage.updateUser('default-tenant', req.user.id, { profilePicture: profilePictureUrl });
       
       // Log profile picture update
       await storage.createUserAuditLog({

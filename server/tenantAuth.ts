@@ -3,15 +3,9 @@ import { Request, Response, NextFunction } from "express";
 // import { multiTenantStorage } from "./multiTenantStorage"; // Disabled for single-tenant mode
 import type { JwtPayload } from "@shared/schema";
 import type { SimpleTenantContext } from "@shared/tenantSchema";
+import { config } from "./config";
 
-const JWT_SECRET = process.env.JWT_SECRET || "WmV5/Y/0IM+ceqZruQsfC3GUhUvXpuwIybZjfwZ3g+s=";
-
-if (!JWT_SECRET) {
-  console.error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required!');
-  console.error('Please set JWT_SECRET to a strong, randomly generated secret.');
-  console.error('Example: JWT_SECRET="your-secure-random-secret-here" npm run dev');
-  process.exit(1);
-}
+const JWT_SECRET = config.JWT_SECRET;
 
 // Extend Express Request to include tenant context
 declare global {
@@ -42,7 +36,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      console.error('Admin JWT verification error:', err.message, 'Token:', token?.substring(0, 20) + '...');
+      console.error('Admin JWT verification error:', err.message);
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
@@ -63,7 +57,7 @@ export const authenticateCustomerToken = (req: Request, res: Response, next: Nex
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      console.error('Customer JWT verification error:', err.message, 'Token:', token?.substring(0, 20) + '...');
+      console.error('Customer JWT verification error:', err.message);
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 

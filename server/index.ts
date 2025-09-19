@@ -1,6 +1,5 @@
 // Set environment variables if not already set - MUST be before any imports
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
-process.env.JWT_SECRET = process.env.JWT_SECRET || "WmV5/Y/0IM+ceqZruQsfC3GUhUvXpuwIybZjfwZ3g+s=";
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
@@ -26,7 +25,13 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        // Redact sensitive data from logs
+        const safeResponse = { ...capturedJsonResponse };
+        if (safeResponse.token) safeResponse.token = '[REDACTED]';
+        if (safeResponse.accessToken) safeResponse.accessToken = '[REDACTED]';
+        if (safeResponse.refreshToken) safeResponse.refreshToken = '[REDACTED]';
+        
+        logLine += ` :: ${JSON.stringify(safeResponse)}`;
       }
 
       if (logLine.length > 80) {
