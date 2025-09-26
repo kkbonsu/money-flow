@@ -8,6 +8,7 @@ import { PaymentSchedule, LoanBook, Customer } from '@shared/schema';
 import { apiClient } from '@/lib/api';
 import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import PaymentReceipt from './PaymentReceipt';
 
 interface ViewPaymentModalProps {
   isOpen: boolean;
@@ -281,7 +282,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                 </div>
               )}
               {nextPayment.status === 'paid' && (
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t space-y-2">
                   <Button
                     onClick={() => markAsUnpaidMutation.mutate(nextPayment.id)}
                     disabled={markAsUnpaidMutation.isPending}
@@ -295,6 +296,19 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
               )}
             </CardContent>
           </Card>
+
+          {/* Payment Receipt Section - Show only for paid payments */}
+          {nextPayment.status === 'paid' && customer && (
+            <Card>
+              <CardContent className="p-6">
+                <PaymentReceipt 
+                  payment={nextPayment}
+                  loan={loan}
+                  customer={customer}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Complete Payment Schedule */}
           <Card>
@@ -331,7 +345,7 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                           <td className="p-2">{formatCurrency(p.principalAmount)}</td>
                           <td className="p-2">{formatCurrency(p.interestAmount)}</td>
                           <td className="p-2">
-                            <Badge className={getStatusColor(p.status)} size="sm">
+                            <Badge className={getStatusColor(p.status)}>
                               {p.status}
                             </Badge>
                           </td>
