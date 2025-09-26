@@ -9,6 +9,7 @@ import { apiClient } from '@/lib/api';
 import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PaymentReceipt from './PaymentReceipt';
+import { useState, useEffect } from 'react';
 
 interface ViewPaymentModalProps {
   isOpen: boolean;
@@ -20,6 +21,12 @@ interface ViewPaymentModalProps {
 export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: ViewPaymentModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedPayment, setSelectedPayment] = useState<PaymentSchedule | null>(payment);
+  
+  // Update selectedPayment when payment prop changes
+  useEffect(() => {
+    setSelectedPayment(payment);
+  }, [payment]);
   
   const { data: customers = [] } = useQuery({
     queryKey: ['/api/customers'],
@@ -238,71 +245,76 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
           {/* Current Payment Details */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Current Payment Information</CardTitle>
+              <CardTitle className="text-lg">Selected Payment Information</CardTitle>
+              <p className="text-sm text-muted-foreground">Click on any payment in the schedule below to view details and print receipts</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Payment ID</p>
-                  <p className="text-sm">{nextPayment.id}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Due Date</p>
-                  <p className="text-sm">{new Date(nextPayment.dueDate).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
-                  <p className="text-sm font-bold">{formatCurrency(nextPayment.amount)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <Badge className={getStatusColor(nextPayment.status)}>
-                    {nextPayment.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Principal Amount</p>
-                  <p className="text-sm">{formatCurrency(nextPayment.principalAmount)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Interest Amount</p>
-                  <p className="text-sm">{formatCurrency(nextPayment.interestAmount)}</p>
-                </div>
-              </div>
-              {nextPayment.status === 'pending' && (
-                <div className="pt-4 border-t">
-                  <Button
-                    onClick={() => markAsPaidMutation.mutate(nextPayment.id)}
-                    disabled={markAsPaidMutation.isPending}
-                    className="w-full"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    {markAsPaidMutation.isPending ? 'Processing...' : 'Mark as Paid'}
-                  </Button>
-                </div>
-              )}
-              {nextPayment.status === 'paid' && (
-                <div className="pt-4 border-t space-y-2">
-                  <Button
-                    onClick={() => markAsUnpaidMutation.mutate(nextPayment.id)}
-                    disabled={markAsUnpaidMutation.isPending}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    {markAsUnpaidMutation.isPending ? 'Processing...' : 'Mark as Unpaid'}
-                  </Button>
-                </div>
+              {selectedPayment && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Payment ID</p>
+                      <p className="text-sm">{selectedPayment.id}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Due Date</p>
+                      <p className="text-sm">{new Date(selectedPayment.dueDate).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                      <p className="text-sm font-bold">{formatCurrency(selectedPayment.amount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Status</p>
+                      <Badge className={getStatusColor(selectedPayment.status)}>
+                        {selectedPayment.status}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Principal Amount</p>
+                      <p className="text-sm">{formatCurrency(selectedPayment.principalAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Interest Amount</p>
+                      <p className="text-sm">{formatCurrency(selectedPayment.interestAmount)}</p>
+                    </div>
+                  </div>
+                  {selectedPayment.status === 'pending' && (
+                    <div className="pt-4 border-t">
+                      <Button
+                        onClick={() => markAsPaidMutation.mutate(selectedPayment.id)}
+                        disabled={markAsPaidMutation.isPending}
+                        className="w-full"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        {markAsPaidMutation.isPending ? 'Processing...' : 'Mark as Paid'}
+                      </Button>
+                    </div>
+                  )}
+                  {selectedPayment.status === 'paid' && (
+                    <div className="pt-4 border-t space-y-2">
+                      <Button
+                        onClick={() => markAsUnpaidMutation.mutate(selectedPayment.id)}
+                        disabled={markAsUnpaidMutation.isPending}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        {markAsUnpaidMutation.isPending ? 'Processing...' : 'Mark as Unpaid'}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
 
-          {/* Payment Receipt Section - Show only for paid payments */}
-          {nextPayment.status === 'paid' && customer && (
+          {/* Payment Receipt Section - Show for the selected payment if it's paid */}
+          {selectedPayment?.status === 'paid' && customer && (
             <Card>
               <CardContent className="p-6">
                 <PaymentReceipt 
-                  payment={nextPayment}
+                  payment={selectedPayment}
                   loan={loan}
                   customer={customer}
                 />
@@ -337,7 +349,8 @@ export default function ViewPaymentModal({ isOpen, onClose, payment, loan }: Vie
                       .map((p: PaymentSchedule, index: number) => (
                         <tr 
                           key={p.id} 
-                          className={`border-b hover:bg-muted/50 ${p.id === payment.id ? 'bg-blue-50 dark:bg-blue-950' : ''}`}
+                          className={`border-b hover:bg-muted/50 cursor-pointer ${p.id === selectedPayment?.id ? 'bg-blue-50 dark:bg-blue-950' : ''}`}
+                          onClick={() => setSelectedPayment(p)}
                         >
                           <td className="p-2 font-medium">{index + 1}</td>
                           <td className="p-2">{new Date(p.dueDate).toLocaleDateString()}</td>
