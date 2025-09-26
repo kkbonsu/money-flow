@@ -968,7 +968,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       console.log('PUT payment schedule request body:', JSON.stringify(req.body, null, 2));
-      const scheduleData = insertPaymentScheduleSchema.parse(req.body);
+      // Use partial validation for updates - only validate provided fields
+      const scheduleData = insertPaymentScheduleSchema.partial().parse(req.body);
       console.log('Parsed schedule data:', JSON.stringify(scheduleData, null, 2));
       console.log(`🔄 About to update payment schedule ${id} with status: ${scheduleData.status}`);
       console.log(`🔄 Calling storage.updatePaymentSchedule with data:`, scheduleData);
