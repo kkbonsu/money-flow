@@ -47,7 +47,7 @@ export default function CustomerProfile() {
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
 
-  const { data: customer, isLoading } = useQuery({
+  const { data: customer, isLoading } = useQuery<any>({
     queryKey: ['/api/customer/profile'],
   });
 
