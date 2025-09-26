@@ -396,7 +396,7 @@ export class DatabaseStorage implements IStorage {
   async createLoanProduct(insertLoanProduct: InsertLoanProduct): Promise<LoanProduct> {
     const [loanProduct] = await db
       .insert(loanProducts)
-      .values({ ...insertLoanProduct, tenantId: DEFAULT_TENANT_ID })
+      .values(insertLoanProduct)
       .returning();
     return loanProduct;
   }
@@ -427,7 +427,7 @@ export class DatabaseStorage implements IStorage {
   async createLoan(insertLoan: InsertLoanBook): Promise<LoanBook> {
     const [loan] = await db
       .insert(loanBooks)
-      .values({ ...insertLoan, tenantId: DEFAULT_TENANT_ID })
+      .values(insertLoan)
       .returning();
     
     // Automatically create payment schedules for the loan
@@ -493,7 +493,6 @@ export class DatabaseStorage implements IStorage {
         const feeAmount = parseFloat(loanProduct.fee);
         if (feeAmount > 0) {
           await db.insert(incomeManagement).values({
-            tenantId: DEFAULT_TENANT_ID,
             source: 'Loan Processing Fee',
             amount: loanProduct.fee,
             description: `Processing fee for loan #${loan.id} (${loanProduct.name})`,
@@ -530,7 +529,7 @@ export class DatabaseStorage implements IStorage {
   async createPaymentSchedule(insertSchedule: InsertPaymentSchedule): Promise<PaymentSchedule> {
     const [schedule] = await db
       .insert(paymentSchedules)
-      .values({ ...insertSchedule, tenantId: DEFAULT_TENANT_ID })
+      .values(insertSchedule)
       .returning();
     return schedule;
   }
@@ -635,7 +634,7 @@ export class DatabaseStorage implements IStorage {
   async createStaff(insertStaff: InsertStaff): Promise<Staff> {
     const [member] = await db
       .insert(staff)
-      .values({ ...insertStaff, tenantId: DEFAULT_TENANT_ID })
+      .values(insertStaff)
       .returning();
     return member;
   }

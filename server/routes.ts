@@ -582,7 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer routes
   app.get("/api/customers", authenticateToken, async (req, res) => {
     try {
-      const customers = await storage.getCustomers();
+      const customers = await storage.getCustomers('default-tenant');
       res.json(customers);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch customers" });
@@ -604,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPortalActive: true
       };
       
-      const customer = await storage.createCustomer(customerWithPortal);
+      const customer = await storage.createCustomer('default-tenant', customerWithPortal);
       
       // Return customer data with generated credentials
       res.json({
@@ -624,7 +624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const customerData = insertCustomerSchema.parse(req.body);
-      const customer = await storage.updateCustomer(id, customerData);
+      const customer = await storage.updateCustomer('default-tenant', id, customerData);
       res.json(customer);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update customer" });
@@ -634,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/customers/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteCustomer(id);
+      await storage.deleteCustomer('default-tenant', id);
       res.json({ message: "Customer deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete customer" });
