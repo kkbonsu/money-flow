@@ -195,7 +195,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values({ ...insertUser, tenantId: DEFAULT_TENANT_ID })
+      .values(insertUser)
       .returning();
     return user;
   }
@@ -238,7 +238,7 @@ export class DatabaseStorage implements IStorage {
   async createUserAuditLog(insertLog: InsertUserAuditLog): Promise<UserAuditLog> {
     const [log] = await db
       .insert(userAuditLogs)
-      .values({ ...insertLog, tenantId: DEFAULT_TENANT_ID })
+      .values(insertLog)
       .returning();
     return log;
   }
@@ -265,7 +265,7 @@ export class DatabaseStorage implements IStorage {
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const [customer] = await db
       .insert(customers)
-      .values({ ...insertCustomer, tenantId: DEFAULT_TENANT_ID })
+      .values(insertCustomer)
       .returning();
     return customer;
   }
