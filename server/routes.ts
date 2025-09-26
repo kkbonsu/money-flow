@@ -1705,7 +1705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics
   app.get("/api/dashboard/metrics", authenticateToken, async (req, res) => {
     try {
-      const metrics = await storage.getDashboardMetrics();
+      const metrics = await storage.getDashboardMetrics('default-tenant');
       res.json(metrics);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch dashboard metrics" });
@@ -1715,7 +1715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan portfolio data
   app.get("/api/dashboard/loan-portfolio", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getLoanPortfolioData();
+      const data = await storage.getLoanPortfolioData('default-tenant');
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loan portfolio data" });
@@ -1725,7 +1725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Payment status data
   app.get("/api/dashboard/payment-status", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getPaymentStatusData();
+      const data = await storage.getPaymentStatusData('default-tenant');
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch payment status data" });
@@ -1735,7 +1735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advanced analytics data
   app.get("/api/dashboard/advanced-analytics", authenticateToken, async (req, res) => {
     try {
-      const data = await storage.getAdvancedAnalyticsData();
+      const data = await storage.getAdvancedAnalyticsData('default-tenant');
       res.json(data);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch advanced analytics data" });

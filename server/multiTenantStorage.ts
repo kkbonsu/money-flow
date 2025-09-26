@@ -346,6 +346,19 @@ export class MultiTenantStorage implements IMultiTenantStorage {
   async getMonthlyPayments(tenantId: string): Promise<any> {
     return this.storage.getMonthlyPayments();
   }
+
+  // Advanced analytics methods (tenant parameter ignored)
+  async getPaymentStatusData(tenantId: string): Promise<any> {
+    return this.storage.getPaymentStatusData();
+  }
+
+  async getLoanPortfolioData(tenantId: string): Promise<any> {
+    return this.storage.getLoanPortfolioData();
+  }
+
+  async getAdvancedAnalyticsData(tenantId: string): Promise<any> {
+    return this.storage.getAdvancedAnalyticsData();
+  }
 }
 
 // Backward compatibility storage instance
