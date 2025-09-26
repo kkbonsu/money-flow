@@ -754,7 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loan Book routes
   app.get("/api/loans", authenticateToken, async (req, res) => {
     try {
-      const loans = await storage.getLoans();
+      const loans = await storage.getLoans('default-tenant');
       res.json(loans);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch loans" });
@@ -763,10 +763,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/loans", authenticateToken, async (req, res) => {
     try {
+      console.log("Loan creation request body:", req.body);
       const loanData = insertLoanBookSchema.parse(req.body);
-      const loan = await storage.createLoan(loanData);
+      console.log("Parsed loan data:", loanData);
+      const loan = await storage.createLoan('default-tenant', loanData);
       res.json(loan);
     } catch (error) {
+      console.error("Loan creation error:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create loan" });
     }
   });
@@ -775,7 +782,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const loanData = insertLoanBookSchema.parse(req.body);
-      const loan = await storage.updateLoan(id, loanData);
+      const loan = await storage.updateLoan('default-tenant', id, loanData);
       res.json(loan);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update loan" });
@@ -785,7 +792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/loans/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteLoan(id);
+      await storage.deleteLoan('default-tenant', id);
       res.json({ message: "Loan deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete loan" });
