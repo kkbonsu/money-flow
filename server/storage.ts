@@ -437,41 +437,56 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async createPaymentSchedulesForLoan(loan: LoanBook): Promise<void> {
-    const principal = parseFloat(loan.loanAmount);
-    const monthlyRate = parseFloat(loan.interestRate) / 100 / 12;
-    const numPayments = loan.term;
-    
-    // Calculate monthly payment using amortization formula
-    const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-                          (Math.pow(1 + monthlyRate, numPayments) - 1);
-    
-    let remainingBalance = principal;
-    const currentDate = new Date();
-    
-    const schedules: InsertPaymentSchedule[] = [];
-    
-    for (let i = 1; i <= numPayments; i++) {
-      const interestPayment = remainingBalance * monthlyRate;
-      const principalPayment = monthlyPayment - interestPayment;
-      remainingBalance -= principalPayment;
+    try {
+      console.log(`🔄 Creating payment schedules for loan ${loan.id}...`);
       
-      // Due date is first day of each month
-      const dueDate = new Date(currentDate);
-      dueDate.setMonth(currentDate.getMonth() + i);
-      dueDate.setDate(1);
+      const principal = parseFloat(loan.loanAmount);
+      const monthlyRate = parseFloat(loan.interestRate) / 100 / 12;
+      const numPayments = loan.term;
       
-      schedules.push({
-        loanId: loan.id,
-        dueDate,
-        amount: monthlyPayment.toFixed(2),
-        principalAmount: principalPayment.toFixed(2),
-        interestAmount: interestPayment.toFixed(2),
-        status: 'pending'
-      });
+      console.log(`📊 Loan details: Principal=${principal}, Rate=${loan.interestRate}%, Term=${numPayments} months`);
+      
+      // Calculate monthly payment using amortization formula
+      const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                            (Math.pow(1 + monthlyRate, numPayments) - 1);
+      
+      console.log(`💰 Monthly payment calculated: $${monthlyPayment.toFixed(2)}`);
+      
+      let remainingBalance = principal;
+      const currentDate = new Date();
+      
+      const schedules: InsertPaymentSchedule[] = [];
+      
+      for (let i = 1; i <= numPayments; i++) {
+        const interestPayment = remainingBalance * monthlyRate;
+        const principalPayment = monthlyPayment - interestPayment;
+        remainingBalance -= principalPayment;
+        
+        // Due date is first day of each month
+        const dueDate = new Date(currentDate);
+        dueDate.setMonth(currentDate.getMonth() + i);
+        dueDate.setDate(1);
+        
+        schedules.push({
+          loanId: loan.id,
+          dueDate,
+          amount: monthlyPayment.toFixed(2),
+          principalAmount: principalPayment.toFixed(2),
+          interestAmount: interestPayment.toFixed(2),
+          status: 'pending'
+        });
+      }
+      
+      console.log(`📅 Generated ${schedules.length} payment schedules`);
+      
+      // Insert all payment schedules
+      const insertedSchedules = await db.insert(paymentSchedules).values(schedules).returning();
+      console.log(`✅ Successfully inserted ${insertedSchedules.length} payment schedules for loan ${loan.id}`);
+      
+    } catch (error) {
+      console.error(`❌ Error creating payment schedules for loan ${loan.id}:`, error);
+      throw error;
     }
-    
-    // Insert all payment schedules
-    await db.insert(paymentSchedules).values(schedules);
   }
 
   async updateLoan(id: number, updateLoan: Partial<InsertLoanBook>): Promise<LoanBook> {
@@ -521,9 +536,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPaymentSchedulesByLoan(loanId: number): Promise<PaymentSchedule[]> {
-    return await db.select().from(paymentSchedules)
+    console.log(`🔍 Searching for payment schedules for loan ID: ${loanId}`);
+    const results = await db.select().from(paymentSchedules)
       .where(eq(paymentSchedules.loanId, loanId))
       .orderBy(paymentSchedules.dueDate);
+    console.log(`📅 Found ${results.length} payment schedules for loan ${loanId}`);
+    return results;
   }
 
   async createPaymentSchedule(insertSchedule: InsertPaymentSchedule): Promise<PaymentSchedule> {
