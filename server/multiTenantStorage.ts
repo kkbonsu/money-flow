@@ -31,6 +31,10 @@ export interface IMultiTenantStorage {
   updateUserLastLogin(tenantId: string, id: number): Promise<User>;
   deleteUser(tenantId: string, id: number): Promise<void>;
   
+  // User audit log methods
+  getUserAuditLogs(tenantId: string, userId: number): Promise<UserAuditLog[]>;
+  createUserAuditLog(tenantId: string, log: InsertUserAuditLog): Promise<UserAuditLog>;
+  
   getCustomers(tenantId: string): Promise<Customer[]>;
   getCustomer(tenantId: string, id: number): Promise<Customer | undefined>;
   getCustomerByEmail(tenantId: string, email: string): Promise<Customer | undefined>;
@@ -134,6 +138,15 @@ export class MultiTenantStorage implements IMultiTenantStorage {
 
   async deleteUser(tenantId: string, id: number): Promise<void> {
     return this.storage.deleteUser(id);
+  }
+
+  // User audit log methods (tenant parameter ignored)
+  async getUserAuditLogs(tenantId: string, userId: number): Promise<UserAuditLog[]> {
+    return this.storage.getUserAuditLogs(userId);
+  }
+
+  async createUserAuditLog(tenantId: string, log: InsertUserAuditLog): Promise<UserAuditLog> {
+    return this.storage.createUserAuditLog(log);
   }
 
   // Customer methods (tenant parameter ignored)

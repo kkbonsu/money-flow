@@ -138,7 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update last login and log the login
       await storage.updateUserLastLogin('default-tenant', user.id);
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog('default-tenant', {
         userId: user.id,
         action: 'login',
         description: 'User logged in successfully',
@@ -370,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.updateUser('default-tenant', req.user.id, safeUpdateData);
       
       // Log profile update
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog('default-tenant', {
         userId: req.user.id,
         action: 'profile_update',
         description: 'User profile updated',
@@ -403,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUserPassword(req.user.id, hashedPassword);
       
       // Log password change
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog('default-tenant', {
         userId: req.user.id,
         action: 'password_change',
         description: 'User password changed',
@@ -438,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser('default-tenant', req.user.id, { profilePicture: profilePictureUrl });
       
       // Log profile picture update
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog('default-tenant', {
         userId: req.user.id,
         action: 'profile_update',
         description: 'Profile picture updated',
@@ -494,7 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteUser(userId);
       
       // Log user deletion
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog('default-tenant', {
         userId: req.user.id,
         action: 'user_delete',
         description: `Admin deleted user with ID: ${userId}`,
@@ -527,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userId, { isActive });
       
       // Log user status change
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog('default-tenant', {
         userId: req.user.id,
         action: 'user_status_change',
         description: `Admin ${isActive ? 'activated' : 'deactivated'} user with ID: ${userId}`,
@@ -565,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userId, { role });
       
       // Log user role change
-      await storage.createUserAuditLog({
+      await storage.createUserAuditLog('default-tenant', {
         userId: req.user.id,
         action: 'user_role_change',
         description: `Admin changed user role to '${role}' for user with ID: ${userId}`,
