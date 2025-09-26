@@ -995,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Staff routes
   app.get("/api/staff", authenticateToken, async (req, res) => {
     try {
-      const staff = await storage.getStaff();
+      const staff = await storage.getStaff('default-tenant');
       res.json(staff);
     } catch (error) {
       res.status(500).json({ message: error instanceof Error ? error.message : "Failed to fetch staff" });
@@ -1005,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/staff", authenticateToken, async (req, res) => {
     try {
       const staffData = insertStaffSchema.parse(req.body);
-      const staff = await storage.createStaff(staffData);
+      const staff = await storage.createStaff('default-tenant', staffData);
       res.json(staff);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create staff" });
@@ -1016,7 +1016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const staffData = insertStaffSchema.parse(req.body);
-      const staff = await storage.updateStaff(id, staffData);
+      const staff = await storage.updateStaff('default-tenant', id, staffData);
       res.json(staff);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update staff" });
@@ -1026,7 +1026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/staff/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteStaff(id);
+      await storage.deleteStaff('default-tenant', id);
       res.json({ message: "Staff deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Failed to delete staff" });
